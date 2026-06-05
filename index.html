@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PromptVault AI - App</title>
+    <title>PromptVault AI - Cloud</title>
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -29,7 +29,6 @@
                         warning: '#F59E0B',
                         error: '#EF4444',
                         lightbg: '#F8FAFC',
-                        // AMOELD Black adjustments
                         darkbg: '#000000',
                         darksurface: '#000000', 
                     },
@@ -40,369 +39,313 @@
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; }
-        
-        /* Glassmorphism utility */
-        .glass {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        .dark .glass {
-            background: rgba(0, 0, 0, 0.85);
-            border-bottom: 1px solid #171717;
-        }
-        
+        .glass { background: rgba(0, 0, 0, 0.85); border-bottom: 1px solid #171717; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .screen { display: none; opacity: 0; transition: opacity 0.3s ease; }
         .screen.active { display: block; opacity: 1; }
-        
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .dark ::-webkit-scrollbar-thumb { background: #262626; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .dark ::-webkit-scrollbar-thumb:hover { background: #404040; }
+        ::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #404040; }
+        .nav-item.active { background-color: rgba(99, 102, 241, 0.15); color: #6366F1; font-weight: 500; border-right: 3px solid #6366F1; }
+        .hover-card { transition: transform 0.2s ease, border-color 0.2s ease; }
+        .hover-card:hover { transform: translateY(-2px); border-color: rgba(99, 102, 241, 0.6); }
+        .editor-bg { background-color: #050505; background-image: radial-gradient(#171717 1px, transparent 1px); background-size: 20px 20px; }
         
-        /* Nav Item Active State */
-        .nav-item.active {
-            background-color: rgba(99, 102, 241, 0.1);
-            color: #6366F1;
-            font-weight: 500;
-            border-right: 3px solid #6366F1;
-        }
-        .dark .nav-item.active {
-            background-color: rgba(99, 102, 241, 0.15);
-        }
-        .nav-item.active i { color: #6366F1; }
-        
-        /* Smooth hover transition */
-        .hover-card { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
-        .hover-card:hover { transform: translateY(-2px); }
-        .dark .hover-card:hover { border-color: rgba(99, 102, 241, 0.6); }
-        
-        /* AMOLED Editor Feel */
-        .editor-bg {
-            background-color: #f1f5f9;
-            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-        .dark .editor-bg {
-            background-color: #050505;
-            background-image: radial-gradient(#171717 1px, transparent 1px);
-        }
-        
-        /* Toast Notification */
         #toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #10B981;
-            color: #fff;
-            text-align: center;
-            border-radius: 8px;
-            padding: 12px;
-            position: fixed;
-            z-index: 9999;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            font-size: 14px;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
-            opacity: 0;
-            transition: opacity 0.3s, bottom 0.3s;
+            visibility: hidden; min-width: 250px; background-color: #10B981; color: #fff; text-align: center;
+            border-radius: 8px; padding: 12px; position: fixed; z-index: 99999; left: 50%; bottom: 30px;
+            transform: translateX(-50%); font-size: 14px; box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
+            opacity: 0; transition: opacity 0.3s, bottom 0.3s;
         }
-        #toast.show {
-            visibility: visible;
-            opacity: 1;
-            bottom: 50px;
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+
+        /* Full Screen Login Overlay */
+        #login-overlay {
+            position: fixed; inset: 0; background: #000000; z-index: 100000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.4s ease;
         }
     </style>
 </head>
-<body class="bg-lightbg dark:bg-darkbg text-slate-800 dark:text-slate-200 overflow-hidden flex h-screen antialiased selection:bg-primary/30 selection:text-primary">
+<body class="bg-darkbg text-slate-200 overflow-hidden flex h-screen antialiased selection:bg-primary/30 selection:text-primary">
 
     <div id="toast">Action successful!</div>
 
+    <!-- LOGIN SCREEN -->
+    <div id="login-overlay">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white mb-6 shadow-lg shadow-primary/30">
+            <i class="fa-solid fa-bolt text-3xl"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-white mb-2">PromptVault Cloud</h1>
+        <p class="text-neutral-400 mb-8 text-center max-w-xs">Your AI prompts securely synced across all your devices.</p>
+        
+        <button onclick="window.signIn()" class="px-6 py-3 bg-white text-black hover:bg-neutral-200 rounded-xl font-bold flex items-center gap-3 transition-colors shadow-lg">
+            <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Sign in with Google
+        </button>
+
+        <div id="login-loader" class="mt-8 hidden">
+            <i class="fa-solid fa-circle-notch fa-spin text-primary text-2xl"></i>
+        </div>
+    </div>
+
     <!-- Mobile Sidebar Backdrop -->
-    <div id="mobile-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="toggleMobileMenu()"></div>
+    <div id="mobile-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="window.toggleMobileMenu()"></div>
 
     <!-- LEFT SIDEBAR -->
-    <aside id="sidebar" class="fixed md:relative w-64 h-full bg-white dark:bg-darksurface border-r border-slate-200 dark:border-neutral-900 flex flex-col justify-between z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+    <aside id="sidebar" class="fixed md:relative w-64 h-full bg-darksurface border-r border-neutral-900 flex flex-col justify-between z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Logo -->
-            <div class="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-neutral-900 shrink-0">
-                <div class="flex items-center cursor-pointer" onclick="switchTab('dashboard')">
+            <div class="h-16 flex items-center justify-between px-6 border-b border-neutral-900 shrink-0">
+                <div class="flex items-center cursor-pointer" onclick="window.switchTab('dashboard')">
                     <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white mr-3 shadow-lg shadow-primary/30">
                         <i class="fa-solid fa-bolt"></i>
                     </div>
-                    <span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">PromptVault</span>
+                    <span class="text-xl font-bold tracking-tight text-white">PromptVault</span>
                 </div>
-                <button class="md:hidden text-slate-500 hover:text-slate-800 dark:hover:text-white" onclick="toggleMobileMenu()">
+                <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()">
                     <i class="fa-solid fa-times"></i>
                 </button>
             </div>
             
-            <!-- Navigation -->
             <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                <p class="px-3 text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wider mb-2 mt-2">Main Menu</p>
-                <a href="#" onclick="switchTab('dashboard')" class="nav-item active flex items-center px-3 py-2.5 rounded-xl text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors">
-                    <i class="fa-solid fa-house w-6 text-center text-slate-400 dark:text-neutral-500"></i>
+                <p class="px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 mt-2">Main Menu</p>
+                <a href="#" onclick="window.switchTab('dashboard')" class="nav-item active flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors">
+                    <i class="fa-solid fa-house w-6 text-center text-neutral-500"></i>
                     <span class="ml-2 text-sm">Dashboard</span>
                 </a>
-                <a href="#" onclick="switchTab('library')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors">
-                    <i class="fa-solid fa-book-open w-6 text-center text-slate-400 dark:text-neutral-500"></i>
+                <a href="#" onclick="window.switchTab('library')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors">
+                    <i class="fa-solid fa-book-open w-6 text-center text-neutral-500"></i>
                     <span class="ml-2 text-sm">Prompt Library</span>
                 </a>
                 
-                <p class="px-3 text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wider mb-2 mt-6">Insights & Tools</p>
-                <a href="#" onclick="switchTab('analytics')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors">
-                    <i class="fa-solid fa-chart-pie w-6 text-center text-slate-400 dark:text-neutral-500"></i>
+                <p class="px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 mt-6">Insights & Tools</p>
+                <a href="#" onclick="window.switchTab('analytics')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors">
+                    <i class="fa-solid fa-chart-pie w-6 text-center text-neutral-500"></i>
                     <span class="ml-2 text-sm">Analytics</span>
                 </a>
                 
-                <p class="px-3 text-xs font-semibold text-slate-400 dark:text-neutral-500 uppercase tracking-wider mb-2 mt-6">System</p>
-                <a href="#" onclick="switchTab('settings')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors">
-                    <i class="fa-solid fa-gear w-6 text-center text-slate-400 dark:text-neutral-500"></i>
-                    <span class="ml-2 text-sm">Settings / Sync</span>
+                <p class="px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 mt-6">System</p>
+                <a href="#" onclick="window.switchTab('settings')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors">
+                    <i class="fa-solid fa-gear w-6 text-center text-neutral-500"></i>
+                    <span class="ml-2 text-sm">Settings / Backup</span>
                 </a>
             </nav>
         </div>
         
-        <!-- User Profile Bottom -->
-        <div class="p-4 border-t border-slate-200 dark:border-neutral-900 shrink-0">
-            <div class="flex items-center p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-neutral-900 cursor-pointer transition-colors">
-                <img src="https://ui-avatars.com/api/?name=Local+User&background=6366F1&color=fff" alt="User Avatar" class="w-9 h-9 rounded-full ring-2 ring-white dark:ring-neutral-800">
+        <!-- User Profile -->
+        <div class="p-4 border-t border-neutral-900 shrink-0">
+            <div class="flex items-center p-2 rounded-xl bg-neutral-900/50 cursor-default">
+                <img id="user-avatar" src="" alt="Avatar" class="w-9 h-9 rounded-full ring-2 ring-neutral-800 hidden">
                 <div class="ml-3 overflow-hidden flex-1">
-                    <p class="text-sm font-medium text-slate-900 dark:text-white truncate">Local User</p>
-                    <p class="text-xs text-slate-500 dark:text-neutral-500 truncate">Offline App</p>
+                    <p id="user-name" class="text-sm font-medium text-white truncate">Loading...</p>
+                    <button onclick="window.signOutUser()" class="text-xs text-red-400 hover:text-red-300 font-medium">Sign Out</button>
                 </div>
             </div>
         </div>
     </aside>
 
-    <!-- MAIN CONTENT WRAPPER -->
-    <div class="flex-1 flex flex-col relative w-full overflow-hidden bg-lightbg dark:bg-darkbg">
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col relative w-full overflow-hidden bg-darkbg">
         
-        <!-- TOPBAR -->
-        <header class="h-16 glass border-b border-slate-200 dark:border-neutral-900 flex items-center justify-between px-4 md:px-8 z-30 sticky top-0">
+        <header class="h-16 glass border-b border-neutral-900 flex items-center justify-between px-4 md:px-8 z-30 sticky top-0">
             <div class="flex items-center flex-1 gap-4">
-                <button class="md:hidden text-slate-500 hover:text-slate-800 dark:hover:text-white" onclick="toggleMobileMenu()">
+                <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()">
                     <i class="fa-solid fa-bars text-lg"></i>
                 </button>
                 <div class="relative max-w-md w-full hidden sm:block">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-neutral-500"></i>
-                    <input type="text" id="global-search" onkeyup="searchPrompts(this.value)" placeholder="Search library..." class="w-full bg-slate-100 dark:bg-neutral-900 border border-transparent dark:border-neutral-800 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 text-slate-900 dark:text-white placeholder-slate-400 transition-all">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"></i>
+                    <input type="text" id="global-search" onkeyup="window.searchPrompts(this.value)" placeholder="Search library..." class="w-full bg-neutral-900 border border-transparent border-neutral-800 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 text-white placeholder-neutral-500 transition-all">
                 </div>
             </div>
             
             <div class="flex items-center gap-3 md:gap-4">
-                <button onclick="prepareAddPrompt()" class="hidden md:flex bg-primary hover:bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm items-center gap-2">
+                <div id="sync-status" class="hidden md:flex items-center gap-1.5 text-xs text-neutral-400 bg-neutral-900 px-3 py-1.5 rounded-full border border-neutral-800">
+                    <div class="w-2 h-2 rounded-full bg-success animate-pulse"></div> Live Sync
+                </div>
+                
+                <button onclick="window.prepareAddPrompt()" class="hidden md:flex bg-primary hover:bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm items-center gap-2">
                     <i class="fa-solid fa-plus"></i> Quick Add
                 </button>
-                <button onclick="prepareAddPrompt()" class="md:hidden w-9 h-9 flex items-center justify-center bg-primary text-white rounded-xl shadow-sm">
+                <button onclick="window.prepareAddPrompt()" class="md:hidden w-9 h-9 flex items-center justify-center bg-primary text-white rounded-xl shadow-sm">
                     <i class="fa-solid fa-plus"></i>
-                </button>
-                
-                <div class="h-6 w-px bg-slate-200 dark:bg-neutral-800 mx-1"></div>
-                
-                <button onclick="toggleTheme()" class="text-slate-400 hover:text-slate-600 dark:text-neutral-400 dark:hover:text-white transition-colors w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-neutral-900">
-                    <i class="fa-solid fa-moon dark:hidden"></i>
-                    <i class="fa-solid fa-sun hidden dark:block"></i>
                 </button>
             </div>
         </header>
 
-        <!-- SCROLLABLE VIEWS -->
         <main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
             
-            <!-- 1. DASHBOARD SCREEN -->
+            <!-- 1. DASHBOARD -->
             <div id="dashboard" class="screen active max-w-7xl mx-auto">
                 <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Dashboard Overview</h1>
-                        <p class="text-slate-500 dark:text-neutral-400 text-sm md:text-base">All your AI workflows running completely locally.</p>
+                        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2 tracking-tight">Dashboard Overview</h1>
+                        <p class="text-neutral-400 text-sm md:text-base">All your AI workflows running securely in the cloud.</p>
                     </div>
                 </div>
 
-                <!-- Stats Grid -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-                    <div class="bg-white dark:bg-darksurface p-5 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
+                    <div class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
                         <div class="flex justify-between items-start mb-2">
-                            <p class="text-sm font-medium text-slate-500 dark:text-neutral-400">Total Prompts</p>
+                            <p class="text-sm font-medium text-neutral-400">Total Prompts</p>
                             <i class="fa-solid fa-layer-group text-primary opacity-50"></i>
                         </div>
-                        <h3 class="text-3xl font-bold text-slate-900 dark:text-white" id="stat-total">0</h3>
+                        <h3 class="text-3xl font-bold text-white" id="stat-total">0</h3>
                         <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
                     </div>
-                    <div class="bg-white dark:bg-darksurface p-5 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
+                    <div class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
                         <div class="flex justify-between items-start mb-2">
-                            <p class="text-sm font-medium text-slate-500 dark:text-neutral-400">Categories</p>
+                            <p class="text-sm font-medium text-neutral-400">Categories</p>
                             <i class="fa-solid fa-tags text-secondary opacity-50"></i>
                         </div>
-                        <h3 class="text-3xl font-bold text-slate-900 dark:text-white" id="stat-categories">0</h3>
+                        <h3 class="text-3xl font-bold text-white" id="stat-categories">0</h3>
                         <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-secondary to-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
                     </div>
                 </div>
 
-                <!-- Recent Prompts -->
                 <div>
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Recent Prompts</h3>
-                        <button onclick="switchTab('library')" class="text-primary text-sm font-medium hover:underline flex items-center gap-1">View All <i class="fa-solid fa-arrow-right text-xs"></i></button>
+                        <h3 class="text-lg font-bold text-white">Recent Prompts</h3>
+                        <button onclick="window.switchTab('library')" class="text-primary text-sm font-medium hover:underline flex items-center gap-1">View All <i class="fa-solid fa-arrow-right text-xs"></i></button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="dashboard-recent-grid">
-                        <!-- Populated by JS -->
-                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="dashboard-recent-grid"></div>
                 </div>
             </div>
 
-            <!-- 2. PROMPT LIBRARY SCREEN -->
+            <!-- 2. LIBRARY -->
             <div id="library" class="screen max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div>
-                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Prompt Library</h1>
-                        <p class="text-sm text-slate-500 dark:text-neutral-400">Manage and discover your saved prompts.</p>
+                        <h1 class="text-2xl font-bold text-white">Prompt Library</h1>
                     </div>
-                    <button onclick="prepareAddPrompt()" class="px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                    <button onclick="window.prepareAddPrompt()" class="px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
                         <i class="fa-solid fa-plus"></i> Create Prompt
                     </button>
                 </div>
                 
-                <!-- Filters Bar -->
-                <div class="bg-white dark:bg-darksurface p-3 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm mb-6 flex flex-col md:flex-row gap-3">
+                <div class="bg-darksurface p-3 rounded-2xl border border-neutral-800 shadow-sm mb-6 flex flex-col md:flex-row gap-3">
                     <div class="relative flex-1">
-                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-neutral-500"></i>
-                        <input type="text" id="lib-search" onkeyup="renderLibrary()" placeholder="Search titles, tags, content..." class="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 text-slate-900 dark:text-white transition-all">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"></i>
+                        <input type="text" id="lib-search" onkeyup="window.renderLibrary()" placeholder="Search titles, tags, content..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 text-white transition-all">
                     </div>
                     <div class="flex gap-2">
-                        <select id="lib-category" onchange="renderLibrary()" class="bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 text-slate-700 dark:text-slate-300 min-w-[130px] cursor-pointer">
+                        <select id="lib-category" onchange="window.renderLibrary()" class="bg-neutral-900 border border-neutral-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 text-slate-300 min-w-[130px] cursor-pointer">
                             <option value="">All Categories</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="library-grid">
-                    <!-- Populated by JS -->
-                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="library-grid"></div>
             </div>
 
-            <!-- 3. ADD/EDIT PROMPT SCREEN -->
+            <!-- 3. ADD/EDIT -->
             <div id="add" class="screen max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col">
                 <div class="flex justify-between items-center mb-4 shrink-0">
                     <div class="flex items-center gap-3">
-                        <button onclick="switchTab('library')" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-neutral-800 flex items-center justify-center text-slate-500 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-arrow-left text-sm"></i></button>
-                        <h1 class="text-xl font-bold text-slate-900 dark:text-white" id="form-title">Create New Prompt</h1>
+                        <button onclick="window.switchTab('library')" class="w-8 h-8 rounded-lg border border-neutral-800 flex items-center justify-center text-neutral-400 hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+                        <h1 class="text-xl font-bold text-white" id="form-title">Create New Prompt</h1>
                     </div>
-                    <button onclick="savePrompt()" class="px-5 py-2 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
-                        <i class="fa-solid fa-check"></i> Save Prompt
+                    <button onclick="window.savePrompt()" class="px-5 py-2 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Save to Cloud
                     </button>
                 </div>
 
                 <div class="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
-                    <!-- Left Column: Form & Editor -->
                     <div class="flex-1 flex flex-col gap-5 overflow-y-auto pr-1 pb-10">
                         <input type="hidden" id="prompt-id">
                         
-                        <!-- Metadata Card -->
-                        <div class="bg-white dark:bg-darksurface p-5 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm shrink-0">
+                        <div class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm shrink-0">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="md:col-span-2">
-                                    <label class="block text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wider">Prompt Name</label>
-                                    <input type="text" id="prompt-name" placeholder="e.g., SEO Blog Post Generator" class="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-slate-900 dark:text-white">
+                                    <label class="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wider">Prompt Name</label>
+                                    <input type="text" id="prompt-name" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-white">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wider">Category</label>
-                                    <input type="text" id="prompt-cat" list="cat-suggestions" placeholder="Marketing, Dev, etc." class="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-slate-900 dark:text-white">
+                                    <label class="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wider">Category</label>
+                                    <input type="text" id="prompt-cat" list="cat-suggestions" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-white">
                                     <datalist id="cat-suggestions"></datalist>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wider">Target Model</label>
-                                    <input type="text" id="prompt-model" placeholder="GPT-4, Claude 3.5..." class="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-slate-900 dark:text-white">
+                                    <label class="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wider">Target Model</label>
+                                    <input type="text" id="prompt-model" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-white">
                                 </div>
                                 <div class="md:col-span-2">
-                                    <label class="block text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wider">Tags (Comma separated)</label>
-                                    <input type="text" id="prompt-tags" placeholder="seo, writing, blog..." class="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-slate-900 dark:text-white text-sm">
+                                    <label class="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wider">Tags (Comma separated)</label>
+                                    <input type="text" id="prompt-tags" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-white text-sm">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Editor Card -->
-                        <div class="bg-white dark:bg-darksurface rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm flex flex-col flex-1 min-h-[300px]">
-                            <div class="px-5 py-3 border-b border-slate-200 dark:border-neutral-800 flex justify-between items-center bg-slate-50/50 dark:bg-neutral-900 rounded-t-2xl">
-                                <h3 class="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-code text-primary"></i> Prompt Editor</h3>
+                        <div class="bg-darksurface rounded-2xl border border-neutral-800 shadow-sm flex flex-col flex-1 min-h-[300px]">
+                            <div class="px-5 py-3 border-b border-neutral-800 flex justify-between items-center bg-neutral-900 rounded-t-2xl">
+                                <h3 class="text-sm font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-code text-primary"></i> Prompt Editor</h3>
                                 <div class="flex gap-2 text-xs">
-                                    <span class="text-slate-500 dark:text-neutral-500">Variables syntax:</span>
-                                    <code class="bg-slate-200 dark:bg-neutral-800 text-primary dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-mono">{{variable}}</code>
+                                    <code class="bg-neutral-800 text-primary dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-mono">{{variable}}</code>
                                 </div>
                             </div>
                             <div class="flex-1 relative p-1">
-                                <textarea id="prompt-content" oninput="parseVariables()" class="w-full h-full resize-none bg-transparent p-4 focus:outline-none text-slate-800 dark:text-slate-300 font-mono text-sm leading-relaxed editor-bg rounded-b-xl" placeholder="Act as an expert {{role}}. I want you to write a {{contentType}} about {{topic}}..."></textarea>
+                                <textarea id="prompt-content" oninput="window.parseVariables()" class="w-full h-full resize-none bg-transparent p-4 focus:outline-none text-slate-300 font-mono text-sm leading-relaxed editor-bg rounded-b-xl"></textarea>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Right Column: Variables & Preview -->
                     <div class="w-full lg:w-96 flex flex-col gap-5 shrink-0 pb-10">
-                        <div class="bg-white dark:bg-darksurface p-5 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm shrink-0">
-                            <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2"><i class="fa-solid fa-cube text-secondary"></i> Detected Variables</h3>
+                        <div class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm shrink-0">
+                            <h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2"><i class="fa-solid fa-cube text-secondary"></i> Detected Variables</h3>
                             <div id="variables-container" class="space-y-3">
-                                <p class="text-xs text-slate-500 dark:text-neutral-500">No variables detected. Type {{var}} in the editor.</p>
+                                <p class="text-xs text-neutral-500">No variables detected.</p>
                             </div>
                         </div>
 
-                        <!-- Live Preview Panel -->
-                        <div class="bg-slate-900 dark:bg-[#050505] rounded-2xl border border-slate-800 dark:border-neutral-800 shadow-sm flex flex-col flex-1 overflow-hidden relative">
+                        <div class="bg-[#050505] rounded-2xl border border-neutral-800 shadow-sm flex flex-col flex-1 overflow-hidden relative">
                             <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
-                            <div class="px-5 py-3 border-b border-slate-800 dark:border-neutral-800 flex justify-between items-center bg-slate-800/50 dark:bg-neutral-900">
+                            <div class="px-5 py-3 border-b border-neutral-800 flex justify-between items-center bg-neutral-900">
                                 <h3 class="text-sm font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-eye text-emerald-400"></i> Live Preview</h3>
                             </div>
-                            <div id="live-preview" class="p-4 flex-1 overflow-y-auto font-mono text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
-                            </div>
+                            <div id="live-preview" class="p-4 flex-1 overflow-y-auto font-mono text-sm text-slate-300 whitespace-pre-wrap leading-relaxed"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 4. PROMPT DETAIL SCREEN -->
+            <!-- 4. DETAIL -->
             <div id="detail" class="screen max-w-5xl mx-auto pb-10">
                 <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-neutral-400">
-                        <a href="#" onclick="switchTab('library')" class="hover:text-primary transition-colors">Library</a>
+                    <div class="flex items-center gap-2 text-sm text-neutral-400">
+                        <a href="#" onclick="window.switchTab('library')" class="hover:text-primary transition-colors">Library</a>
                         <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                        <span class="text-slate-900 dark:text-white font-medium" id="view-breadcrumb">Prompt</span>
+                        <span class="text-white font-medium" id="view-breadcrumb">Prompt</span>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="editCurrentPrompt()" class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-neutral-800 text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deleteCurrentPrompt()" class="w-9 h-9 flex items-center justify-center rounded-xl border border-error/20 text-error hover:bg-error/10 transition-colors" title="Delete"><i class="fa-regular fa-trash-can"></i></button>
+                        <button onclick="window.editCurrentPrompt()" class="w-9 h-9 flex items-center justify-center rounded-xl border border-neutral-800 text-neutral-400 hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="window.deleteCurrentPrompt()" class="w-9 h-9 flex items-center justify-center rounded-xl border border-error/20 text-error hover:bg-error/10 transition-colors"><i class="fa-regular fa-trash-can"></i></button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 space-y-6">
-                        <div class="bg-white dark:bg-darksurface p-6 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm">
+                        <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm">
                             <div class="flex items-start justify-between mb-4">
                                 <div>
-                                    <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="view-title">Title</h1>
-                                    <p class="text-sm text-slate-500 dark:text-neutral-400 mt-2" id="view-desc">Added on <span id="view-date"></span></p>
+                                    <h1 class="text-2xl font-bold text-white tracking-tight" id="view-title">Title</h1>
+                                    <p class="text-sm text-neutral-400 mt-2" id="view-desc">Added on <span id="view-date"></span></p>
                                 </div>
                             </div>
                             <div class="flex flex-wrap items-center gap-2 mb-4">
-                                <span class="bg-slate-100 dark:bg-neutral-900 text-slate-600 dark:text-neutral-300 px-2.5 py-1 rounded-md text-xs font-medium border border-slate-200 dark:border-neutral-800"><i class="fa-solid fa-folder-tree mr-1"></i> <span id="view-cat"></span></span>
-                                <span class="bg-slate-100 dark:bg-neutral-900 text-slate-600 dark:text-neutral-300 px-2.5 py-1 rounded-md text-xs font-medium border border-slate-200 dark:border-neutral-800"><i class="fa-solid fa-microchip mr-1"></i> <span id="view-model"></span></span>
+                                <span class="bg-neutral-900 text-neutral-300 px-2.5 py-1 rounded-md text-xs font-medium border border-neutral-800"><i class="fa-solid fa-folder-tree mr-1"></i> <span id="view-cat"></span></span>
+                                <span class="bg-neutral-900 text-neutral-300 px-2.5 py-1 rounded-md text-xs font-medium border border-neutral-800"><i class="fa-solid fa-microchip mr-1"></i> <span id="view-model"></span></span>
                             </div>
                             <div class="flex gap-2 flex-wrap" id="view-tags"></div>
                         </div>
 
-                        <div class="bg-slate-900 dark:bg-[#050505] rounded-2xl border border-slate-800 dark:border-neutral-800 shadow-sm overflow-hidden relative">
-                            <div class="px-5 py-3 border-b border-slate-800 dark:border-neutral-800 flex justify-between items-center bg-slate-800/50 dark:bg-neutral-900">
+                        <div class="bg-[#050505] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden relative">
+                            <div class="px-5 py-3 border-b border-neutral-800 flex justify-between items-center bg-neutral-900">
                                 <h3 class="text-sm font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-terminal text-slate-400"></i> Prompt Template</h3>
-                                <button onclick="copyToClipboard('view-content')" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-2">
+                                <button onclick="window.copyToClipboard('view-content')" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-2">
                                     <i class="fa-regular fa-copy"></i> Copy
                                 </button>
                             </div>
@@ -412,73 +355,41 @@
                 </div>
             </div>
 
-            <!-- 5. ANALYTICS SCREEN -->
+            <!-- 5. ANALYTICS -->
             <div id="analytics" class="screen max-w-7xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Analytics</h1>
-                        <p class="text-sm text-slate-500 dark:text-neutral-400">Simple offline usage statistics based on local data.</p>
+                        <h1 class="text-2xl font-bold text-white">Analytics</h1>
+                        <p class="text-sm text-neutral-400">Overview of your cloud library.</p>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-darksurface p-6 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm mb-6">
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Category Distribution</h3>
+                <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm mb-6">
+                    <h3 class="text-lg font-bold text-white mb-6">Category Distribution</h3>
                     <div class="h-[300px] w-full flex justify-center">
                         <canvas id="categoryChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <!-- 6. SETTINGS / SYNC SCREEN -->
+            <!-- 6. SETTINGS -->
             <div id="settings" class="screen max-w-5xl mx-auto">
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Settings & Sync</h1>
+                <h1 class="text-2xl font-bold text-white mb-6">Settings & Backup</h1>
                 
-                <div class="flex flex-col md:flex-row gap-8">
-                    <!-- Settings Panel -->
-                    <div class="flex-1 space-y-6">
-                        
-                        <div class="bg-white dark:bg-darksurface p-6 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm">
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-cloud-arrow-up text-primary mr-2"></i> Cross-Device Sync</h3>
-                            <p class="text-sm text-slate-500 dark:text-neutral-400 mb-6">Since this app runs entirely locally without a database, use these tools to sync data between your PC and Mobile phone.</p>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="border border-slate-200 dark:border-neutral-800 p-4 rounded-xl">
-                                    <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-2">Export Data (To JSON File)</h4>
-                                    <p class="text-xs text-slate-500 dark:text-neutral-400 mb-4">Download a backup file containing all your prompts.</p>
-                                    <button onclick="exportDataFile()" class="w-full px-4 py-2 bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-neutral-700 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                                        <i class="fa-solid fa-download"></i> Download File
-                                    </button>
-                                </div>
-                                <div class="border border-slate-200 dark:border-neutral-800 p-4 rounded-xl">
-                                    <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-2">Import Data (From JSON File)</h4>
-                                    <p class="text-xs text-slate-500 dark:text-neutral-400 mb-4">Upload a backup file to restore your prompts here.</p>
-                                    <input type="file" id="import-file" accept=".json" class="hidden" onchange="importDataFile(event)">
-                                    <button onclick="document.getElementById('import-file').click()" class="w-full px-4 py-2 bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-neutral-700 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                                        <i class="fa-solid fa-upload"></i> Select File
-                                    </button>
-                                </div>
-                                
-                                <div class="md:col-span-2 border border-slate-200 dark:border-neutral-800 p-4 rounded-xl mt-2">
-                                    <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-2">Sync Code (Copy/Paste)</h4>
-                                    <p class="text-xs text-slate-500 dark:text-neutral-400 mb-4">Quickly move data via a text string if you can't transfer files easily.</p>
-                                    <div class="flex gap-2">
-                                        <button onclick="exportSyncCode()" class="flex-1 px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">
-                                            Copy My Sync Code
-                                        </button>
-                                        <button onclick="importSyncCodePrompt()" class="flex-1 px-4 py-2 border border-primary text-primary hover:bg-primary/10 rounded-lg text-sm font-medium transition-colors">
-                                            Paste a Sync Code
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-red-50 dark:bg-red-900/10 p-6 rounded-2xl border border-red-200 dark:border-red-900/30 shadow-sm mt-6">
-                            <h3 class="text-lg font-bold text-red-600 dark:text-red-500 mb-2">Danger Zone</h3>
-                            <p class="text-sm text-red-500/80 mb-4">Erase all local data permanently.</p>
-                            <button onclick="factoryReset()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors">
-                                Delete All Data
-                            </button>
-                        </div>
+                <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm">
+                    <h3 class="text-lg font-bold text-white mb-2"><i class="fa-solid fa-download text-primary mr-2"></i> Export Data Backup</h3>
+                    <p class="text-sm text-neutral-400 mb-6">Your data is safely stored in Firebase and syncs automatically across all your devices. However, you can download a local JSON backup of your library anytime.</p>
+                    
+                    <button onclick="window.exportDataFile()" class="px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 rounded-xl font-medium transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-download"></i> Download JSON Backup
+                    </button>
+                    
+                    <div class="mt-8 pt-6 border-t border-neutral-900">
+                        <h3 class="text-lg font-bold text-white mb-2"><i class="fa-solid fa-upload text-primary mr-2"></i> Upload to Cloud</h3>
+                        <p class="text-sm text-neutral-400 mb-4">Import an old JSON backup file into your cloud account.</p>
+                        <input type="file" id="import-file" accept=".json" class="hidden" onchange="window.importDataFile(event)">
+                        <button onclick="document.getElementById('import-file').click()" class="px-6 py-2.5 bg-primary hover:bg-indigo-600 text-white rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Select File to Import
+                        </button>
                     </div>
                 </div>
             </div>
@@ -486,82 +397,133 @@
         </main>
     </div>
 
-    <!-- Application Script -->
-    <script>
-        // --- Core Data Logic ---
-        const STORAGE_KEY = 'promptvault_data_v1';
-        let prompts = [];
+    <!-- FIREBASE SDK & APP LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // FIREBASE CONFIGURATION (Provided by User)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBimffGhLYalnH2CMYW64OXxtStASXt8I",
+            authDomain: "promptlib-78914.firebaseapp.com",
+            projectId: "promptlib-78914",
+            storageBucket: "promptlib-78914.firebasestorage.app",
+            messagingSenderId: "579017245729",
+            appId: "1:579017245729:web:c765e1b2ddb24e685b4f60"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global State
+        window.prompts = [];
+        let currentUser = null;
         let currentEditingId = null;
         let currentViewId = null;
+        let unsubscribeSnapshot = null;
 
         // PWA Setup
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed: ', err));
+                navigator.serviceWorker.register('sw.js');
             });
         }
 
-        function loadData() {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                try {
-                    prompts = JSON.parse(raw);
-                } catch(e) {
-                    console.error("Corrupted local storage");
-                    prompts = [];
-                }
-            } else {
-                // Initial Sample Data
-                prompts = [
-                    {
-                        id: generateId(),
-                        title: "Expert Code Refactoring",
-                        category: "Engineering",
-                        model: "GPT-4o",
-                        tags: ["code", "refactoring", "clean-code"],
-                        content: "Act as a Senior Software Engineer. Please review the following code and refactor it based on these constraints:\n1. Convert to strictly typed structure.\n2. Optimize for performance.\n3. Add comprehensive inline comments.\n\nCode to refactor:\n```{{language}}\n{{code}}\n```",
-                        date: new Date().toISOString()
-                    },
-                    {
-                        id: generateId(),
-                        title: "SEO Blog Post Generator",
-                        category: "Marketing",
-                        model: "Claude 3.5",
-                        tags: ["seo", "blog", "writing"],
-                        content: "Act as an expert Content Marketer. Write a 1000-word blog post about {{topic}}. Ensure the tone is {{tone}} and includes the keyword '{{keyword}}' at least 3 times organically.",
-                        date: new Date().toISOString()
-                    }
-                ];
-                saveData();
+        // --- AUTHENTICATION LOGIC ---
+        window.signIn = () => {
+            const provider = new GoogleAuthProvider();
+            document.getElementById('login-loader').classList.remove('hidden');
+            signInWithPopup(auth, provider).catch(error => {
+                console.error("Login failed:", error);
+                document.getElementById('login-loader').classList.add('hidden');
+                alert("Login failed: " + error.message);
+            });
+        };
+
+        window.signOutUser = () => {
+            if(confirm("Are you sure you want to sign out?")) {
+                signOut(auth);
             }
+        };
+
+        // Listen for Login State Changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                
+                // Update UI
+                document.getElementById('login-overlay').style.opacity = '0';
+                setTimeout(() => { document.getElementById('login-overlay').style.display = 'none'; }, 400);
+                
+                document.getElementById('user-name').innerText = user.displayName || "User";
+                if(user.photoURL) {
+                    const avatar = document.getElementById('user-avatar');
+                    avatar.src = user.photoURL;
+                    avatar.classList.remove('hidden');
+                }
+
+                // Start Firestore real-time sync
+                startDataSync();
+            } else {
+                currentUser = null;
+                window.prompts = [];
+                if(unsubscribeSnapshot) unsubscribeSnapshot();
+                
+                // Show Login UI
+                document.getElementById('login-overlay').style.display = 'flex';
+                setTimeout(() => { document.getElementById('login-overlay').style.opacity = '1'; }, 10);
+                document.getElementById('login-loader').classList.add('hidden');
+                document.getElementById('user-avatar').classList.add('hidden');
+            }
+        });
+
+        // --- DATABASE SYNC LOGIC ---
+        function startDataSync() {
+            const q = query(collection(db, "prompts"), where("userId", "==", currentUser.uid));
+            
+            unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+                window.prompts = [];
+                snapshot.forEach((doc) => {
+                    window.prompts.push({ id: doc.id, ...doc.data() });
+                });
+                
+                updateCategoryDatalist();
+                
+                // Refresh active screens
+                const activeId = document.querySelector('.screen.active').id;
+                if(activeId === 'dashboard') renderDashboard();
+                if(activeId === 'library') renderLibrary();
+                if(activeId === 'analytics') renderAnalytics();
+            }, (error) => {
+                console.error("Error fetching data: ", error);
+            });
         }
 
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(prompts));
-            updateDashboardStats();
-            updateCategoryDatalist();
+        // --- UI & CORE FUNCTIONS ---
+        let toastTimeout;
+        window.showToast = (message) => {
+            const t = document.getElementById('toast');
+            t.innerText = message;
+            t.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { t.classList.remove('show'); }, 3000);
         }
 
         function generateId() {
-            return Math.random().toString(36).substring(2, 9);
+            return Math.random().toString(36).substring(2, 15);
         }
 
-        function showToast(message) {
-            const t = document.getElementById('toast');
-            t.innerText = message;
-            t.className = 'show';
-            setTimeout(() => { t.className = t.className.replace('show', ''); }, 3000);
-        }
-
-        // --- UI State & Navigation ---
-        function switchTab(tabId) {
+        window.switchTab = (tabId) => {
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             
             const targetScreen = document.getElementById(tabId);
             if(targetScreen) targetScreen.classList.add('active');
             
-            const navLink = document.querySelector(`.nav-item[onclick="switchTab('${tabId}')"]`);
+            const navLink = document.querySelector(`.nav-item[onclick="window.switchTab('${tabId}')"]`);
             if(navLink) navLink.classList.add('active');
 
             if(window.innerWidth < 768) {
@@ -569,103 +531,91 @@
                 document.getElementById('mobile-backdrop').classList.add('hidden');
             }
 
-            // Tab specific triggers
             if(tabId === 'dashboard') renderDashboard();
             if(tabId === 'library') renderLibrary();
             if(tabId === 'analytics') renderAnalytics();
         }
 
-        function toggleMobileMenu() {
+        window.toggleMobileMenu = () => {
             const sidebar = document.getElementById('sidebar');
             const backdrop = document.getElementById('mobile-backdrop');
             sidebar.classList.toggle('-translate-x-full');
             backdrop.classList.toggle('hidden');
         }
 
-        function toggleTheme() {
-            const html = document.documentElement;
-            html.classList.toggle('dark');
-            if(document.getElementById('analytics').classList.contains('active')) renderAnalytics();
-        }
-
         // --- Dashboard ---
-        function updateDashboardStats() {
-            document.getElementById('stat-total').innerText = prompts.length;
-            const cats = new Set(prompts.map(p => p.category).filter(c => c));
-            document.getElementById('stat-categories').innerText = cats.size;
-        }
-
         function renderDashboard() {
-            updateDashboardStats();
+            document.getElementById('stat-total').innerText = window.prompts.length;
+            const cats = new Set(window.prompts.map(p => p.category).filter(c => c));
+            document.getElementById('stat-categories').innerText = cats.size;
+
             const grid = document.getElementById('dashboard-recent-grid');
-            const recent = [...prompts].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
+            const recent = [...window.prompts].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
             
             grid.innerHTML = recent.map(p => `
-                <div onclick="viewPrompt('${p.id}')" class="bg-white dark:bg-darksurface p-4 rounded-xl border border-slate-200 dark:border-neutral-800 shadow-sm flex items-start gap-4 hover-card cursor-pointer">
+                <div onclick="window.viewPrompt('${p.id}')" class="bg-darksurface p-4 rounded-xl border border-neutral-800 shadow-sm flex items-start gap-4 hover-card cursor-pointer">
                     <div class="flex-1 min-w-0">
-                        <h4 class="font-bold text-slate-900 dark:text-white truncate text-base">${p.title}</h4>
-                        <p class="text-xs text-slate-500 dark:text-neutral-400 mt-1 mb-2">Category: ${p.category || 'None'}</p>
+                        <h4 class="font-bold text-white truncate text-base">${p.title}</h4>
+                        <p class="text-xs text-neutral-400 mt-1 mb-2">Category: ${p.category || 'None'}</p>
                         <div class="flex flex-wrap items-center gap-2 text-xs">
-                            <span class="bg-slate-100 dark:bg-neutral-900 text-slate-600 dark:text-neutral-300 px-2 py-0.5 rounded-md font-medium border border-slate-200 dark:border-neutral-800"><i class="fa-solid fa-microchip"></i> ${p.model || 'Any'}</span>
+                            <span class="bg-neutral-900 text-neutral-300 px-2 py-0.5 rounded-md font-medium border border-neutral-800"><i class="fa-solid fa-microchip"></i> ${p.model || 'Any'}</span>
                         </div>
                     </div>
                 </div>
             `).join('');
             
-            if(recent.length === 0) grid.innerHTML = `<p class="text-slate-500 dark:text-neutral-500 text-sm col-span-full">No prompts found. Create one!</p>`;
+            if(recent.length === 0) grid.innerHTML = `<p class="text-neutral-500 text-sm col-span-full">No prompts found in cloud. Create one!</p>`;
         }
 
         // --- Library ---
         function updateCategoryDatalist() {
-            const cats = new Set(prompts.map(p => p.category).filter(c => c));
+            const cats = new Set(window.prompts.map(p => p.category).filter(c => c));
             
-            // For Library Filter
             const filterSelect = document.getElementById('lib-category');
             const currentVal = filterSelect.value;
             filterSelect.innerHTML = '<option value="">All Categories</option>' + Array.from(cats).map(c => `<option value="${c}">${c}</option>`).join('');
             filterSelect.value = currentVal;
 
-            // For Add Form Datalist
             const datalist = document.getElementById('cat-suggestions');
             datalist.innerHTML = Array.from(cats).map(c => `<option value="${c}">`).join('');
         }
 
-        function renderLibrary() {
+        window.renderLibrary = () => {
             const q = document.getElementById('lib-search').value.toLowerCase();
             const cat = document.getElementById('lib-category').value;
             const grid = document.getElementById('library-grid');
             
-            const filtered = prompts.filter(p => {
+            const filtered = window.prompts.filter(p => {
                 const matchQ = p.title.toLowerCase().includes(q) || (p.tags && p.tags.join(' ').toLowerCase().includes(q)) || p.content.toLowerCase().includes(q);
                 const matchCat = cat === '' || p.category === cat;
                 return matchQ && matchCat;
             });
 
             grid.innerHTML = filtered.map(p => `
-                <div onclick="viewPrompt('${p.id}')" class="bg-white dark:bg-darksurface p-5 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm hover-card cursor-pointer flex flex-col h-full">
-                    <h4 class="font-bold text-slate-900 dark:text-white mb-2 line-clamp-1 text-lg">${p.title}</h4>
-                    <p class="text-xs text-slate-500 dark:text-neutral-400 mb-4 line-clamp-3 flex-1 font-mono">${p.content}</p>
-                    <div class="mt-auto pt-4 border-t border-slate-100 dark:border-neutral-800 flex items-center gap-2 flex-wrap">
-                        ${p.category ? `<span class="bg-slate-100 dark:bg-neutral-900 text-slate-600 dark:text-neutral-300 px-2 py-0.5 rounded text-[10px] font-medium border border-slate-200 dark:border-neutral-800">${p.category}</span>` : ''}
-                        ${p.model ? `<span class="bg-slate-100 dark:bg-neutral-900 text-slate-600 dark:text-neutral-300 px-2 py-0.5 rounded text-[10px] font-medium border border-slate-200 dark:border-neutral-800"><i class="fa-solid fa-microchip"></i> ${p.model}</span>` : ''}
+                <div onclick="window.viewPrompt('${p.id}')" class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm hover-card cursor-pointer flex flex-col h-full">
+                    <h4 class="font-bold text-white mb-2 line-clamp-1 text-lg">${p.title}</h4>
+                    <p class="text-xs text-neutral-400 mb-4 line-clamp-3 flex-1 font-mono">${p.content}</p>
+                    <div class="mt-auto pt-4 border-t border-neutral-800 flex items-center gap-2 flex-wrap">
+                        ${p.category ? `<span class="bg-neutral-900 text-neutral-300 px-2 py-0.5 rounded text-[10px] font-medium border border-neutral-800">${p.category}</span>` : ''}
+                        ${p.model ? `<span class="bg-neutral-900 text-neutral-300 px-2 py-0.5 rounded text-[10px] font-medium border border-neutral-800"><i class="fa-solid fa-microchip"></i> ${p.model}</span>` : ''}
                     </div>
                 </div>
             `).join('');
 
-            if(filtered.length === 0) grid.innerHTML = `<p class="text-slate-500 dark:text-neutral-500 text-sm col-span-full py-10 text-center">No prompts match your criteria.</p>`;
+            if(filtered.length === 0) grid.innerHTML = `<p class="text-neutral-500 text-sm col-span-full py-10 text-center">No prompts match your criteria.</p>`;
         }
 
-        function searchPrompts(val) {
+        window.searchPrompts = (val) => {
             document.getElementById('lib-search').value = val;
             if(!document.getElementById('library').classList.contains('active')) {
-                switchTab('library');
+                window.switchTab('library');
             } else {
-                renderLibrary();
+                window.renderLibrary();
             }
         }
 
-        // --- Add / Edit ---
-        function prepareAddPrompt() {
+        // --- Add / Edit to Cloud ---
+        window.prepareAddPrompt = () => {
             currentEditingId = null;
             document.getElementById('form-title').innerText = "Create New Prompt";
             document.getElementById('prompt-id').value = "";
@@ -674,12 +624,12 @@
             document.getElementById('prompt-model').value = "";
             document.getElementById('prompt-tags').value = "";
             document.getElementById('prompt-content').value = "";
-            parseVariables();
-            switchTab('add');
+            window.parseVariables();
+            window.switchTab('add');
         }
 
-        function editCurrentPrompt() {
-            const p = prompts.find(x => x.id === currentViewId);
+        window.editCurrentPrompt = () => {
+            const p = window.prompts.find(x => x.id === currentViewId);
             if(!p) return;
             currentEditingId = p.id;
             document.getElementById('form-title').innerText = "Edit Prompt";
@@ -689,11 +639,11 @@
             document.getElementById('prompt-model').value = p.model || "";
             document.getElementById('prompt-tags').value = (p.tags || []).join(", ");
             document.getElementById('prompt-content').value = p.content;
-            parseVariables();
-            switchTab('add');
+            window.parseVariables();
+            window.switchTab('add');
         }
 
-        function savePrompt() {
+        window.savePrompt = async () => {
             const title = document.getElementById('prompt-name').value.trim();
             const content = document.getElementById('prompt-content').value.trim();
             if(!title || !content) {
@@ -701,53 +651,52 @@
                 return;
             }
 
+            const docId = currentEditingId || generateId();
             const newPrompt = {
-                id: currentEditingId || generateId(),
                 title: title,
                 category: document.getElementById('prompt-cat').value.trim(),
                 model: document.getElementById('prompt-model').value.trim(),
                 tags: document.getElementById('prompt-tags').value.split(',').map(t => t.trim()).filter(t => t),
                 content: content,
-                date: new Date().toISOString()
+                date: new Date().toISOString(),
+                userId: currentUser.uid // Attach user ID
             };
 
-            if (currentEditingId) {
-                const idx = prompts.findIndex(x => x.id === currentEditingId);
-                if(idx > -1) prompts[idx] = newPrompt;
-            } else {
-                prompts.push(newPrompt);
+            try {
+                window.showToast("Saving to cloud...");
+                await setDoc(doc(db, "prompts", docId), newPrompt);
+                window.showToast("Saved Successfully!");
+                window.switchTab('library');
+            } catch (error) {
+                console.error("Error saving prompt: ", error);
+                alert("Error saving to cloud. Make sure you have internet access.");
             }
-
-            saveData();
-            showToast("Prompt Saved Successfully!");
-            switchTab('library');
         }
 
-        // Live Preview & Variables Logic
-        function parseVariables() {
+        // Live Preview & Variables
+        window.parseVariables = () => {
             const content = document.getElementById('prompt-content').value;
             const regex = /\{\{([^}]+)\}\}/g;
             const matches = [...new Set(Array.from(content.matchAll(regex)).map(m => m[1]))];
             
             const container = document.getElementById('variables-container');
             if (matches.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-500 dark:text-neutral-500">No variables detected. Type {{var}} in the editor.</p>`;
+                container.innerHTML = `<p class="text-xs text-neutral-500">No variables detected. Type {{var}} in the editor.</p>`;
             } else {
                 container.innerHTML = matches.map(v => `
-                    <div class="border border-slate-200 dark:border-neutral-800 rounded-lg p-3 bg-slate-50 dark:bg-neutral-900">
+                    <div class="border border-neutral-800 rounded-lg p-3 bg-neutral-900">
                         <div class="flex justify-between items-center mb-2">
                             <code class="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">{{${v}}}</code>
                         </div>
-                        <input type="text" id="var_input_${v}" oninput="updateLivePreview()" placeholder="Value for ${v}..." class="w-full bg-white dark:bg-darksurface border border-slate-200 dark:border-neutral-800 rounded-lg py-1.5 px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 text-slate-900 dark:text-white">
+                        <input type="text" id="var_input_${v}" oninput="window.updateLivePreview()" placeholder="Value for ${v}..." class="w-full bg-darksurface border border-neutral-800 rounded-lg py-1.5 px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 text-white">
                     </div>
                 `).join('');
             }
-            updateLivePreview();
+            window.updateLivePreview();
         }
 
-        function updateLivePreview() {
+        window.updateLivePreview = () => {
             let content = document.getElementById('prompt-content').value;
-            // Escape HTML basically
             content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             
             const regex = /\{\{([^}]+)\}\}/g;
@@ -761,8 +710,8 @@
         }
 
         // --- Detail View ---
-        function viewPrompt(id) {
-            const p = prompts.find(x => x.id === id);
+        window.viewPrompt = (id) => {
+            const p = window.prompts.find(x => x.id === id);
             if(!p) return;
             
             currentViewId = id;
@@ -773,26 +722,29 @@
             document.getElementById('view-model').innerText = p.model || 'Any Model';
             
             document.getElementById('view-tags').innerHTML = (p.tags || []).map(t => 
-                `<span class="text-xs text-slate-500 dark:text-neutral-400 bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 px-2 py-1 rounded">#${t}</span>`
+                `<span class="text-xs text-neutral-400 bg-neutral-900 border border-neutral-800 px-2 py-1 rounded">#${t}</span>`
             ).join('');
             
             document.getElementById('view-content').innerText = p.content;
             
-            switchTab('detail');
+            window.switchTab('detail');
         }
 
-        function deleteCurrentPrompt() {
-            if(confirm("Are you sure you want to delete this prompt?")) {
-                prompts = prompts.filter(p => p.id !== currentViewId);
-                saveData();
-                showToast("Prompt Deleted!");
-                switchTab('library');
+        window.deleteCurrentPrompt = async () => {
+            if(confirm("Are you sure you want to delete this prompt from the cloud?")) {
+                try {
+                    await deleteDoc(doc(db, "prompts", currentViewId));
+                    window.showToast("Prompt Deleted!");
+                    window.switchTab('library');
+                } catch(error) {
+                    alert("Error deleting prompt.");
+                }
             }
         }
 
-        function copyToClipboard(elementId) {
+        window.copyToClipboard = (elementId) => {
             const text = document.getElementById(elementId).innerText;
-            navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!"));
+            navigator.clipboard.writeText(text).then(() => window.showToast("Copied to clipboard!"));
         }
 
         // --- Analytics ---
@@ -801,14 +753,13 @@
             if (categoryChartInst) categoryChartInst.destroy();
             
             const cats = {};
-            prompts.forEach(p => {
+            window.prompts.forEach(p => {
                 const c = p.category || 'Uncategorized';
                 cats[c] = (cats[c] || 0) + 1;
             });
 
             const ctx = document.getElementById('categoryChart').getContext('2d');
-            const isDark = document.documentElement.classList.contains('dark');
-            Chart.defaults.color = isDark ? '#a3a3a3' : '#64748b';
+            Chart.defaults.color = '#a3a3a3';
 
             categoryChartInst = new Chart(ctx, {
                 type: 'doughnut',
@@ -817,8 +768,8 @@
                     datasets: [{
                         data: Object.values(cats),
                         backgroundColor: ['#6366F1', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#cbd5e1'],
-                        borderWidth: isDark ? 1 : 0,
-                        borderColor: isDark ? '#000000' : '#ffffff'
+                        borderWidth: 1,
+                        borderColor: '#000000'
                     }]
                 },
                 options: {
@@ -829,75 +780,60 @@
             });
         }
 
-        // --- Sync & Data Transfer ---
-        function exportDataFile() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(prompts));
+        // --- Backup Tools ---
+        window.exportDataFile = () => {
+            const dataStr = JSON.stringify(window.prompts, null, 2);
+            const blob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            
             const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "promptvault_backup.json");
+            downloadAnchorNode.setAttribute("href", url);
+            downloadAnchorNode.setAttribute("download", "promptvault_cloud_backup.json");
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
         }
 
-        function importDataFile(event) {
+        window.importDataFile = async (event) => {
             const file = event.target.files[0];
             if(!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
                     if(Array.isArray(imported)) {
-                        prompts = imported;
-                        saveData();
-                        showToast("Data imported successfully!");
-                        updateDashboardStats();
+                        window.showToast(`Uploading ${imported.length} prompts to cloud...`);
+                        let uploadCount = 0;
+                        for(let p of imported) {
+                            const docId = p.id || generateId();
+                            // Clean up data for cloud
+                            const newPrompt = {
+                                title: p.title || "Untitled",
+                                category: p.category || "",
+                                model: p.model || "",
+                                tags: p.tags || [],
+                                content: p.content || "",
+                                date: p.date || new Date().toISOString(),
+                                userId: currentUser.uid
+                            };
+                            await setDoc(doc(db, "prompts", docId), newPrompt);
+                            uploadCount++;
+                        }
+                        window.showToast(`Successfully imported ${uploadCount} prompts!`);
                     }
                 } catch(err) {
                     alert("Invalid JSON file.");
+                    console.error(err);
                 }
             };
             reader.readAsText(file);
+            event.target.value = '';
         }
 
-        function exportSyncCode() {
-            const str = btoa(unescape(encodeURIComponent(JSON.stringify(prompts))));
-            navigator.clipboard.writeText(str).then(() => {
-                showToast("Sync Code copied to clipboard!");
-            });
-        }
+        // Default screen
+        window.switchTab('dashboard');
 
-        function importSyncCodePrompt() {
-            const code = prompt("Paste your Sync Code here:");
-            if(!code) return;
-            try {
-                const str = decodeURIComponent(escape(atob(code)));
-                const imported = JSON.parse(str);
-                if(Array.isArray(imported)) {
-                    prompts = imported;
-                    saveData();
-                    showToast("Sync successful!");
-                    updateDashboardStats();
-                } else { throw new Error(); }
-            } catch(e) {
-                alert("Invalid Sync Code.");
-            }
-        }
-
-        function factoryReset() {
-            if(confirm("WARNING: This will delete ALL locally saved prompts. Are you completely sure?")) {
-                prompts = [];
-                saveData();
-                showToast("All data cleared.");
-                switchTab('dashboard');
-            }
-        }
-
-        // Init
-        window.onload = () => {
-            loadData();
-            switchTab('dashboard');
-        };
     </script>
 </body>
 </html>
