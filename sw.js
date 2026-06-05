@@ -1,4 +1,4 @@
-const CACHE_NAME = 'promptvault-v1';
+const CACHE_NAME = 'promptvault-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -15,6 +15,22 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          if (name !== CACHE_NAME) {
+            return caches.delete(name);
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
