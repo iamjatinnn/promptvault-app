@@ -576,12 +576,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const sharedId = urlParams.get('share');
 
-        if(sharedId) {
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('share-overlay').style.display = 'flex';
-            loadSharedPrompt(sharedId);
-        } else {
-            async function loadSharedPrompt(id) {
+        async function loadSharedPrompt(id) {
             try {
                 const docSnap = await getDoc(doc(db, "prompts", id));
                 if (docSnap.exists() && docSnap.data().isPublic) {
@@ -601,17 +596,22 @@
         }
         window.copySharedPrompt = () => { window.copyToClipboard('share-content'); }
         window.saveSharedPrompt = async () => {
-            if(!auth.currentUser) { alert("Please login first to save!"); window.closeShareOverlay(); return; }
+            if(!window.currentUser) { alert("Please login first to save!"); window.closeShareOverlay(); return; }
             if(!window.currentSharedData) return;
             
             const docId = generateId();
-            const newPrompt = { ...window.currentSharedData, userId: auth.currentUser.uid, isPublic: false, date: new Date().toISOString() };
+            const newPrompt = { ...window.currentSharedData, userId: window.currentUser.uid, isPublic: false, date: new Date().toISOString() };
             await setDoc(doc(db, "prompts", docId), newPrompt);
             window.showToast("Saved to your Library!");
             window.closeShareOverlay();
         }
 
-        onAuthStateChanged(auth, (user) => {
+        if(sharedId) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('share-overlay').style.display = 'flex';
+            loadSharedPrompt(sharedId);
+        } else {
+            onAuthStateChanged(auth, (user) => {
                 const overlay = document.getElementById('login-overlay');
                 if (user) {
                     window.currentUser = user;
