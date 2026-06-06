@@ -53,9 +53,9 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; overscroll-behavior-y: none; }
         .glass { background: rgba(0, 0, 0, 0.75); border-bottom: 1px solid #171717; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
-        .screen { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .screen { display: none; opacity: 0; transition: opacity 0.3s ease; min-height: 100%; }
         .screen.active { display: block; opacity: 1; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -68,7 +68,6 @@
         
         .editor-bg { background-color: #050505; background-image: radial-gradient(#171717 1px, transparent 1px); background-size: 20px 20px; }
         
-        /* Shimmering Button Effect */
         .magic-btn {
             background: linear-gradient(45deg, #6366F1, #8B5CF6, #EC4899, #6366F1);
             background-size: 300% 300%;
@@ -87,23 +86,29 @@
         #login-overlay {
             position: fixed; inset: 0; background: #000000; z-index: 100000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
         }
+        
+        /* Smooth Pull-to-refresh transition */
+        #ptr-indicator { transition: height 0.2s cubic-bezier(0.1, 0.7, 0.1, 1); }
     </style>
 </head>
 <body class="bg-darkbg text-slate-200 overflow-hidden flex h-screen antialiased selection:bg-primary/30 selection:text-primary">
 
     <div id="toast">Action successful!</div>
 
-    <!-- LOGIN SCREEN -->
+    <!-- LOGIN / SPLASH SCREEN -->
     <div id="login-overlay">
+        <!-- Always visible logo on load -->
         <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white mb-6 shadow-[0_0_30px_rgba(99,102,241,0.5)]">
-            <i class="fa-solid fa-bolt text-4xl"></i>
+            <i id="splash-bolt" class="fa-solid fa-bolt text-4xl animate-pulse"></i>
         </div>
         <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">PromptVault <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Pro</span></h1>
-        <p class="text-neutral-400 mb-8 text-center max-w-sm">AI Magic Optimizer, Live Playground, and Cloud Sync in one place.</p>
         
-        <div class="w-full max-w-sm px-6">
+        <p id="splash-text" class="text-neutral-400 mb-8 text-center max-w-sm transition-opacity duration-300">Checking authentication...</p>
+        
+        <!-- Login Form (Fades in if user is not logged in) -->
+        <div id="login-content" class="w-full max-w-sm px-6 opacity-0 hidden transition-all duration-500 transform translate-y-4">
             <button onclick="window.signInWithGoogle()" class="w-full px-6 py-3.5 bg-white text-black hover:bg-neutral-200 rounded-xl font-bold flex items-center justify-center gap-3 transition-transform hover:scale-[1.02] shadow-[0_10px_20px_rgba(255,255,255,0.1)]">
                 <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                 Sign in with Google
@@ -143,7 +148,7 @@
                     <i class="fa-solid fa-book-open w-6 text-center"></i>
                     <span class="ml-2 text-sm font-medium">Prompt Library</span>
                 </a>
-                <a href="#" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors">
+                <a href="#" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors opacity-50 cursor-not-allowed">
                     <i class="fa-regular fa-folder-open w-6 text-center"></i>
                     <span class="ml-2 text-sm font-medium">Collections</span>
                     <span class="ml-auto bg-neutral-800 text-[10px] px-2 py-0.5 rounded-full">Coming Soon</span>
@@ -177,7 +182,7 @@
     <!-- MAIN CONTENT -->
     <div class="flex-1 flex flex-col relative w-full overflow-hidden bg-darkbg">
         
-        <header class="h-16 glass flex items-center justify-between px-4 md:px-8 z-30 sticky top-0">
+        <header class="h-16 glass flex items-center justify-between px-4 md:px-8 z-30 sticky top-0 shrink-0">
             <div class="flex items-center flex-1 gap-4">
                 <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()">
                     <i class="fa-solid fa-bars text-xl"></i>
@@ -189,8 +194,8 @@
             </div>
             
             <div class="flex items-center gap-4">
-                <div id="sync-status" class="hidden md:flex items-center gap-2 text-[11px] font-medium text-neutral-400 bg-neutral-900/80 px-3 py-1.5 rounded-full border border-neutral-800">
-                    <div class="w-2 h-2 rounded-full bg-success animate-pulse shadow-[0_0_8px_#10B981]"></div> Cloud Sync Active
+                <div id="sync-status" class="hidden md:flex items-center gap-2 text-[11px] font-medium text-neutral-400 bg-neutral-900/80 px-3 py-1.5 rounded-full border border-neutral-800 cursor-pointer" onclick="window.manualRefresh()" title="Click to manually sync">
+                    <div id="sync-indicator" class="w-2 h-2 rounded-full bg-success animate-pulse shadow-[0_0_8px_#10B981]"></div> Cloud Sync Active
                 </div>
                 
                 <button onclick="window.prepareAddPrompt()" class="hidden md:flex bg-primary hover:bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-[0_4px_14px_rgba(99,102,241,0.3)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.4)] hover:-translate-y-0.5 items-center gap-2">
@@ -201,6 +206,13 @@
                 </button>
             </div>
         </header>
+
+        <!-- Pull to refresh indicator -->
+        <div id="ptr-indicator" class="w-full flex justify-center items-center h-0 overflow-hidden bg-darkbg z-20">
+            <div class="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] border border-neutral-800 text-neutral-400">
+                <i id="ptr-icon" class="fa-solid fa-arrow-down text-lg"></i>
+            </div>
+        </div>
 
         <main id="main-scroll" class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
             
@@ -320,7 +332,7 @@
                             </div>
                             <div class="flex-1 relative p-2">
                                 <textarea id="prompt-content" oninput="window.parseVariables()" class="w-full h-full resize-none bg-transparent p-4 focus:outline-none text-neutral-300 font-mono text-[15px] leading-relaxed editor-bg rounded-b-2xl" placeholder="Write your prompt here..."></textarea>
-                                <!-- Loading overlay for magic optimization -->
+                                <!-- Loading overlay -->
                                 <div id="magic-loader" class="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 hidden flex-col items-center justify-center rounded-b-2xl">
                                     <i class="fa-solid fa-wand-magic-sparkles text-3xl text-purple-500 animate-bounce mb-4"></i>
                                     <p class="text-white font-bold animate-pulse">AI is rewriting your prompt...</p>
@@ -329,7 +341,6 @@
                         </div>
                     </div>
 
-                    <!-- Right Column Variables -->
                     <div class="w-full lg:w-96 flex flex-col shrink-0 pb-10">
                         <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm h-full flex flex-col">
                             <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-cubes text-secondary"></i> Detected Variables</h3>
@@ -358,7 +369,6 @@
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <!-- Version History Dropdown -->
                         <select id="version-selector" onchange="window.loadHistoricalVersion(this.value)" class="bg-neutral-900 border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary">
                             <option value="current">Current Version</option>
                         </select>
@@ -368,7 +378,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <!-- Left: Prompt Template (Col span 5) -->
                     <div class="lg:col-span-5 space-y-6">
                         <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm">
                             <h3 class="text-sm font-bold text-neutral-500 uppercase tracking-widest mb-4">Metadata</h3>
@@ -387,7 +396,6 @@
                         </div>
                     </div>
 
-                    <!-- Right: Live AI Playground (Col span 7) -->
                     <div class="lg:col-span-7 flex flex-col h-[700px]">
                         <div class="bg-gradient-to-br from-[#0A0A0A] to-[#050505] rounded-3xl border border-neutral-800 shadow-2xl flex flex-col h-full overflow-hidden relative">
                             <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary"></div>
@@ -396,11 +404,9 @@
                                 <h3 class="text-base font-extrabold text-white flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> Live AI Playground</h3>
                             </div>
                             
-                            <!-- Playground Variables Input -->
                             <div class="p-6 border-b border-neutral-800 bg-neutral-900/20 shrink-0">
                                 <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3">Variables</p>
                                 <div id="play-variables" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <!-- Inputs populated by JS -->
                                 </div>
                                 <div class="mt-5 flex justify-end">
                                     <button onclick="window.executeAI()" class="magic-btn px-6 py-2.5 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
@@ -409,7 +415,6 @@
                                 </div>
                             </div>
 
-                            <!-- Playground Output (Markdown rendered) -->
                             <div class="flex-1 p-6 overflow-y-auto relative">
                                 <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3">AI Output</p>
                                 <div id="play-output" class="prose prose-invert max-w-none text-[15px] leading-relaxed">
@@ -419,7 +424,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Loading State -->
                                 <div id="play-loader" class="absolute inset-0 bg-[#0A0A0A]/90 backdrop-blur-sm hidden flex-col items-center justify-center z-10">
                                     <div class="w-12 h-12 border-4 border-neutral-800 border-t-primary rounded-full animate-spin mb-4"></div>
                                     <p class="text-white font-bold animate-pulse">Generating response...</p>
@@ -445,8 +449,7 @@
             <div id="settings" class="screen max-w-5xl mx-auto">
                 <h1 class="text-3xl font-extrabold text-white tracking-tight mb-8">Settings & Integrations</h1>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- API Keys -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-10">
                     <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm">
                         <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 text-xl mb-4">
                             <i class="fa-solid fa-key"></i>
@@ -465,7 +468,6 @@
                         </div>
                     </div>
 
-                    <!-- Backup -->
                     <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm">
                         <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-xl mb-4">
                             <i class="fa-solid fa-database"></i>
@@ -495,7 +497,6 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyCBimffGhLYalnH2CMYW64OXxtStASXt8I",
             authDomain: "promptlib-78914.firebaseapp.com",
@@ -509,19 +510,17 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // GLOBAL STATE
         window.prompts = [];
-        let currentUser = null;
+        window.currentUser = null;
         let currentEditingId = null;
         let currentViewId = null;
         let unsubscribeSnapshot = null;
 
-        // PWA Setup
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
         }
 
-        // --- AUTHENTICATION ---
+        // --- AUTHENTICATION & LOGIN BLINK FIX ---
         window.signInWithGoogle = () => {
             const provider = new GoogleAuthProvider();
             document.getElementById('login-loader').classList.remove('hidden');
@@ -536,10 +535,16 @@
         };
 
         onAuthStateChanged(auth, (user) => {
+            const overlay = document.getElementById('login-overlay');
+            const loginContent = document.getElementById('login-content');
+            const splashText = document.getElementById('splash-text');
+            const splashBolt = document.getElementById('splash-bolt');
+
             if (user) {
-                currentUser = user;
-                document.getElementById('login-overlay').style.opacity = '0';
-                setTimeout(() => { document.getElementById('login-overlay').style.display = 'none'; }, 500);
+                window.currentUser = user;
+                // Fade out full overlay smoothly
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.visibility = 'hidden'; }, 500);
                 
                 document.getElementById('user-name').innerText = user.displayName || "User";
                 if(user.photoURL) {
@@ -548,25 +553,39 @@
                     avatar.classList.remove('hidden');
                 }
                 
-                // Load local API keys
                 const savedKey = localStorage.getItem('gemini_api_key');
                 if(savedKey) document.getElementById('gemini-key').value = savedKey;
 
-                startDataSync();
+                window.startDataSync();
             } else {
-                currentUser = null;
+                window.currentUser = null;
                 window.prompts = [];
                 if(unsubscribeSnapshot) unsubscribeSnapshot();
                 
-                document.getElementById('login-overlay').style.display = 'flex';
-                setTimeout(() => { document.getElementById('login-overlay').style.opacity = '1'; }, 10);
+                // Show login form (stops the blinking/flashing)
+                overlay.style.visibility = 'visible';
+                overlay.style.opacity = '1';
+                
+                splashBolt.classList.remove('animate-pulse');
+                splashText.innerText = "AI Magic Optimizer, Live Playground, and Cloud Sync in one place.";
+                
+                loginContent.classList.remove('hidden');
+                // Allow browser reflow, then animate in
+                requestAnimationFrame(() => {
+                    loginContent.classList.remove('opacity-0', 'translate-y-4');
+                });
                 document.getElementById('login-loader').classList.add('hidden');
             }
         });
 
         // --- DATABASE SYNC ---
-        function startDataSync() {
-            const q = query(collection(db, "prompts"), where("userId", "==", currentUser.uid));
+        window.startDataSync = () => {
+            const syncIcon = document.getElementById('sync-indicator');
+            if(syncIcon) syncIcon.classList.remove('bg-neutral-500', 'animate-none');
+            
+            const q = query(collection(db, "prompts"), where("userId", "==", window.currentUser.uid));
+            if(unsubscribeSnapshot) unsubscribeSnapshot();
+
             unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
                 window.prompts = [];
                 snapshot.forEach((doc) => {
@@ -581,7 +600,65 @@
             });
         }
 
-        // --- UI UTILS ---
+        window.manualRefresh = () => {
+            const icon = document.getElementById('sync-indicator');
+            icon.classList.remove('bg-success');
+            icon.classList.add('bg-blue-500');
+            if(window.currentUser) window.startDataSync();
+            setTimeout(() => {
+                icon.classList.remove('bg-blue-500');
+                icon.classList.add('bg-success');
+                window.showToast("Sync Successful");
+            }, 600);
+        }
+
+        // --- PULL TO REFRESH ---
+        const mainScroll = document.getElementById('main-scroll');
+        const ptrIndicator = document.getElementById('ptr-indicator');
+        const ptrIcon = document.getElementById('ptr-icon');
+        let ptrStartY = 0;
+        let ptrPulling = false;
+
+        mainScroll.addEventListener('touchstart', (e) => {
+            if (mainScroll.scrollTop <= 0) {
+                ptrStartY = e.touches[0].clientY;
+                ptrPulling = true;
+                ptrIndicator.style.transition = 'none';
+            }
+        }, {passive: true});
+
+        mainScroll.addEventListener('touchmove', (e) => {
+            if (!ptrPulling) return;
+            const dist = e.touches[0].clientY - ptrStartY;
+            if (dist > 0 && mainScroll.scrollTop <= 0) {
+                if (e.cancelable) e.preventDefault(); // Stop native overscroll
+                ptrIndicator.style.height = Math.min(dist * 0.4, 70) + 'px';
+                ptrIcon.className = dist > 120 ? 'fa-solid fa-arrow-up text-primary text-xl' : 'fa-solid fa-arrow-down text-neutral-400 text-lg';
+            } else {
+                ptrPulling = false;
+                ptrIndicator.style.height = '0px';
+            }
+        }, {passive: false});
+
+        mainScroll.addEventListener('touchend', (e) => {
+            if (!ptrPulling) return;
+            ptrPulling = false;
+            ptrIndicator.style.transition = 'height 0.3s ease';
+            const height = parseInt(ptrIndicator.style.height || '0');
+            if (height >= 50) {
+                ptrIndicator.style.height = '60px';
+                ptrIcon.className = 'fa-solid fa-circle-notch fa-spin text-primary text-xl';
+                window.manualRefresh();
+                setTimeout(() => {
+                    ptrIndicator.style.height = '0px';
+                    setTimeout(() => ptrIcon.className = 'fa-solid fa-arrow-down text-neutral-400 text-lg', 300);
+                }, 800);
+            } else {
+                ptrIndicator.style.height = '0px';
+            }
+        });
+
+        // --- UI UTILS & SCROLL BUG FIX ---
         let toastTimeout;
         window.showToast = (message) => {
             const t = document.getElementById('toast');
@@ -594,6 +671,12 @@
         function generateId() { return Math.random().toString(36).substring(2, 15); }
 
         window.switchTab = (tabId) => {
+            // FIX SCROLL BUG: Force scroll to top before hiding elements
+            if(mainScroll) {
+                mainScroll.style.overflow = 'hidden'; 
+                mainScroll.scrollTop = 0; 
+            }
+
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             
@@ -608,10 +691,14 @@
                 document.getElementById('mobile-backdrop').classList.add('hidden');
             }
 
-            const mainScroll = document.getElementById('main-scroll');
-            if(mainScroll) mainScroll.scrollTop = 0;
-
-            setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 50);
+            // Restore scroll capability and trigger chart resize instantly
+            setTimeout(() => { 
+                if(mainScroll) {
+                    mainScroll.scrollTop = 0; 
+                    mainScroll.style.overflow = 'auto'; 
+                }
+                window.dispatchEvent(new Event('resize')); 
+            }, 10);
 
             if(tabId === 'dashboard') renderDashboard();
             if(tabId === 'library') renderLibrary();
@@ -630,8 +717,6 @@
             document.getElementById('stat-total').innerText = window.prompts.length;
             const cats = new Set(window.prompts.map(p => p.category).filter(c => c));
             document.getElementById('stat-categories').innerText = cats.size;
-            
-            // Count executions (if we tracked it)
             const execs = localStorage.getItem('ai_exec_count') || 0;
             document.getElementById('stat-executions').innerText = execs;
 
@@ -731,16 +816,11 @@
             const docId = currentEditingId || generateId();
             let existing = window.prompts.find(x => x.id === docId);
             
-            // VERSION CONTROL LOGIC
             let historyArray = existing ? (existing.history || []) : [];
             let currentVer = existing ? parseFloat(existing.version || 1.0) : 1.0;
             
             if(existing && existing.content !== content) {
-                historyArray.push({
-                    version: currentVer.toFixed(1),
-                    content: existing.content,
-                    date: existing.date
-                });
+                historyArray.push({ version: currentVer.toFixed(1), content: existing.content, date: existing.date });
                 currentVer += 0.1;
             }
 
@@ -750,7 +830,7 @@
                 tags: document.getElementById('prompt-tags').value.split(',').map(t => t.trim()).filter(t => t),
                 content: content,
                 date: new Date().toISOString(),
-                userId: currentUser.uid,
+                userId: window.currentUser.uid,
                 version: currentVer.toFixed(1),
                 history: historyArray
             };
@@ -798,17 +878,14 @@
                 `<span class="text-xs font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">#${t}</span>`
             ).join('');
 
-            // Version Dropdown Population
             const sel = document.getElementById('version-selector');
             sel.innerHTML = `<option value="current">v${p.version || '1.0'} (Current)</option>`;
             if(p.history && p.history.length > 0) {
-                // sort reverse
                 [...p.history].reverse().forEach(h => {
                     sel.innerHTML += `<option value="${h.version}">v${h.version} (${new Date(h.date).toLocaleDateString()})</option>`;
                 });
             }
 
-            // Populate Playground Variables
             const regex = /\{\{([^}]+)\}\}/g;
             const matches = [...new Set(Array.from(p.content.matchAll(regex)).map(m => m[1]))];
             const playVars = document.getElementById('play-variables');
@@ -823,7 +900,6 @@
                 `).join('');
             }
 
-            // Reset Output
             document.getElementById('play-output').innerHTML = `
                 <div class="h-full flex flex-col items-center justify-center text-neutral-600 mt-10">
                     <i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i>
@@ -903,7 +979,6 @@
             const p = window.prompts.find(x => x.id === currentViewId);
             if(!p) return;
             
-            // Build the final prompt text
             let finalText = p.content;
             const regex = /\{\{([^}]+)\}\}/g;
             finalText = finalText.replace(regex, (match, vName) => {
@@ -919,7 +994,6 @@
                 const result = await callGeminiAPI(finalText);
                 outputBox.innerHTML = marked.parse(result);
                 
-                // Track execution stats
                 let execs = parseInt(localStorage.getItem('ai_exec_count') || 0);
                 localStorage.setItem('ai_exec_count', execs + 1);
                 
