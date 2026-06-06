@@ -105,7 +105,7 @@
         </div>
         <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">PromptVault <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Pro</span></h1>
         
-        <p id="splash-text" class="text-neutral-400 mb-8 text-center max-w-sm transition-opacity duration-300">Checking authentication...</p>
+        <p id="splash-text" class="text-neutral-400 mb-8 text-center max-w-sm transition-opacity duration-300">Loading your workspace...</p>
         
         <!-- Login Form (Fades in if user is not logged in) -->
         <div id="login-content" class="w-full max-w-sm px-6 opacity-0 hidden transition-all duration-500 transform translate-y-4">
@@ -140,28 +140,28 @@
             
             <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1.5">
                 <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3">Main Menu</p>
-                <a href="#" onclick="window.switchTab('dashboard')" class="nav-item active flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors">
+                <a onclick="window.switchTab('dashboard')" class="nav-item active flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
                     <i class="fa-solid fa-house w-6 text-center"></i>
                     <span class="ml-2 text-sm font-medium">Dashboard</span>
                 </a>
-                <a href="#" onclick="window.switchTab('library')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors">
+                <a onclick="window.switchTab('library')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
                     <i class="fa-solid fa-book-open w-6 text-center"></i>
                     <span class="ml-2 text-sm font-medium">Prompt Library</span>
                 </a>
-                <a href="#" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors opacity-50 cursor-not-allowed">
+                <a class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors opacity-50 cursor-not-allowed">
                     <i class="fa-regular fa-folder-open w-6 text-center"></i>
                     <span class="ml-2 text-sm font-medium">Collections</span>
                     <span class="ml-auto bg-neutral-800 text-[10px] px-2 py-0.5 rounded-full">Coming Soon</span>
                 </a>
                 
                 <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 mt-8">Insights & Tools</p>
-                <a href="#" onclick="window.switchTab('analytics')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors">
+                <a onclick="window.switchTab('analytics')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
                     <i class="fa-solid fa-chart-pie w-6 text-center"></i>
                     <span class="ml-2 text-sm font-medium">Analytics</span>
                 </a>
                 
                 <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 mt-8">System</p>
-                <a href="#" onclick="window.switchTab('settings')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors">
+                <a onclick="window.switchTab('settings')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
                     <i class="fa-solid fa-sliders w-6 text-center"></i>
                     <span class="ml-2 text-sm font-medium">Settings & API Keys</span>
                 </a>
@@ -214,7 +214,7 @@
             </div>
         </div>
 
-        <main id="main-scroll" class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+        <main id="main-scroll" class="flex-1 overflow-y-auto p-4 md:p-8 relative">
             
             <!-- 1. DASHBOARD -->
             <div id="dashboard" class="screen active max-w-7xl mx-auto">
@@ -671,17 +671,22 @@
         function generateId() { return Math.random().toString(36).substring(2, 15); }
 
         window.switchTab = (tabId) => {
-            // FIX SCROLL BUG: Force scroll to top before hiding elements
-            if(mainScroll) {
-                mainScroll.style.overflow = 'hidden'; 
-                mainScroll.scrollTop = 0; 
-            }
+            const mainScroll = document.getElementById('main-scroll');
+            if(mainScroll) mainScroll.scrollTop = 0;
 
-            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.screen').forEach(el => {
+                el.classList.remove('active');
+                el.style.display = 'none';
+            });
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             
             const targetScreen = document.getElementById(tabId);
-            if(targetScreen) targetScreen.classList.add('active');
+            if(targetScreen) {
+                targetScreen.style.display = 'block';
+                // Force browser reflow
+                void targetScreen.offsetWidth;
+                targetScreen.classList.add('active');
+            }
             
             const navLink = document.querySelector(`.nav-item[onclick="window.switchTab('${tabId}')"]`);
             if(navLink) navLink.classList.add('active');
@@ -691,14 +696,10 @@
                 document.getElementById('mobile-backdrop').classList.add('hidden');
             }
 
-            // Restore scroll capability and trigger chart resize instantly
-            setTimeout(() => { 
-                if(mainScroll) {
-                    mainScroll.scrollTop = 0; 
-                    mainScroll.style.overflow = 'auto'; 
-                }
-                window.dispatchEvent(new Event('resize')); 
-            }, 10);
+            if(mainScroll) mainScroll.scrollTop = 0;
+            
+            // Force chart redraw
+            window.dispatchEvent(new Event('resize'));
 
             if(tabId === 'dashboard') renderDashboard();
             if(tabId === 'library') renderLibrary();
