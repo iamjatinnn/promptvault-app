@@ -580,9 +580,8 @@
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('share-overlay').style.display = 'flex';
             loadSharedPrompt(sharedId);
-        }
-
-        async function loadSharedPrompt(id) {
+        } else {
+            async function loadSharedPrompt(id) {
             try {
                 const docSnap = await getDoc(doc(db, "prompts", id));
                 if (docSnap.exists() && docSnap.data().isPublic) {
@@ -602,46 +601,45 @@
         }
         window.copySharedPrompt = () => { window.copyToClipboard('share-content'); }
         window.saveSharedPrompt = async () => {
-            if(!window.currentUser) { alert("Please login first to save!"); window.closeShareOverlay(); return; }
+            if(!auth.currentUser) { alert("Please login first to save!"); window.closeShareOverlay(); return; }
             if(!window.currentSharedData) return;
             
             const docId = generateId();
-            const newPrompt = { ...window.currentSharedData, userId: window.currentUser.uid, isPublic: false, date: new Date().toISOString() };
+            const newPrompt = { ...window.currentSharedData, userId: auth.currentUser.uid, isPublic: false, date: new Date().toISOString() };
             await setDoc(doc(db, "prompts", docId), newPrompt);
             window.showToast("Saved to your Library!");
             window.closeShareOverlay();
         }
 
         onAuthStateChanged(auth, (user) => {
-            if(sharedId) return; // Halt auth UI changes if looking at a share link
-            
-            const overlay = document.getElementById('login-overlay');
-            if (user) {
-                window.currentUser = user;
-                overlay.style.opacity = '0'; setTimeout(() => { overlay.style.visibility = 'hidden'; }, 500);
-                document.getElementById('user-name').innerText = user.displayName || "User";
-                if(user.photoURL) { const av = document.getElementById('user-avatar'); av.src = user.photoURL; av.classList.remove('hidden'); }
-                
-                // Load keys
-                ['gemini','openai','grok','anthropic'].forEach(k => {
-                    const val = localStorage.getItem('api_key_'+k);
-                    if(val) document.getElementById('key-'+k).value = val;
-                });
+                const overlay = document.getElementById('login-overlay');
+                if (user) {
+                    window.currentUser = user;
+                    overlay.style.opacity = '0'; setTimeout(() => { overlay.style.visibility = 'hidden'; }, 500);
+                    document.getElementById('user-name').innerText = user.displayName || "User";
+                    if(user.photoURL) { const av = document.getElementById('user-avatar'); av.src = user.photoURL; av.classList.remove('hidden'); }
+                    
+                    // Load keys
+                    ['gemini','openai','grok','anthropic'].forEach(k => {
+                        const val = localStorage.getItem('api_key_'+k);
+                        if(val) document.getElementById('key-'+k).value = val;
+                    });
 
-                window.startDataSync();
-            } else {
-                window.currentUser = null;
-                window.prompts = []; window.collectionsData = [];
-                if(unsubscribePrompts) unsubscribePrompts(); if(unsubscribeCollections) unsubscribeCollections();
-                
-                overlay.style.visibility = 'visible'; overlay.style.opacity = '1';
-                document.getElementById('splash-bolt').classList.remove('animate-pulse');
-                document.getElementById('splash-text').innerText = "Omni-Models, Voice, and Cloud Sync.";
-                document.getElementById('login-content').classList.remove('hidden');
-                requestAnimationFrame(() => document.getElementById('login-content').classList.remove('opacity-0', 'translate-y-4'));
-                document.getElementById('login-loader').classList.add('hidden');
-            }
-        });
+                    window.startDataSync();
+                } else {
+                    window.currentUser = null;
+                    window.prompts = []; window.collectionsData = [];
+                    if(unsubscribePrompts) unsubscribePrompts(); if(unsubscribeCollections) unsubscribeCollections();
+                    
+                    overlay.style.visibility = 'visible'; overlay.style.opacity = '1';
+                    document.getElementById('splash-bolt').classList.remove('animate-pulse');
+                    document.getElementById('splash-text').innerText = "Omni-Models, Voice, and Cloud Sync.";
+                    document.getElementById('login-content').classList.remove('hidden');
+                    requestAnimationFrame(() => document.getElementById('login-content').classList.remove('opacity-0', 'translate-y-4'));
+                    document.getElementById('login-loader').classList.add('hidden');
+                }
+            });
+        }
 
         // --- DATABASE SYNC ---
         window.startDataSync = () => {
