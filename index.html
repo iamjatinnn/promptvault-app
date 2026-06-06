@@ -42,6 +42,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- Markdown Parser for AI Output -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+
     <style>
         body { font-family: 'Inter', sans-serif; }
         .glass { background: rgba(0, 0, 0, 0.85); border-bottom: 1px solid #171717; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
@@ -55,6 +59,21 @@
         .hover-card { transition: transform 0.2s ease, border-color 0.2s ease; }
         .hover-card:hover { transform: translateY(-2px); border-color: rgba(99, 102, 241, 0.6); }
         .editor-bg { background-color: #050505; background-image: radial-gradient(#171717 1px, transparent 1px); background-size: 20px 20px; }
+        
+        /* Markdown Styling for AMOLED Dark Mode */
+        .prose { color: #d4d4d4; line-height: 1.6; font-size: 0.875rem; }
+        .prose h1, .prose h2, .prose h3 { color: #ffffff; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; }
+        .prose h1 { font-size: 1.5rem; } .prose h2 { font-size: 1.25rem; } .prose h3 { font-size: 1.125rem; }
+        .prose p { margin-bottom: 1em; }
+        .prose ul, .prose ol { margin-left: 1.5em; margin-bottom: 1em; }
+        .prose ul { list-style-type: disc; } .prose ol { list-style-type: decimal; }
+        .prose li { margin-bottom: 0.25em; }
+        .prose a { color: #8B5CF6; text-decoration: underline; }
+        .prose blockquote { border-left: 4px solid #333; padding-left: 1em; color: #a3a3a3; font-style: italic; }
+        .prose code { background-color: #171717; padding: 0.2em 0.4em; border-radius: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.875em; color: #8B5CF6; border: 1px solid #262626; }
+        .prose pre { background-color: #0a0a0a; padding: 1em; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1em; border: 1px solid #171717; }
+        .prose pre code { background-color: transparent; padding: 0; border-radius: 0; color: #e5e5e5; border: none; font-size: 0.875em; }
+        .prose strong { color: #ffffff; font-weight: 600; }
         
         #toast {
             visibility: hidden; min-width: 250px; background-color: #10B981; color: #fff; text-align: center;
@@ -316,8 +335,10 @@
                         <div class="bg-darksurface rounded-2xl border border-neutral-800 shadow-sm flex flex-col flex-1 min-h-[300px]">
                             <div class="px-5 py-3 border-b border-neutral-800 flex justify-between items-center bg-neutral-900 rounded-t-2xl">
                                 <h3 class="text-sm font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-code text-primary"></i> Prompt Editor</h3>
-                                <div class="flex gap-2 text-xs">
-                                    <code class="bg-neutral-800 text-primary dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-mono">{{variable}}</code>
+                                <div class="flex gap-3 text-xs items-center">
+                                    <button onclick="window.magicEnhance()" id="magic-btn" class="font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-500/10 px-2.5 py-1.5 rounded-lg border border-indigo-500/20 transition-colors">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> Magic Enhance
+                                    </button>
                                 </div>
                             </div>
                             <div class="flex-1 relative p-1">
@@ -345,27 +366,29 @@
                 </div>
             </div>
 
-            <!-- 4. DETAIL -->
-            <div id="detail" class="screen max-w-5xl mx-auto pb-10">
+            <!-- 4. DETAIL & PLAYGROUND -->
+            <div id="detail" class="screen max-w-7xl mx-auto pb-10">
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center gap-2 text-sm text-neutral-400">
                         <a href="#" onclick="window.switchTab('library')" class="hover:text-primary transition-colors">Library</a>
                         <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                        <span class="text-white font-medium" id="view-breadcrumb">Prompt</span>
+                        <span class="text-white font-medium truncate max-w-[200px]" id="view-breadcrumb">Prompt</span>
                     </div>
                     <div class="flex gap-2">
+                        <button onclick="window.forkCurrentPrompt()" class="h-9 px-3 flex items-center justify-center rounded-xl border border-neutral-800 text-neutral-400 hover:bg-neutral-900 transition-colors gap-2 text-sm font-medium"><i class="fa-solid fa-code-branch"></i> Fork</button>
                         <button onclick="window.editCurrentPrompt()" class="w-9 h-9 flex items-center justify-center rounded-xl border border-neutral-800 text-neutral-400 hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="window.deleteCurrentPrompt()" class="w-9 h-9 flex items-center justify-center rounded-xl border border-error/20 text-error hover:bg-error/10 transition-colors"><i class="fa-regular fa-trash-can"></i></button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 space-y-6">
-                        <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm">
+                    <!-- Left Side: Prompt Info & Tabs -->
+                    <div class="lg:col-span-2 space-y-6 flex flex-col">
+                        <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm shrink-0">
                             <div class="flex items-start justify-between mb-4">
                                 <div>
                                     <h1 class="text-2xl font-bold text-white tracking-tight" id="view-title">Title</h1>
-                                    <p class="text-sm text-neutral-400 mt-2" id="view-desc">Added on <span id="view-date"></span></p>
+                                    <p class="text-sm text-neutral-400 mt-2">Version <span id="view-version" class="text-white font-mono bg-neutral-800 px-1 rounded">1</span> • Added on <span id="view-date"></span></p>
                                 </div>
                             </div>
                             <div class="flex flex-wrap items-center gap-2 mb-4">
@@ -375,14 +398,45 @@
                             <div class="flex gap-2 flex-wrap" id="view-tags"></div>
                         </div>
 
-                        <div class="bg-[#050505] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden relative">
-                            <div class="px-5 py-3 border-b border-neutral-800 flex justify-between items-center bg-neutral-900">
-                                <h3 class="text-sm font-semibold text-white flex items-center gap-2"><i class="fa-solid fa-terminal text-slate-400"></i> Prompt Template</h3>
-                                <button onclick="window.copyToClipboard('view-content')" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-2">
-                                    <i class="fa-regular fa-copy"></i> Copy
-                                </button>
+                        <!-- Content Tabs -->
+                        <div class="bg-[#050505] rounded-2xl border border-neutral-800 shadow-sm flex flex-col flex-1 min-h-[400px]">
+                            <div class="flex border-b border-neutral-800 bg-neutral-900/50 rounded-t-2xl overflow-hidden shrink-0">
+                                <button onclick="window.switchDetailTab('template')" id="tab-btn-template" class="flex-1 py-3 text-sm font-medium text-white border-b-2 border-primary bg-neutral-900/50 transition-colors flex items-center justify-center gap-2"><i class="fa-solid fa-code"></i> Template</button>
+                                <button onclick="window.switchDetailTab('playground')" id="tab-btn-playground" class="flex-1 py-3 text-sm font-medium text-neutral-500 hover:text-white border-b-2 border-transparent hover:bg-neutral-900/50 transition-colors flex items-center justify-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> Playground</button>
+                                <button onclick="window.switchDetailTab('history')" id="tab-btn-history" class="flex-1 py-3 text-sm font-medium text-neutral-500 hover:text-white border-b-2 border-transparent hover:bg-neutral-900/50 transition-colors flex items-center justify-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> History</button>
                             </div>
-                            <div id="view-content" class="p-6 font-mono text-sm text-slate-300 whitespace-pre-wrap leading-relaxed select-all"></div>
+                            
+                            <!-- Tab: Template -->
+                            <div id="tab-content-template" class="p-6 font-mono text-sm text-slate-300 whitespace-pre-wrap leading-relaxed select-all overflow-y-auto flex-1"></div>
+                            
+                            <!-- Tab: Playground Output -->
+                            <div id="tab-content-playground" class="hidden flex-col flex-1">
+                                <div id="pg-output-area" class="p-6 prose flex-1 overflow-y-auto w-full max-w-none">
+                                    <div class="h-full flex flex-col items-center justify-center text-neutral-500 text-center">
+                                        <i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i>
+                                        <p>Fill out the variables on the right and click "Run AI" to see the magic happen.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tab: History -->
+                            <div id="tab-content-history" class="hidden p-6 overflow-y-auto flex-1">
+                                <div id="history-list" class="space-y-4"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side: Playground Controls -->
+                    <div class="space-y-6">
+                        <div class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm sticky top-24">
+                            <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider text-xs border-b border-neutral-800 pb-3 flex items-center gap-2"><i class="fa-solid fa-sliders text-secondary"></i> Execution Variables</h3>
+                            <div id="pg-variables" class="space-y-4 mb-6">
+                                <p class="text-xs text-neutral-500">No variables found in this prompt.</p>
+                            </div>
+                            <button onclick="window.runPlayground()" id="btn-run-ai" class="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play"></i> Run AI
+                            </button>
+                            <p class="text-[10px] text-neutral-500 text-center mt-3">Powered by Google Gemini 1.5</p>
                         </div>
                     </div>
                 </div>
@@ -405,9 +459,23 @@
             </div>
 
             <!-- 6. SETTINGS -->
-            <div id="settings" class="screen max-w-5xl mx-auto">
-                <h1 class="text-2xl font-bold text-white mb-6">Settings & Backup</h1>
+            <div id="settings" class="screen max-w-5xl mx-auto pb-10">
+                <h1 class="text-2xl font-bold text-white mb-6">Settings & Integration</h1>
                 
+                <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm mb-6">
+                    <h3 class="text-lg font-bold text-white mb-2"><i class="fa-solid fa-wand-magic-sparkles text-primary mr-2"></i> AI API Configuration</h3>
+                    <p class="text-sm text-neutral-400 mb-6">Enter your free Google Gemini API key to unlock the <strong>Magic Prompt Enhancer</strong> and the <strong>Live Execution Playground</strong>.</p>
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wider">Gemini API Key</label>
+                        <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary/50 text-white font-mono text-sm">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="window.saveApiKey()" class="px-6 py-2 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-medium transition-colors shadow-sm">Save Key</button>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-sm text-indigo-400 hover:text-indigo-300 font-medium">Get a free key here <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i></a>
+                    </div>
+                </div>
+
                 <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm">
                     <h3 class="text-lg font-bold text-white mb-2"><i class="fa-solid fa-download text-primary mr-2"></i> Export Data Backup</h3>
                     <p class="text-sm text-neutral-400 mb-6">Your data is safely stored in Firebase and syncs automatically across all your devices. However, you can download a local JSON backup of your library anytime.</p>
@@ -600,6 +668,13 @@
                 document.getElementById('mobile-backdrop').classList.add('hidden');
             }
 
+            // FIX: Scroll back to top so pages don't appear blank if you scrolled down on previous page
+            const mainScroll = document.querySelector('main');
+            if(mainScroll) mainScroll.scrollTop = 0;
+
+            // FIX: Force a window resize event so Chart.js recalculates dimensions properly
+            setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 50);
+
             if(tabId === 'dashboard') renderDashboard();
             if(tabId === 'library') renderLibrary();
             if(tabId === 'analytics') renderAnalytics();
@@ -712,6 +787,21 @@
             window.switchTab('add');
         }
 
+        window.forkCurrentPrompt = () => {
+            const p = window.prompts.find(x => x.id === currentViewId);
+            if(!p) return;
+            currentEditingId = null; // New prompt
+            document.getElementById('form-title').innerText = "Forked Prompt";
+            document.getElementById('prompt-id').value = "";
+            document.getElementById('prompt-name').value = p.title + " (Fork)";
+            document.getElementById('prompt-cat').value = p.category || "";
+            document.getElementById('prompt-model').value = p.model || "";
+            document.getElementById('prompt-tags').value = (p.tags || []).join(", ");
+            document.getElementById('prompt-content').value = p.content;
+            window.parseVariables();
+            window.switchTab('add');
+        }
+
         window.savePrompt = async () => {
             const title = document.getElementById('prompt-name').value.trim();
             const content = document.getElementById('prompt-content').value.trim();
@@ -721,19 +811,42 @@
             }
 
             const docId = currentEditingId || generateId();
-            const newPrompt = {
+            
+            // Build the updated payload
+            let promptPayload = {
                 title: title,
                 category: document.getElementById('prompt-cat').value.trim(),
                 model: document.getElementById('prompt-model').value.trim(),
                 tags: document.getElementById('prompt-tags').value.split(',').map(t => t.trim()).filter(t => t),
                 content: content,
                 date: new Date().toISOString(),
-                userId: currentUser.uid // Attach user ID
+                userId: currentUser.uid
             };
+
+            // Version Control Logic
+            if (currentEditingId) {
+                const oldPrompt = window.prompts.find(x => x.id === currentEditingId);
+                if (oldPrompt && oldPrompt.content !== content) {
+                    const newHistory = oldPrompt.history || [];
+                    newHistory.push({
+                        content: oldPrompt.content,
+                        date: oldPrompt.date,
+                        version: oldPrompt.version || 1
+                    });
+                    promptPayload.history = newHistory;
+                    promptPayload.version = (oldPrompt.version || 1) + 1;
+                } else {
+                    promptPayload.history = oldPrompt.history || [];
+                    promptPayload.version = oldPrompt.version || 1;
+                }
+            } else {
+                promptPayload.history = [];
+                promptPayload.version = 1;
+            }
 
             try {
                 window.showToast("Saving to cloud...");
-                await setDoc(doc(db, "prompts", docId), newPrompt);
+                await setDoc(doc(db, "prompts", docId), promptPayload);
                 window.showToast("Saved Successfully!");
                 window.switchTab('library');
             } catch (error) {
@@ -778,6 +891,116 @@
             document.getElementById('live-preview').innerHTML = content;
         }
 
+        // --- GEMINI API INTEGRATION ---
+        window.saveApiKey = () => {
+            const key = document.getElementById('api-key-input').value.trim();
+            if(key) {
+                localStorage.setItem('gemini_api_key', key);
+                window.showToast("API Key saved to your browser!");
+                document.getElementById('api-key-input').value = ""; // Clear input for security
+            } else {
+                alert("Please enter a valid key.");
+            }
+        }
+
+        async function fetchGemini(promptText) {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if(!apiKey) {
+                alert("Please save your Google Gemini API Key in Settings first!");
+                return null;
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptText }] }]
+                    })
+                });
+
+                if(!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error.message || "API Error");
+                }
+
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch(error) {
+                alert("Gemini API Error: " + error.message);
+                return null;
+            }
+        }
+
+        window.magicEnhance = async () => {
+            const ta = document.getElementById('prompt-content');
+            let currentText = ta.value.trim();
+            if(!currentText) {
+                alert("Please write a basic prompt in the editor first to enhance it.");
+                return;
+            }
+
+            const btn = document.getElementById('magic-btn');
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Enhancing...`;
+            btn.disabled = true;
+
+            const systemInstruction = `You are a world-class Prompt Engineering expert. Your job is to take the following basic prompt and rewrite it to be highly effective, structured, and professional for an AI model. Use clear instructions, formatting, and maintain any {{variables}} the user included. ONLY output the enhanced prompt text, absolutely no intro or outro remarks.\n\nHere is the prompt to enhance:\n\n`;
+
+            const enhancedText = await fetchGemini(systemInstruction + currentText);
+            
+            if(enhancedText) {
+                ta.value = enhancedText;
+                window.parseVariables();
+                window.showToast("Prompt magically enhanced!");
+            }
+            
+            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Magic Enhance`;
+            btn.disabled = false;
+        }
+
+        window.runPlayground = async () => {
+            const p = window.prompts.find(x => x.id === currentViewId);
+            if(!p) return;
+
+            // Extract variables and substitute them
+            let finalPrompt = p.content;
+            const regex = /\{\{([^}]+)\}\}/g;
+            const matches = [...new Set(Array.from(p.content.matchAll(regex)).map(m => m[1]))];
+            
+            for(let v of matches) {
+                const inputEl = document.getElementById(`run_var_${v}`);
+                if(inputEl && inputEl.value.trim()) {
+                    // Global replace
+                    finalPrompt = finalPrompt.replace(new RegExp(`\\{\\{${v}\\}\\}`, 'g'), inputEl.value.trim());
+                } else {
+                    alert(`Please provide a value for {{${v}}}`);
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('btn-run-ai');
+            const outputArea = document.getElementById('pg-output-area');
+            
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Generating...`;
+            btn.disabled = true;
+            outputArea.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-primary"><i class="fa-solid fa-bolt fa-bounce text-4xl mb-3"></i><p class="font-bold animate-pulse">Running Prompt via Gemini API...</p></div>`;
+
+            const aiResponse = await fetchGemini(finalPrompt);
+
+            if(aiResponse) {
+                // Parse markdown securely using DOMPurify + Marked
+                const cleanHTML = DOMPurify.sanitize(marked.parse(aiResponse));
+                outputArea.innerHTML = cleanHTML;
+            } else {
+                outputArea.innerHTML = `<p class="text-error text-center mt-10">Failed to generate response.</p>`;
+            }
+
+            btn.innerHTML = `<i class="fa-solid fa-play"></i> Run AI`;
+            btn.disabled = false;
+        }
+
         // --- Detail View ---
         window.viewPrompt = (id) => {
             const p = window.prompts.find(x => x.id === id);
@@ -787,6 +1010,7 @@
             document.getElementById('view-breadcrumb').innerText = p.title;
             document.getElementById('view-title').innerText = p.title;
             document.getElementById('view-date').innerText = new Date(p.date).toLocaleDateString();
+            document.getElementById('view-version').innerText = p.version || 1;
             document.getElementById('view-cat').innerText = p.category || 'Uncategorized';
             document.getElementById('view-model').innerText = p.model || 'Any Model';
             
@@ -795,8 +1019,101 @@
             ).join('');
             
             document.getElementById('view-content').innerText = p.content;
+
+            // Generate Playground Variables
+            const regex = /\{\{([^}]+)\}\}/g;
+            const matches = [...new Set(Array.from(p.content.matchAll(regex)).map(m => m[1]))];
+            const pgContainer = document.getElementById('pg-variables');
             
+            if (matches.length === 0) {
+                pgContainer.innerHTML = `<p class="text-xs text-neutral-500">No variables found in this prompt.</p>`;
+            } else {
+                pgContainer.innerHTML = matches.map(v => `
+                    <div>
+                        <label class="block text-[10px] font-bold text-primary mb-1 ml-1 uppercase tracking-wider">{{${v}}}</label>
+                        <input type="text" id="run_var_${v}" placeholder="Enter value..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary/50 text-white text-sm">
+                    </div>
+                `).join('');
+            }
+
+            // Generate History List
+            const histContainer = document.getElementById('history-list');
+            if (!p.history || p.history.length === 0) {
+                histContainer.innerHTML = `<p class="text-sm text-neutral-500 text-center py-10">No previous versions exist for this prompt.</p>`;
+            } else {
+                const reversedHistory = [...p.history].reverse();
+                histContainer.innerHTML = reversedHistory.map(h => `
+                    <div class="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold text-white text-sm">Version ${h.version}</span>
+                            <span class="text-xs text-neutral-500">${new Date(h.date).toLocaleString()}</span>
+                        </div>
+                        <div class="font-mono text-[11px] text-neutral-400 bg-black/50 p-3 rounded-lg border border-neutral-900 line-clamp-3">
+                            ${h.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+                        </div>
+                        <button onclick="window.restoreHistory(${h.version})" class="mt-3 text-xs font-medium text-primary hover:text-indigo-400 transition-colors"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Restore this version</button>
+                    </div>
+                `).join('');
+            }
+
+            // Reset Playground state
+            document.getElementById('pg-output-area').innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center text-neutral-500 text-center py-20">
+                    <i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i>
+                    <p>Fill out the variables on the right and click "Run AI" to see the magic happen.</p>
+                </div>`;
+            
+            window.switchDetailTab('template');
             window.switchTab('detail');
+        }
+
+        window.switchDetailTab = (tab) => {
+            ['template', 'playground', 'history'].forEach(t => {
+                document.getElementById(`tab-btn-${t}`).className = "flex-1 py-3 text-sm font-medium text-neutral-500 hover:text-white border-b-2 border-transparent hover:bg-neutral-900/50 transition-colors flex items-center justify-center gap-2";
+                document.getElementById(`tab-content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-content-${t}`).classList.remove('flex');
+            });
+            
+            const btn = document.getElementById(`tab-btn-${tab}`);
+            btn.className = "flex-1 py-3 text-sm font-medium text-white border-b-2 border-primary bg-neutral-900/50 transition-colors flex items-center justify-center gap-2";
+            
+            const content = document.getElementById(`tab-content-${tab}`);
+            content.classList.remove('hidden');
+            if(tab === 'playground') content.classList.add('flex');
+        }
+
+        window.restoreHistory = async (versionToRestore) => {
+            const p = window.prompts.find(x => x.id === currentViewId);
+            if(!p) return;
+            const targetHist = p.history.find(h => h.version === versionToRestore);
+            if(!targetHist) return;
+
+            if(confirm(`Are you sure you want to restore Version ${versionToRestore}? Your current version will be saved in history.`)) {
+                const newHistory = [...p.history];
+                newHistory.push({
+                    content: p.content,
+                    date: p.date,
+                    version: p.version || 1
+                });
+
+                const updatedPrompt = {
+                    ...p,
+                    content: targetHist.content,
+                    version: (p.version || 1) + 1,
+                    history: newHistory,
+                    date: new Date().toISOString()
+                };
+
+                try {
+                    window.showToast("Restoring version...");
+                    await setDoc(doc(db, "prompts", currentViewId), updatedPrompt);
+                    window.showToast("Version Restored!");
+                    // The onSnapshot will automatically trigger UI update, but just to be safe:
+                    setTimeout(() => window.viewPrompt(currentViewId), 500);
+                } catch (error) {
+                    alert("Failed to restore: " + error.message);
+                }
+            }
         }
 
         window.deleteCurrentPrompt = async () => {
