@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PromptVault AI - Pro Cloud</title>
     
-    <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     
-    <!-- Tailwind CSS with Typography Plugin for Markdown -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script>
         tailwind.config = {
@@ -21,14 +19,8 @@
                         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
                     },
                     colors: {
-                        primary: '#6366F1',
-                        secondary: '#8B5CF6',
-                        success: '#10B981',
-                        warning: '#F59E0B',
-                        error: '#EF4444',
-                        darkbg: '#000000',
-                        darksurface: '#050505',
-                        darksurface2: '#0A0A0A',
+                        primary: '#6366F1', secondary: '#8B5CF6', success: '#10B981', warning: '#F59E0B', error: '#EF4444',
+                        darkbg: '#000000', darksurface: '#050505', darksurface2: '#0A0A0A',
                     },
                     typography: (theme) => ({
                         invert: {
@@ -46,7 +38,6 @@
         }
     </script>
     
-    <!-- Google Fonts, FontAwesome, Chart.js, Marked.js (Markdown) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -68,59 +59,73 @@
         
         .editor-bg { background-color: #050505; background-image: radial-gradient(#171717 1px, transparent 1px); background-size: 20px 20px; }
         
-        .magic-btn {
-            background: linear-gradient(45deg, #6366F1, #8B5CF6, #EC4899, #6366F1);
-            background-size: 300% 300%;
-            animation: gradientMove 3s ease infinite;
-        }
+        .magic-btn { background: linear-gradient(45deg, #6366F1, #8B5CF6, #EC4899, #6366F1); background-size: 300% 300%; animation: gradientMove 3s ease infinite; }
         @keyframes gradientMove { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
 
         #toast {
             visibility: hidden; min-width: 250px; background-color: #10B981; color: #fff; text-align: center;
-            border-radius: 12px; padding: 14px; position: fixed; z-index: 99999; left: 50%; bottom: 30px;
+            border-radius: 12px; padding: 14px; position: fixed; z-index: 999999; left: 50%; bottom: 30px;
             transform: translateX(-50%) scale(0.9); font-size: 14px; box-shadow: 0px 10px 25px rgba(0,0,0,0.5);
             opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; transform: translateX(-50%) scale(1); }
 
-        #login-overlay {
+        #login-overlay, #share-overlay {
             position: fixed; inset: 0; background: #000000; z-index: 100000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.5s ease, visibility 0.5s ease;
         }
-        
-        /* Smooth Pull-to-refresh transition */
         #ptr-indicator { transition: height 0.2s cubic-bezier(0.1, 0.7, 0.1, 1); }
+        
+        /* Voice animation */
+        .voice-pulse { animation: voicePulse 1.5s infinite; }
+        @keyframes voicePulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body class="bg-darkbg text-slate-200 overflow-hidden flex h-screen antialiased selection:bg-primary/30 selection:text-primary">
 
     <div id="toast">Action successful!</div>
 
-    <!-- LOGIN / SPLASH SCREEN -->
+    <!-- SHARED PROMPT OVERLAY (Public View) -->
+    <div id="share-overlay" class="hidden">
+        <div class="w-full max-w-2xl bg-darksurface2 border border-neutral-800 rounded-3xl p-8 shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-lg">
+                    <i class="fa-solid fa-share-nodes text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-primary uppercase tracking-widest mb-1">Shared Prompt Template</p>
+                    <h2 id="share-title" class="text-2xl font-extrabold text-white">Loading...</h2>
+                </div>
+            </div>
+            <div class="bg-[#0A0A0A] border border-neutral-800 rounded-2xl p-5 overflow-y-auto mb-6 flex-1">
+                <pre id="share-content" class="font-mono text-sm text-neutral-300 whitespace-pre-wrap leading-relaxed select-all"></pre>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="window.copySharedPrompt()" class="flex-1 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-bold transition-colors"><i class="fa-regular fa-copy mr-2"></i> Copy Prompt</button>
+                <button onclick="window.saveSharedPrompt()" class="flex-1 py-3 bg-primary hover:bg-indigo-600 text-white rounded-xl font-bold transition-colors shadow-lg"><i class="fa-solid fa-cloud-arrow-down mr-2"></i> Save to My Library</button>
+            </div>
+            <button onclick="window.closeShareOverlay()" class="mt-4 text-xs text-neutral-500 hover:text-white font-medium">Continue to App</button>
+        </div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
     <div id="login-overlay">
-        <!-- Always visible logo on load -->
         <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white mb-6 shadow-[0_0_30px_rgba(99,102,241,0.5)]">
             <i id="splash-bolt" class="fa-solid fa-bolt text-4xl animate-pulse"></i>
         </div>
         <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">PromptVault <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Pro</span></h1>
-        
         <p id="splash-text" class="text-neutral-400 mb-8 text-center max-w-sm transition-opacity duration-300">Loading your workspace...</p>
         
-        <!-- Login Form (Fades in if user is not logged in) -->
         <div id="login-content" class="w-full max-w-sm px-6 opacity-0 hidden transition-all duration-500 transform translate-y-4">
             <button onclick="window.signInWithGoogle()" class="w-full px-6 py-3.5 bg-white text-black hover:bg-neutral-200 rounded-xl font-bold flex items-center justify-center gap-3 transition-transform hover:scale-[1.02] shadow-[0_10px_20px_rgba(255,255,255,0.1)]">
                 <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                 Sign in with Google
             </button>
         </div>
-
-        <div id="login-loader" class="mt-8 hidden">
-            <i class="fa-solid fa-circle-notch fa-spin text-primary text-3xl"></i>
-        </div>
+        <div id="login-loader" class="mt-8 hidden"><i class="fa-solid fa-circle-notch fa-spin text-primary text-3xl"></i></div>
     </div>
 
-    <!-- Mobile Sidebar Backdrop -->
     <div id="mobile-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden md:hidden" onclick="window.toggleMobileMenu()"></div>
 
     <!-- LEFT SIDEBAR -->
@@ -133,37 +138,29 @@
                     </div>
                     <span class="text-xl font-bold tracking-tight text-white">PromptVault</span>
                 </div>
-                <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()">
-                    <i class="fa-solid fa-times text-xl"></i>
-                </button>
+                <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
             
             <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1.5">
                 <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3">Main Menu</p>
                 <a onclick="window.switchTab('dashboard')" class="nav-item active flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
-                    <i class="fa-solid fa-house w-6 text-center"></i>
-                    <span class="ml-2 text-sm font-medium">Dashboard</span>
+                    <i class="fa-solid fa-house w-6 text-center"></i><span class="ml-2 text-sm font-medium">Dashboard</span>
                 </a>
                 <a onclick="window.switchTab('library')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
-                    <i class="fa-solid fa-book-open w-6 text-center"></i>
-                    <span class="ml-2 text-sm font-medium">Prompt Library</span>
+                    <i class="fa-solid fa-book-open w-6 text-center"></i><span class="ml-2 text-sm font-medium">Library</span>
                 </a>
-                <a class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors opacity-50 cursor-not-allowed">
-                    <i class="fa-regular fa-folder-open w-6 text-center"></i>
-                    <span class="ml-2 text-sm font-medium">Collections</span>
-                    <span class="ml-auto bg-neutral-800 text-[10px] px-2 py-0.5 rounded-full">Coming Soon</span>
+                <a onclick="window.switchTab('collections')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-folder-open w-6 text-center text-amber-400"></i><span class="ml-2 text-sm font-medium">Collections</span>
                 </a>
                 
                 <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 mt-8">Insights & Tools</p>
                 <a onclick="window.switchTab('analytics')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
-                    <i class="fa-solid fa-chart-pie w-6 text-center"></i>
-                    <span class="ml-2 text-sm font-medium">Analytics</span>
+                    <i class="fa-solid fa-chart-pie w-6 text-center"></i><span class="ml-2 text-sm font-medium">Analytics</span>
                 </a>
                 
                 <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 mt-8">System</p>
                 <a onclick="window.switchTab('settings')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
-                    <i class="fa-solid fa-sliders w-6 text-center"></i>
-                    <span class="ml-2 text-sm font-medium">Settings & API Keys</span>
+                    <i class="fa-solid fa-sliders w-6 text-center"></i><span class="ml-2 text-sm font-medium">API Keys & Settings</span>
                 </a>
             </nav>
         </div>
@@ -184,9 +181,7 @@
         
         <header class="h-16 glass flex items-center justify-between px-4 md:px-8 z-30 sticky top-0 shrink-0">
             <div class="flex items-center flex-1 gap-4">
-                <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()">
-                    <i class="fa-solid fa-bars text-xl"></i>
-                </button>
+                <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()"><i class="fa-solid fa-bars text-xl"></i></button>
                 <div class="relative max-w-md w-full hidden sm:block">
                     <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-500"></i>
                     <input type="text" id="global-search" onkeyup="window.searchPrompts(this.value)" placeholder="Search library..." class="w-full bg-neutral-900/80 border border-neutral-800 rounded-full py-2 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white placeholder-neutral-500 transition-all">
@@ -207,7 +202,6 @@
             </div>
         </header>
 
-        <!-- Pull to refresh indicator -->
         <div id="ptr-indicator" class="w-full flex justify-center items-center h-0 overflow-hidden bg-darkbg z-20">
             <div class="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] border border-neutral-800 text-neutral-400">
                 <i id="ptr-icon" class="fa-solid fa-arrow-down text-lg"></i>
@@ -221,7 +215,7 @@
                 <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 class="text-3xl font-extrabold text-white mb-1 tracking-tight">Welcome to Pro <i class="fa-solid fa-sparkles text-amber-400 ml-1"></i></h1>
-                        <p class="text-neutral-400 text-sm">Supercharge your workflows with AI magic and live execution.</p>
+                        <p class="text-neutral-400 text-sm">Supercharge your workflows with Omni-Models, Voice, and Live Execution.</p>
                     </div>
                 </div>
 
@@ -235,16 +229,23 @@
                     </div>
                     <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
                         <div class="flex justify-between items-start mb-4">
-                            <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 text-lg"><i class="fa-solid fa-tags"></i></div>
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 text-lg"><i class="fa-solid fa-folder-open"></i></div>
                         </div>
-                        <p class="text-sm font-medium text-neutral-400 mb-1">Categories</p>
-                        <h3 class="text-3xl font-extrabold text-white" id="stat-categories">0</h3>
+                        <p class="text-sm font-medium text-neutral-400 mb-1">Collections</p>
+                        <h3 class="text-3xl font-extrabold text-white" id="stat-collections">0</h3>
+                    </div>
+                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-lg"><i class="fa-solid fa-share-nodes"></i></div>
+                        </div>
+                        <p class="text-sm font-medium text-neutral-400 mb-1">Shared Publicly</p>
+                        <h3 class="text-3xl font-extrabold text-white" id="stat-shared">0</h3>
                     </div>
                     <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
                         <div class="flex justify-between items-start mb-4">
                             <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 text-lg"><i class="fa-solid fa-bolt"></i></div>
                         </div>
-                        <p class="text-sm font-medium text-neutral-400 mb-1">AI Executions</p>
+                        <p class="text-sm font-medium text-neutral-400 mb-1">Omni-API Calls</p>
                         <h3 class="text-3xl font-extrabold text-white" id="stat-executions">0</h3>
                     </div>
                 </div>
@@ -261,9 +262,7 @@
             <!-- 2. LIBRARY -->
             <div id="library" class="screen max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h1 class="text-3xl font-extrabold text-white tracking-tight">Prompt Library</h1>
-                    </div>
+                    <h1 class="text-3xl font-extrabold text-white tracking-tight">Prompt Library</h1>
                     <button onclick="window.prepareAddPrompt()" class="px-5 py-2.5 bg-primary hover:bg-indigo-600 text-white rounded-full text-sm font-bold transition-all shadow-[0_4px_14px_rgba(99,102,241,0.3)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.4)] flex items-center gap-2">
                         <i class="fa-solid fa-plus"></i> Create Prompt
                     </button>
@@ -275,13 +274,24 @@
                         <input type="text" id="lib-search" onkeyup="window.renderLibrary()" placeholder="Search titles, tags, content..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white transition-all">
                     </div>
                     <div class="flex gap-3">
-                        <select id="lib-category" onchange="window.renderLibrary()" class="bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary/50 text-white min-w-[150px] cursor-pointer appearance-none">
-                            <option value="">All Categories</option>
+                        <select id="lib-collection" onchange="window.renderLibrary()" class="bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary/50 text-white min-w-[150px] cursor-pointer appearance-none">
+                            <option value="">All Collections</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="library-grid"></div>
+            </div>
+
+            <!-- 2.5. COLLECTIONS -->
+            <div id="collections" class="screen max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <h1 class="text-3xl font-extrabold text-white tracking-tight">Your Collections</h1>
+                    <button onclick="window.createCollectionPrompt()" class="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 rounded-full text-sm font-bold transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-folder-plus"></i> New Collection
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="collections-grid"></div>
             </div>
 
             <!-- 3. ADD/EDIT -->
@@ -292,8 +302,8 @@
                         <h1 class="text-2xl font-extrabold text-white tracking-tight" id="form-title">Create New Prompt</h1>
                     </div>
                     <div class="flex gap-3">
-                        <button onclick="window.magicOptimizePrompt()" class="magic-btn px-5 py-2.5 text-white rounded-full text-sm font-bold transition-all shadow-lg flex items-center gap-2" title="Requires Gemini API Key in Settings">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span class="hidden sm:inline">Magic Optimize</span>
+                        <button onclick="window.magicOptimizePrompt()" class="magic-btn px-5 py-2.5 text-white rounded-full text-sm font-bold transition-all shadow-lg flex items-center gap-2" title="Requires API Key in Settings">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span class="hidden sm:inline">AI Optimize</span>
                         </button>
                         <button onclick="window.savePrompt()" class="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white rounded-full text-sm font-bold transition-colors flex items-center gap-2">
                             <i class="fa-solid fa-cloud-arrow-up"></i> Save
@@ -308,17 +318,18 @@
                         <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm shrink-0">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="md:col-span-2">
-                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-wider">Prompt Name</label>
+                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Prompt Name</label>
                                     <input type="text" id="prompt-name" placeholder="e.g. SEO Blog Generator" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-wider">Category</label>
-                                    <input type="text" id="prompt-cat" list="cat-suggestions" placeholder="Marketing" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium">
-                                    <datalist id="cat-suggestions"></datalist>
+                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Collection</label>
+                                    <select id="prompt-collection" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium cursor-pointer">
+                                        <option value="">No Collection</option>
+                                    </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-wider">Tags (Comma separated)</label>
-                                    <input type="text" id="prompt-tags" placeholder="seo, writing..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white text-sm font-medium">
+                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Tags (Comma separated)</label>
+                                    <input type="text" id="prompt-tags" placeholder="seo, code..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white text-sm font-medium">
                                 </div>
                             </div>
                         </div>
@@ -326,16 +337,13 @@
                         <div class="bg-darksurface rounded-3xl border border-neutral-800 shadow-sm flex flex-col flex-1 min-h-[400px]">
                             <div class="px-6 py-4 border-b border-neutral-800 flex justify-between items-center bg-neutral-900/50 rounded-t-3xl">
                                 <h3 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-code text-primary"></i> Editor</h3>
-                                <div class="flex gap-2 text-xs font-medium text-neutral-500">
-                                    Variables: <code class="bg-neutral-800 text-primary px-1.5 py-0.5 rounded text-[10px] font-mono">{{name}}</code>
-                                </div>
+                                <div class="flex gap-2 text-xs font-medium text-neutral-500">Variables: <code class="bg-neutral-800 text-primary px-1.5 py-0.5 rounded text-[10px] font-mono">{{name}}</code></div>
                             </div>
                             <div class="flex-1 relative p-2">
                                 <textarea id="prompt-content" oninput="window.parseVariables()" class="w-full h-full resize-none bg-transparent p-4 focus:outline-none text-neutral-300 font-mono text-[15px] leading-relaxed editor-bg rounded-b-2xl" placeholder="Write your prompt here..."></textarea>
-                                <!-- Loading overlay -->
                                 <div id="magic-loader" class="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 hidden flex-col items-center justify-center rounded-b-2xl">
                                     <i class="fa-solid fa-wand-magic-sparkles text-3xl text-purple-500 animate-bounce mb-4"></i>
-                                    <p class="text-white font-bold animate-pulse">AI is rewriting your prompt...</p>
+                                    <p class="text-white font-bold animate-pulse">Omni-AI is rewriting your prompt...</p>
                                 </div>
                             </div>
                         </div>
@@ -344,12 +352,7 @@
                     <div class="w-full lg:w-96 flex flex-col shrink-0 pb-10">
                         <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm h-full flex flex-col">
                             <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-cubes text-secondary"></i> Detected Variables</h3>
-                            <div id="variables-container" class="space-y-3 flex-1 overflow-y-auto">
-                                <div class="p-6 text-center border-2 border-dashed border-neutral-800 rounded-2xl">
-                                    <i class="fa-solid fa-cube text-3xl text-neutral-700 mb-2"></i>
-                                    <p class="text-sm font-medium text-neutral-500">No variables detected.<br>Type <code class="text-primary">{{var}}</code> in editor.</p>
-                                </div>
-                            </div>
+                            <div id="variables-container" class="space-y-3 flex-1 overflow-y-auto"></div>
                         </div>
                     </div>
                 </div>
@@ -361,15 +364,17 @@
                     <div class="flex items-center gap-3">
                         <button onclick="window.switchTab('library')" class="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center text-neutral-400 hover:bg-neutral-800 hover:text-white transition-colors"><i class="fa-solid fa-arrow-left"></i></button>
                         <div>
-                            <h1 class="text-3xl font-extrabold text-white tracking-tight" id="view-title">Title</h1>
+                            <h1 class="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3" id="view-title">Title</h1>
                             <div class="flex items-center gap-3 mt-1.5 text-xs font-medium">
                                 <span class="bg-primary/20 text-primary px-2 py-0.5 rounded border border-primary/30">v<span id="view-version">1.0</span></span>
                                 <span class="text-neutral-500">Updated <span id="view-date"></span></span>
+                                <span id="view-public-badge" class="hidden bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30"><i class="fa-solid fa-globe mr-1"></i> Public</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <select id="version-selector" onchange="window.loadHistoricalVersion(this.value)" class="bg-neutral-900 border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary">
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="window.generateShareLink()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-lg"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                        <select id="version-selector" onchange="window.loadHistoricalVersion(this.value)" class="bg-neutral-900 border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary hidden sm:block">
                             <option value="current">Current Version</option>
                         </select>
                         <button onclick="window.editCurrentPrompt()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2"><i class="fa-solid fa-pen"></i> Edit</button>
@@ -378,11 +383,12 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Prompt Template -->
                     <div class="lg:col-span-5 space-y-6">
                         <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm">
                             <h3 class="text-sm font-bold text-neutral-500 uppercase tracking-widest mb-4">Metadata</h3>
                             <div class="flex flex-wrap items-center gap-2 mb-6">
-                                <span class="bg-neutral-900 text-neutral-300 px-3 py-1.5 rounded-lg text-xs font-bold border border-neutral-800"><i class="fa-solid fa-folder-tree mr-1.5 text-neutral-500"></i> <span id="view-cat"></span></span>
+                                <span id="view-cat" class="bg-neutral-900 text-neutral-300 px-3 py-1.5 rounded-lg text-xs font-bold border border-neutral-800"><i class="fa-solid fa-folder-open mr-1.5 text-amber-500"></i> None</span>
                                 <span id="view-tags" class="flex gap-2 flex-wrap"></span>
                             </div>
                             
@@ -396,37 +402,48 @@
                         </div>
                     </div>
 
+                    <!-- Omni-Model AI Playground -->
                     <div class="lg:col-span-7 flex flex-col h-[700px]">
                         <div class="bg-gradient-to-br from-[#0A0A0A] to-[#050505] rounded-3xl border border-neutral-800 shadow-2xl flex flex-col h-full overflow-hidden relative">
                             <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary"></div>
                             
                             <div class="px-6 py-4 border-b border-neutral-800 flex justify-between items-center bg-neutral-900/40">
-                                <h3 class="text-base font-extrabold text-white flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> Live AI Playground</h3>
+                                <h3 class="text-base font-extrabold text-white flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> Omni-Model Playground</h3>
+                                <select id="omni-model-select" class="bg-black border border-neutral-800 text-white text-xs font-bold rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-primary cursor-pointer">
+                                    <option value="gemini">Google Gemini 1.5</option>
+                                    <option value="openai">OpenAI GPT-4o</option>
+                                    <option value="grok">xAI Grok Beta</option>
+                                    <option value="anthropic">Anthropic Claude 3.5</option>
+                                </select>
                             </div>
                             
                             <div class="p-6 border-b border-neutral-800 bg-neutral-900/20 shrink-0">
-                                <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3">Variables</p>
-                                <div id="play-variables" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="flex justify-between items-center mb-3">
+                                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest">Variables (Voice Supported)</p>
                                 </div>
-                                <div class="mt-5 flex justify-end">
-                                    <button onclick="window.executeAI()" class="magic-btn px-6 py-2.5 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
-                                        <i class="fa-solid fa-play"></i> Run Prompt
+                                <div id="play-variables" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5"></div>
+                                <div class="flex justify-end gap-3">
+                                    <button onclick="window.executeAI()" class="magic-btn px-8 py-2.5 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
+                                        <i class="fa-solid fa-play"></i> Run Omni-Prompt
                                     </button>
                                 </div>
                             </div>
 
-                            <div class="flex-1 p-6 overflow-y-auto relative">
-                                <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3">AI Output</p>
-                                <div id="play-output" class="prose prose-invert max-w-none text-[15px] leading-relaxed">
+                            <div class="flex-1 p-6 overflow-y-auto relative flex flex-col">
+                                <div class="flex justify-between items-center mb-3 shrink-0">
+                                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest">AI Output</p>
+                                    <button onclick="window.speakOutput()" id="btn-speak-output" class="text-neutral-400 hover:text-white transition-colors" title="Read Aloud"><i class="fa-solid fa-volume-high"></i></button>
+                                </div>
+                                <div id="play-output" class="prose prose-invert max-w-none text-[15px] leading-relaxed flex-1">
                                     <div class="h-full flex flex-col items-center justify-center text-neutral-600">
                                         <i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i>
-                                        <p class="font-medium">Fill in variables and click Run Prompt.</p>
+                                        <p class="font-medium">Fill in variables and click Run.</p>
                                     </div>
                                 </div>
                                 
                                 <div id="play-loader" class="absolute inset-0 bg-[#0A0A0A]/90 backdrop-blur-sm hidden flex-col items-center justify-center z-10">
                                     <div class="w-12 h-12 border-4 border-neutral-800 border-t-primary rounded-full animate-spin mb-4"></div>
-                                    <p class="text-white font-bold animate-pulse">Generating response...</p>
+                                    <p class="text-white font-bold animate-pulse">Omni-Model Generating...</p>
                                 </div>
                             </div>
                         </div>
@@ -438,7 +455,7 @@
             <div id="analytics" class="screen max-w-7xl mx-auto">
                 <h1 class="text-3xl font-extrabold text-white tracking-tight mb-8">Analytics</h1>
                 <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm mb-6">
-                    <h3 class="text-lg font-bold text-white mb-6">Category Distribution</h3>
+                    <h3 class="text-lg font-bold text-white mb-6">Collection Distribution</h3>
                     <div class="h-[350px] w-full flex justify-center">
                         <canvas id="categoryChart"></canvas>
                     </div>
@@ -447,44 +464,40 @@
 
             <!-- 6. SETTINGS & API KEYS -->
             <div id="settings" class="screen max-w-5xl mx-auto">
-                <h1 class="text-3xl font-extrabold text-white tracking-tight mb-8">Settings & Integrations</h1>
+                <h1 class="text-3xl font-extrabold text-white tracking-tight mb-8">Settings & Omni-API Keys</h1>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-10">
-                    <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm">
-                        <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 text-xl mb-4">
-                            <i class="fa-solid fa-key"></i>
+                <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm mb-8">
+                    <h3 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-microchip text-primary mr-2"></i> Omni-Model API Keys</h3>
+                    <p class="text-sm text-neutral-400 mb-6 leading-relaxed">Add keys for any providers you want to use. Keys are stored locally on your device for absolute security. At least one key is required for the Magic Optimizer and Live Playground.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2"><i class="fa-solid fa-cube text-blue-500 mr-1"></i> Google Gemini</label>
+                            <input type="password" id="key-gemini" placeholder="AIzaSy..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500 text-white font-mono text-sm">
                         </div>
-                        <h3 class="text-xl font-bold text-white mb-2">Google Gemini API Key</h3>
-                        <p class="text-sm text-neutral-400 mb-6 leading-relaxed">Required for "Magic Optimize" and "Live AI Playground". Keys are stored locally on your device for security.</p>
-                        
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2">API Key</label>
-                            <input type="password" id="gemini-key" placeholder="AIzaSy..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white font-mono">
+                        <div>
+                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2"><i class="fa-solid fa-leaf text-emerald-500 mr-1"></i> OpenAI (ChatGPT)</label>
+                            <input type="password" id="key-openai" placeholder="sk-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-emerald-500 text-white font-mono text-sm">
                         </div>
-                        <button onclick="window.saveAPIKeys()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors shadow-lg">Save Key</button>
-                        
-                        <div class="mt-6 pt-5 border-t border-neutral-900">
-                            <p class="text-xs text-neutral-500">Don't have a key? Get one for free at <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:underline font-bold">Google AI Studio</a>.</p>
+                        <div>
+                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2"><i class="fa-solid fa-xmarks-lines text-white mr-1"></i> xAI (Grok)</label>
+                            <input type="password" id="key-grok" placeholder="xai-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-white text-white font-mono text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2"><i class="fa-solid fa-brain text-amber-500 mr-1"></i> Anthropic (Claude)</label>
+                            <input type="password" id="key-anthropic" placeholder="sk-ant-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-amber-500 text-white font-mono text-sm">
                         </div>
                     </div>
+                    <button onclick="window.saveAPIKeys()" class="px-6 py-3 bg-primary hover:bg-indigo-600 text-white rounded-xl font-bold transition-colors shadow-lg">Save All Keys</button>
+                </div>
 
-                    <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm">
-                        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-xl mb-4">
-                            <i class="fa-solid fa-database"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2">Data Backup</h3>
-                        <p class="text-sm text-neutral-400 mb-6 leading-relaxed">Download a JSON copy of your entire cloud library, or upload an old backup.</p>
-                        
-                        <div class="flex flex-col gap-3">
-                            <button onclick="window.exportDataFile()" class="w-full py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-download"></i> Download Backup
-                            </button>
-                            
-                            <input type="file" id="import-file" accept=".json" class="hidden" onchange="window.importDataFile(event)">
-                            <button onclick="document.getElementById('import-file').click()" class="w-full py-3 border border-neutral-700 hover:bg-neutral-800 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-upload"></i> Restore from JSON
-                            </button>
-                        </div>
+                <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm mb-10">
+                    <h3 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-database text-emerald-400 mr-2"></i> Data Backup</h3>
+                    <p class="text-sm text-neutral-400 mb-6 leading-relaxed">Download a JSON copy of your entire cloud library, or upload an old backup.</p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button onclick="window.exportDataFile()" class="flex-1 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> Download Backup</button>
+                        <input type="file" id="import-file" accept=".json" class="hidden" onchange="window.importDataFile(event)">
+                        <button onclick="document.getElementById('import-file').click()" class="flex-1 py-3 border border-neutral-700 hover:bg-neutral-800 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2"><i class="fa-solid fa-upload"></i> Restore JSON</button>
                     </div>
                 </div>
             </div>
@@ -495,7 +508,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCBimffGhLYalnH2CMYW64OXxtStASXt8I",
@@ -511,302 +524,283 @@
         const db = getFirestore(app);
 
         window.prompts = [];
+        window.collectionsData = [];
         window.currentUser = null;
         let currentEditingId = null;
         let currentViewId = null;
-        let unsubscribeSnapshot = null;
+        let unsubscribePrompts = null;
+        let unsubscribeCollections = null;
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+        if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+
+        // --- SPEECH API (Voice Mode) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const synth = window.speechSynthesis;
+        let activeRecognition = null;
+
+        window.startVoiceDictation = (inputId, btnId) => {
+            if(!SpeechRecognition) return alert("Voice dictation is not supported in this browser. Try Chrome.");
+            if(activeRecognition) { activeRecognition.stop(); return; }
+            
+            const btn = document.getElementById(btnId);
+            const input = document.getElementById(inputId);
+            
+            activeRecognition = new SpeechRecognition();
+            activeRecognition.continuous = false;
+            activeRecognition.interimResults = false;
+            
+            activeRecognition.onstart = () => { btn.classList.add('voice-pulse', 'text-red-500'); };
+            activeRecognition.onresult = (e) => { input.value = e.results[0][0].transcript; };
+            activeRecognition.onerror = (e) => { console.error(e); window.showToast("Voice error: " + e.error); };
+            activeRecognition.onend = () => { btn.classList.remove('voice-pulse', 'text-red-500'); activeRecognition = null; };
+            activeRecognition.start();
         }
 
-        // --- AUTHENTICATION & LOGIN BLINK FIX ---
+        window.speakOutput = () => {
+            if(synth.speaking) { synth.cancel(); return; }
+            const text = document.getElementById('play-output').innerText;
+            if(!text || text.includes("Fill in variables")) return;
+            const utterThis = new SpeechSynthesisUtterance(text);
+            synth.speak(utterThis);
+        }
+
+        // --- BOOT & AUTHENTICATION ---
         window.signInWithGoogle = () => {
             const provider = new GoogleAuthProvider();
             document.getElementById('login-loader').classList.remove('hidden');
-            signInWithPopup(auth, provider).catch(error => {
-                document.getElementById('login-loader').classList.add('hidden');
-                alert("Login failed: " + error.message);
-            });
+            signInWithPopup(auth, provider).catch(e => { document.getElementById('login-loader').classList.add('hidden'); alert(e.message); });
         };
+        window.signOutUser = () => { if(confirm("Sign out?")) signOut(auth); };
 
-        window.signOutUser = () => {
-            if(confirm("Sign out?")) signOut(auth);
-        };
+        // Handle Public Share URLs
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedId = urlParams.get('share');
+
+        if(sharedId) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('share-overlay').style.display = 'flex';
+            loadSharedPrompt(sharedId);
+        }
+
+        async function loadSharedPrompt(id) {
+            try {
+                const docSnap = await getDoc(doc(db, "prompts", id));
+                if (docSnap.exists() && docSnap.data().isPublic) {
+                    const data = docSnap.data();
+                    document.getElementById('share-title').innerText = data.title;
+                    document.getElementById('share-content').innerText = data.content;
+                    window.currentSharedData = data;
+                } else {
+                    document.getElementById('share-title').innerText = "Prompt Not Found or Private";
+                    document.getElementById('share-content').innerText = "This link is invalid.";
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        window.closeShareOverlay = () => {
+            window.location.href = window.location.origin + window.location.pathname; // strip URL params and reload
+        }
+        window.copySharedPrompt = () => { window.copyToClipboard('share-content'); }
+        window.saveSharedPrompt = async () => {
+            if(!window.currentUser) { alert("Please login first to save!"); window.closeShareOverlay(); return; }
+            if(!window.currentSharedData) return;
+            
+            const docId = generateId();
+            const newPrompt = { ...window.currentSharedData, userId: window.currentUser.uid, isPublic: false, date: new Date().toISOString() };
+            await setDoc(doc(db, "prompts", docId), newPrompt);
+            window.showToast("Saved to your Library!");
+            window.closeShareOverlay();
+        }
 
         onAuthStateChanged(auth, (user) => {
+            if(sharedId) return; // Halt auth UI changes if looking at a share link
+            
             const overlay = document.getElementById('login-overlay');
-            const loginContent = document.getElementById('login-content');
-            const splashText = document.getElementById('splash-text');
-            const splashBolt = document.getElementById('splash-bolt');
-
             if (user) {
                 window.currentUser = user;
-                // Fade out full overlay smoothly
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.visibility = 'hidden'; }, 500);
-                
+                overlay.style.opacity = '0'; setTimeout(() => { overlay.style.visibility = 'hidden'; }, 500);
                 document.getElementById('user-name').innerText = user.displayName || "User";
-                if(user.photoURL) {
-                    const avatar = document.getElementById('user-avatar');
-                    avatar.src = user.photoURL;
-                    avatar.classList.remove('hidden');
-                }
+                if(user.photoURL) { const av = document.getElementById('user-avatar'); av.src = user.photoURL; av.classList.remove('hidden'); }
                 
-                const savedKey = localStorage.getItem('gemini_api_key');
-                if(savedKey) document.getElementById('gemini-key').value = savedKey;
+                // Load keys
+                ['gemini','openai','grok','anthropic'].forEach(k => {
+                    const val = localStorage.getItem('api_key_'+k);
+                    if(val) document.getElementById('key-'+k).value = val;
+                });
 
                 window.startDataSync();
             } else {
                 window.currentUser = null;
-                window.prompts = [];
-                if(unsubscribeSnapshot) unsubscribeSnapshot();
+                window.prompts = []; window.collectionsData = [];
+                if(unsubscribePrompts) unsubscribePrompts(); if(unsubscribeCollections) unsubscribeCollections();
                 
-                // Show login form (stops the blinking/flashing)
-                overlay.style.visibility = 'visible';
-                overlay.style.opacity = '1';
-                
-                splashBolt.classList.remove('animate-pulse');
-                splashText.innerText = "AI Magic Optimizer, Live Playground, and Cloud Sync in one place.";
-                
-                loginContent.classList.remove('hidden');
-                // Allow browser reflow, then animate in
-                requestAnimationFrame(() => {
-                    loginContent.classList.remove('opacity-0', 'translate-y-4');
-                });
+                overlay.style.visibility = 'visible'; overlay.style.opacity = '1';
+                document.getElementById('splash-bolt').classList.remove('animate-pulse');
+                document.getElementById('splash-text').innerText = "Omni-Models, Voice, and Cloud Sync.";
+                document.getElementById('login-content').classList.remove('hidden');
+                requestAnimationFrame(() => document.getElementById('login-content').classList.remove('opacity-0', 'translate-y-4'));
                 document.getElementById('login-loader').classList.add('hidden');
             }
         });
 
         // --- DATABASE SYNC ---
         window.startDataSync = () => {
-            const syncIcon = document.getElementById('sync-indicator');
-            if(syncIcon) syncIcon.classList.remove('bg-neutral-500', 'animate-none');
-            
-            const q = query(collection(db, "prompts"), where("userId", "==", window.currentUser.uid));
-            if(unsubscribeSnapshot) unsubscribeSnapshot();
-
-            unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+            const qP = query(collection(db, "prompts"), where("userId", "==", window.currentUser.uid));
+            unsubscribePrompts = onSnapshot(qP, (snapshot) => {
                 window.prompts = [];
-                snapshot.forEach((doc) => {
-                    window.prompts.push({ id: doc.id, ...doc.data() });
-                });
-                updateCategoryDatalist();
-                
-                const activeId = document.querySelector('.screen.active')?.id || 'dashboard';
-                if(activeId === 'dashboard') renderDashboard();
-                if(activeId === 'library') renderLibrary();
-                if(activeId === 'analytics') renderAnalytics();
+                snapshot.forEach((doc) => window.prompts.push({ id: doc.id, ...doc.data() }));
+                refreshActiveUI();
             });
+
+            const qC = query(collection(db, "collections"), where("userId", "==", window.currentUser.uid));
+            unsubscribeCollections = onSnapshot(qC, (snapshot) => {
+                window.collectionsData = [];
+                snapshot.forEach((doc) => window.collectionsData.push({ id: doc.id, ...doc.data() }));
+                refreshActiveUI();
+            });
+        }
+
+        function refreshActiveUI() {
+            updateCollectionDropdowns();
+            const activeId = document.querySelector('.screen.active')?.id || 'dashboard';
+            if(activeId === 'dashboard') renderDashboard();
+            if(activeId === 'library') window.renderLibrary();
+            if(activeId === 'collections') window.renderCollections();
+            if(activeId === 'analytics') window.renderAnalytics();
         }
 
         window.manualRefresh = () => {
-            const icon = document.getElementById('sync-indicator');
-            icon.classList.remove('bg-success');
-            icon.classList.add('bg-blue-500');
             if(window.currentUser) window.startDataSync();
-            setTimeout(() => {
-                icon.classList.remove('bg-blue-500');
-                icon.classList.add('bg-success');
-                window.showToast("Sync Successful");
-            }, 600);
+            window.showToast("Cloud Synced");
         }
 
-        // --- PULL TO REFRESH ---
-        const mainScroll = document.getElementById('main-scroll');
-        const ptrIndicator = document.getElementById('ptr-indicator');
-        const ptrIcon = document.getElementById('ptr-icon');
-        let ptrStartY = 0;
-        let ptrPulling = false;
-
-        mainScroll.addEventListener('touchstart', (e) => {
-            if (mainScroll.scrollTop <= 0) {
-                ptrStartY = e.touches[0].clientY;
-                ptrPulling = true;
-                ptrIndicator.style.transition = 'none';
-            }
-        }, {passive: true});
-
-        mainScroll.addEventListener('touchmove', (e) => {
-            if (!ptrPulling) return;
-            const dist = e.touches[0].clientY - ptrStartY;
-            if (dist > 0 && mainScroll.scrollTop <= 0) {
-                if (e.cancelable) e.preventDefault(); // Stop native overscroll
-                ptrIndicator.style.height = Math.min(dist * 0.4, 70) + 'px';
-                ptrIcon.className = dist > 120 ? 'fa-solid fa-arrow-up text-primary text-xl' : 'fa-solid fa-arrow-down text-neutral-400 text-lg';
-            } else {
-                ptrPulling = false;
-                ptrIndicator.style.height = '0px';
-            }
-        }, {passive: false});
-
-        mainScroll.addEventListener('touchend', (e) => {
-            if (!ptrPulling) return;
-            ptrPulling = false;
-            ptrIndicator.style.transition = 'height 0.3s ease';
-            const height = parseInt(ptrIndicator.style.height || '0');
-            if (height >= 50) {
-                ptrIndicator.style.height = '60px';
-                ptrIcon.className = 'fa-solid fa-circle-notch fa-spin text-primary text-xl';
-                window.manualRefresh();
-                setTimeout(() => {
-                    ptrIndicator.style.height = '0px';
-                    setTimeout(() => ptrIcon.className = 'fa-solid fa-arrow-down text-neutral-400 text-lg', 300);
-                }, 800);
-            } else {
-                ptrIndicator.style.height = '0px';
-            }
-        });
-
-        // --- UI UTILS & SCROLL BUG FIX ---
+        // --- UI UTILS & SCROLL ---
         let toastTimeout;
-        window.showToast = (message) => {
-            const t = document.getElementById('toast');
-            t.innerText = message;
-            t.classList.add('show');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => { t.classList.remove('show'); }, 3000);
+        window.showToast = (msg) => {
+            const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show');
+            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
         }
-
         function generateId() { return Math.random().toString(36).substring(2, 15); }
 
+        const mainScroll = document.getElementById('main-scroll');
         window.switchTab = (tabId) => {
-            const mainScroll = document.getElementById('main-scroll');
-            if(mainScroll) mainScroll.scrollTop = 0;
-
-            document.querySelectorAll('.screen').forEach(el => {
-                el.classList.remove('active');
-                el.style.display = 'none';
-            });
+            if(mainScroll) { mainScroll.style.overflow = 'hidden'; mainScroll.scrollTop = 0; }
+            document.querySelectorAll('.screen').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             
             const targetScreen = document.getElementById(tabId);
-            if(targetScreen) {
-                targetScreen.style.display = 'block';
-                // Force browser reflow
-                void targetScreen.offsetWidth;
-                targetScreen.classList.add('active');
-            }
+            if(targetScreen) { targetScreen.style.display = 'block'; void targetScreen.offsetWidth; targetScreen.classList.add('active'); }
             
             const navLink = document.querySelector(`.nav-item[onclick="window.switchTab('${tabId}')"]`);
             if(navLink) navLink.classList.add('active');
+            if(window.innerWidth < 768) { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobile-backdrop').classList.add('hidden'); }
 
-            if(window.innerWidth < 768) {
-                document.getElementById('sidebar').classList.add('-translate-x-full');
-                document.getElementById('mobile-backdrop').classList.add('hidden');
-            }
-
-            if(mainScroll) mainScroll.scrollTop = 0;
+            setTimeout(() => { if(mainScroll) { mainScroll.scrollTop = 0; mainScroll.style.overflow = 'auto'; } window.dispatchEvent(new Event('resize')); }, 10);
             
-            // Force chart redraw
-            window.dispatchEvent(new Event('resize'));
-
             if(tabId === 'dashboard') renderDashboard();
-            if(tabId === 'library') renderLibrary();
-            if(tabId === 'analytics') renderAnalytics();
+            if(tabId === 'library') window.renderLibrary();
+            if(tabId === 'collections') window.renderCollections();
+            if(tabId === 'analytics') window.renderAnalytics();
+        }
+        window.toggleMobileMenu = () => {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('mobile-backdrop').classList.toggle('hidden');
         }
 
-        window.toggleMobileMenu = () => {
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.getElementById('mobile-backdrop');
-            sidebar.classList.toggle('-translate-x-full');
-            backdrop.classList.toggle('hidden');
+        // --- COLLECTIONS LOGIC ---
+        function updateCollectionDropdowns() {
+            const opts = '<option value="">No Collection</option>' + window.collectionsData.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+            document.getElementById('lib-collection').innerHTML = '<option value="">All Collections</option>' + window.collectionsData.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+            document.getElementById('prompt-collection').innerHTML = opts;
+        }
+
+        window.createCollectionPrompt = async () => {
+            const name = prompt("Collection Name (e.g. Marketing):");
+            if(!name) return;
+            const icon = prompt("Emoji Icon (e.g. 🚀):", "📁") || "📁";
+            const newCol = { name, icon, userId: window.currentUser.uid };
+            await setDoc(doc(db, "collections", generateId()), newCol);
+            window.showToast("Collection created!");
+        }
+
+        window.renderCollections = () => {
+            const grid = document.getElementById('collections-grid');
+            grid.innerHTML = window.collectionsData.map(c => {
+                const count = window.prompts.filter(p => p.collectionId === c.id).length;
+                return `
+                <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card flex flex-col items-center justify-center text-center cursor-pointer" onclick="document.getElementById('lib-collection').value='${c.id}'; window.switchTab('library');">
+                    <div class="text-4xl mb-3">${c.icon}</div>
+                    <h3 class="text-lg font-bold text-white mb-1">${c.name}</h3>
+                    <p class="text-xs text-neutral-500 font-bold uppercase tracking-widest">${count} Prompts</p>
+                </div>`;
+            }).join('');
         }
 
         // --- DASHBOARD ---
         function renderDashboard() {
             document.getElementById('stat-total').innerText = window.prompts.length;
-            const cats = new Set(window.prompts.map(p => p.category).filter(c => c));
-            document.getElementById('stat-categories').innerText = cats.size;
-            const execs = localStorage.getItem('ai_exec_count') || 0;
-            document.getElementById('stat-executions').innerText = execs;
+            document.getElementById('stat-collections').innerText = window.collectionsData.length;
+            document.getElementById('stat-shared').innerText = window.prompts.filter(p => p.isPublic).length;
+            document.getElementById('stat-executions').innerText = localStorage.getItem('ai_exec_count') || 0;
 
             const grid = document.getElementById('dashboard-recent-grid');
             const recent = [...window.prompts].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
-            
             grid.innerHTML = recent.map(p => `
                 <div onclick="window.viewPrompt('${p.id}')" class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm flex flex-col gap-3 hover-card cursor-pointer">
                     <h4 class="font-bold text-white text-lg line-clamp-1">${p.title}</h4>
                     <p class="text-xs text-neutral-500 font-mono line-clamp-2">${p.content}</p>
-                    <div class="mt-auto pt-3 flex gap-2">
-                        ${p.category ? `<span class="bg-neutral-900 text-neutral-400 px-2 py-1 rounded-md text-[10px] font-bold uppercase">${p.category}</span>` : ''}
-                    </div>
                 </div>
             `).join('');
-            if(recent.length === 0) grid.innerHTML = `<p class="text-neutral-500 text-sm">No prompts yet.</p>`;
         }
 
         // --- LIBRARY ---
-        function updateCategoryDatalist() {
-            const cats = new Set(window.prompts.map(p => p.category).filter(c => c));
-            const filterSelect = document.getElementById('lib-category');
-            const currentVal = filterSelect.value;
-            filterSelect.innerHTML = '<option value="">All Categories</option>' + Array.from(cats).map(c => `<option value="${c}">${c}</option>`).join('');
-            filterSelect.value = currentVal;
-            document.getElementById('cat-suggestions').innerHTML = Array.from(cats).map(c => `<option value="${c}">`).join('');
-        }
-
         window.renderLibrary = () => {
             const q = document.getElementById('lib-search').value.toLowerCase();
-            const cat = document.getElementById('lib-category').value;
+            const colId = document.getElementById('lib-collection').value;
             const grid = document.getElementById('library-grid');
             
             const filtered = window.prompts.filter(p => {
                 const matchQ = p.title.toLowerCase().includes(q) || (p.tags && p.tags.join(' ').toLowerCase().includes(q)) || p.content.toLowerCase().includes(q);
-                const matchCat = cat === '' || p.category === cat;
-                return matchQ && matchCat;
+                const matchCol = colId === '' || p.collectionId === colId;
+                return matchQ && matchCol;
             });
 
             grid.innerHTML = filtered.map(p => {
-                const v = p.version || '1.0';
+                const col = window.collectionsData.find(c => c.id === p.collectionId);
+                const colTag = col ? `<span class="bg-neutral-900 text-neutral-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-neutral-800">${col.icon} ${col.name}</span>` : '';
                 return `
                 <div onclick="window.viewPrompt('${p.id}')" class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card cursor-pointer flex flex-col h-full relative overflow-hidden">
-                    <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div>
                     <div class="flex justify-between items-start mb-3">
                         <h4 class="font-extrabold text-white text-xl line-clamp-1 pr-4">${p.title}</h4>
-                        <span class="text-[10px] font-bold text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded">v${v}</span>
+                        ${p.isPublic ? `<i class="fa-solid fa-globe text-emerald-500 text-xs"></i>` : ''}
                     </div>
                     <p class="text-[13px] text-neutral-400 mb-6 line-clamp-3 flex-1 font-mono leading-relaxed">${p.content}</p>
                     <div class="mt-auto flex items-center gap-2 flex-wrap">
-                        ${p.category ? `<span class="bg-neutral-900 text-neutral-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-neutral-800">${p.category}</span>` : ''}
-                        ${p.tags ? p.tags.slice(0,2).map(t => `<span class="text-neutral-500 text-[10px] font-bold">#${t}</span>`).join('') : ''}
+                        ${colTag}
                     </div>
                 </div>
             `}).join('');
-            if(filtered.length === 0) grid.innerHTML = `<p class="text-neutral-500 py-10">No prompts match your criteria.</p>`;
         }
 
-        window.searchPrompts = (val) => {
-            document.getElementById('lib-search').value = val;
-            if(!document.getElementById('library').classList.contains('active')) window.switchTab('library');
-            else window.renderLibrary();
-        }
-
-        // --- ADD/EDIT (WITH VERSIONING) ---
+        // --- ADD/EDIT ---
         window.prepareAddPrompt = () => {
             currentEditingId = null;
             document.getElementById('form-title').innerText = "Create New Prompt";
-            document.getElementById('prompt-id').value = "";
-            document.getElementById('prompt-name').value = "";
-            document.getElementById('prompt-cat').value = "";
-            document.getElementById('prompt-tags').value = "";
+            document.getElementById('prompt-id').value = ""; document.getElementById('prompt-name').value = "";
+            document.getElementById('prompt-collection').value = ""; document.getElementById('prompt-tags').value = "";
             document.getElementById('prompt-content').value = "";
-            window.parseVariables();
-            window.switchTab('add');
+            window.parseVariables(); window.switchTab('add');
         }
 
         window.editCurrentPrompt = () => {
-            const p = window.prompts.find(x => x.id === currentViewId);
-            if(!p) return;
+            const p = window.prompts.find(x => x.id === currentViewId); if(!p) return;
             currentEditingId = p.id;
             document.getElementById('form-title').innerText = "Edit Prompt";
-            document.getElementById('prompt-id').value = p.id;
-            document.getElementById('prompt-name').value = p.title;
-            document.getElementById('prompt-cat').value = p.category || "";
+            document.getElementById('prompt-id').value = p.id; document.getElementById('prompt-name').value = p.title;
+            document.getElementById('prompt-collection').value = p.collectionId || "";
             document.getElementById('prompt-tags').value = (p.tags || []).join(", ");
             document.getElementById('prompt-content').value = p.content;
-            window.parseVariables();
-            window.switchTab('add');
+            window.parseVariables(); window.switchTab('add');
         }
 
         window.savePrompt = async () => {
@@ -819,226 +813,173 @@
             
             let historyArray = existing ? (existing.history || []) : [];
             let currentVer = existing ? parseFloat(existing.version || 1.0) : 1.0;
-            
             if(existing && existing.content !== content) {
                 historyArray.push({ version: currentVer.toFixed(1), content: existing.content, date: existing.date });
                 currentVer += 0.1;
             }
 
             const newPrompt = {
-                title: title,
-                category: document.getElementById('prompt-cat').value.trim(),
+                title, content, version: currentVer.toFixed(1), history: historyArray,
+                collectionId: document.getElementById('prompt-collection').value,
                 tags: document.getElementById('prompt-tags').value.split(',').map(t => t.trim()).filter(t => t),
-                content: content,
-                date: new Date().toISOString(),
-                userId: window.currentUser.uid,
-                version: currentVer.toFixed(1),
-                history: historyArray
+                date: new Date().toISOString(), userId: window.currentUser.uid, isPublic: existing ? existing.isPublic : false
             };
 
-            try {
-                window.showToast("Saving to cloud...");
-                await setDoc(doc(db, "prompts", docId), newPrompt);
-                window.showToast("Saved Successfully!");
-                window.switchTab('library');
-            } catch (error) {
-                alert("Error saving to cloud.");
-            }
+            await setDoc(doc(db, "prompts", docId), newPrompt);
+            window.showToast("Saved Successfully!"); window.switchTab('library');
         }
 
         window.parseVariables = () => {
             const content = document.getElementById('prompt-content').value;
-            const regex = /\{\{([^}]+)\}\}/g;
-            const matches = [...new Set(Array.from(content.matchAll(regex)).map(m => m[1]))];
+            const matches = [...new Set(Array.from(content.matchAll(/\{\{([^}]+)\}\}/g)).map(m => m[1]))];
             const container = document.getElementById('variables-container');
-            if (matches.length === 0) {
-                container.innerHTML = `<div class="p-6 text-center border-2 border-dashed border-neutral-800 rounded-2xl"><i class="fa-solid fa-cube text-3xl text-neutral-700 mb-2"></i><p class="text-sm font-medium text-neutral-500">No variables detected.<br>Type <code class="text-primary">{{var}}</code></p></div>`;
-            } else {
-                container.innerHTML = matches.map(v => `
-                    <div class="border border-neutral-800 rounded-xl p-3 bg-neutral-900/50">
-                        <code class="text-xs font-bold text-primary mb-2 block">{{${v}}}</code>
-                        <input type="text" placeholder="Value..." class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-primary text-white">
-                    </div>
-                `).join('');
-            }
+            if (matches.length === 0) container.innerHTML = `<div class="p-6 text-center border-2 border-dashed border-neutral-800 rounded-2xl"><i class="fa-solid fa-cube text-3xl text-neutral-700 mb-2"></i><p class="text-sm font-medium text-neutral-500">No variables detected.<br>Type <code class="text-primary">{{var}}</code></p></div>`;
+            else container.innerHTML = matches.map(v => `<div class="border border-neutral-800 rounded-xl p-3 bg-neutral-900/50"><code class="text-xs font-bold text-primary mb-2 block">{{${v}}}</code><input type="text" placeholder="Value..." class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-primary text-white"></div>`).join('');
         }
 
-        // --- DETAIL VIEW & PLAYGROUND ---
+        // --- DETAIL VIEW ---
         window.viewPrompt = (id) => {
-            const p = window.prompts.find(x => x.id === id);
-            if(!p) return;
+            const p = window.prompts.find(x => x.id === id); if(!p) return;
             currentViewId = id;
             
             document.getElementById('view-title').innerText = p.title;
             document.getElementById('view-date').innerText = new Date(p.date).toLocaleDateString();
-            document.getElementById('view-cat').innerText = p.category || 'Uncategorized';
             document.getElementById('view-version').innerText = p.version || '1.0';
             document.getElementById('view-content').innerText = p.content;
             
-            document.getElementById('view-tags').innerHTML = (p.tags || []).map(t => 
-                `<span class="text-xs font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">#${t}</span>`
-            ).join('');
-
-            const sel = document.getElementById('version-selector');
-            sel.innerHTML = `<option value="current">v${p.version || '1.0'} (Current)</option>`;
-            if(p.history && p.history.length > 0) {
-                [...p.history].reverse().forEach(h => {
-                    sel.innerHTML += `<option value="${h.version}">v${h.version} (${new Date(h.date).toLocaleDateString()})</option>`;
-                });
-            }
-
-            const regex = /\{\{([^}]+)\}\}/g;
-            const matches = [...new Set(Array.from(p.content.matchAll(regex)).map(m => m[1]))];
-            const playVars = document.getElementById('play-variables');
-            if(matches.length === 0) {
-                playVars.innerHTML = `<p class="text-xs text-neutral-500 col-span-2">This prompt has no dynamic variables.</p>`;
-            } else {
-                playVars.innerHTML = matches.map(v => `
-                    <div>
-                        <label class="block text-[10px] font-bold text-neutral-400 mb-1 uppercase">${v}</label>
-                        <input type="text" id="play_var_${v}" class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary text-white" placeholder="Value...">
-                    </div>
-                `).join('');
-            }
-
-            document.getElementById('play-output').innerHTML = `
-                <div class="h-full flex flex-col items-center justify-center text-neutral-600 mt-10">
-                    <i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i>
-                    <p class="font-medium">Fill in variables and click Run Prompt.</p>
-                </div>`;
+            const col = window.collectionsData.find(c => c.id === p.collectionId);
+            document.getElementById('view-cat').innerHTML = col ? `<i class="fa-solid fa-folder-open mr-1.5 text-amber-500"></i> ${col.name}` : 'None';
+            document.getElementById('view-tags').innerHTML = (p.tags || []).map(t => `<span class="text-xs font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">#${t}</span>`).join('');
             
+            const pubBadge = document.getElementById('view-public-badge');
+            p.isPublic ? pubBadge.classList.remove('hidden') : pubBadge.classList.add('hidden');
+
+            const matches = [...new Set(Array.from(p.content.matchAll(/\{\{([^}]+)\}\}/g)).map(m => m[1]))];
+            const playVars = document.getElementById('play-variables');
+            if(matches.length === 0) playVars.innerHTML = `<p class="text-xs text-neutral-500 col-span-2">This prompt has no dynamic variables.</p>`;
+            else playVars.innerHTML = matches.map(v => `
+                <div>
+                    <label class="block text-[10px] font-bold text-neutral-400 mb-1 uppercase flex justify-between">${v} <button onclick="window.startVoiceDictation('play_var_${v}', 'btn_mic_${v}')" id="btn_mic_${v}" class="text-neutral-500 hover:text-primary transition-colors"><i class="fa-solid fa-microphone"></i></button></label>
+                    <input type="text" id="play_var_${v}" class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary text-white" placeholder="Type or Speak...">
+                </div>
+            `).join('');
+
+            document.getElementById('play-output').innerHTML = `<div class="h-full flex flex-col items-center justify-center text-neutral-600 mt-10"><i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i><p class="font-medium">Fill in variables and click Run.</p></div>`;
             window.switchTab('detail');
         }
 
-        window.loadHistoricalVersion = (ver) => {
+        window.generateShareLink = async () => {
             const p = window.prompts.find(x => x.id === currentViewId);
-            if(!p) return;
-            if(ver === 'current') {
-                document.getElementById('view-content').innerText = p.content;
-            } else {
-                const hist = p.history.find(h => h.version === ver);
-                if(hist) document.getElementById('view-content').innerText = hist.content;
-            }
+            if(!p.isPublic) { await setDoc(doc(db, "prompts", currentViewId), { isPublic: true }, { merge: true }); document.getElementById('view-public-badge').classList.remove('hidden'); }
+            const link = window.location.origin + window.location.pathname + '?share=' + currentViewId;
+            navigator.clipboard.writeText(link).then(() => window.showToast("Public Share Link Copied!"));
         }
 
-        window.copyToClipboard = (id) => {
-            navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => window.showToast("Copied!"));
-        }
+        window.copyToClipboard = (id) => { navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => window.showToast("Copied!")); }
+        window.deleteCurrentPrompt = async () => { if(confirm("Delete forever?")) { await deleteDoc(doc(db, "prompts", currentViewId)); window.switchTab('library'); } }
 
-        window.deleteCurrentPrompt = async () => {
-            if(confirm("Delete this prompt from the cloud forever?")) {
-                await deleteDoc(doc(db, "prompts", currentViewId));
-                window.showToast("Prompt Deleted!");
-                window.switchTab('library');
-            }
-        }
-
-        // --- AI API INTEGRATIONS (GEMINI 1.5) ---
+        // --- OMNI-MODEL API INTEGRATIONS ---
         window.saveAPIKeys = () => {
-            const key = document.getElementById('gemini-key').value.trim();
-            localStorage.setItem('gemini_api_key', key);
-            window.showToast("API Key Saved Locally!");
+            ['gemini','openai','grok','anthropic'].forEach(k => {
+                const val = document.getElementById('key-'+k).value.trim();
+                if(val) localStorage.setItem('api_key_'+k, val);
+            });
+            window.showToast("All Keys Saved Locally!");
         }
 
-        async function callGeminiAPI(promptText) {
-            const apiKey = localStorage.getItem('gemini_api_key');
-            if(!apiKey) throw new Error("Please add your Gemini API Key in Settings first!");
-            
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ contents: [{parts: [{text: promptText}]}] })
-            });
-            const data = await response.json();
-            if(data.error) throw new Error(data.error.message);
-            return data.candidates[0].content.parts[0].text;
+        async function callOmniAPI(promptText, modelProvider) {
+            const keys = {
+                gemini: localStorage.getItem('api_key_gemini'), openai: localStorage.getItem('api_key_openai'),
+                grok: localStorage.getItem('api_key_grok'), anthropic: localStorage.getItem('api_key_anthropic')
+            };
+
+            if(modelProvider === 'gemini') {
+                if(!keys.gemini) throw new Error("Gemini API Key missing in Settings.");
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${keys.gemini}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{parts: [{text: promptText}]}] })
+                });
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); return data.candidates[0].content.parts[0].text;
+            }
+            else if(modelProvider === 'openai') {
+                if(!keys.openai) throw new Error("OpenAI API Key missing in Settings.");
+                const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.openai}`},
+                    body: JSON.stringify({ model: 'gpt-4o', messages: [{role: 'user', content: promptText}] })
+                });
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); return data.choices[0].message.content;
+            }
+            else if(modelProvider === 'grok') {
+                if(!keys.grok) throw new Error("Grok API Key missing in Settings.");
+                const res = await fetch('https://api.x.ai/v1/chat/completions', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.grok}`},
+                    body: JSON.stringify({ model: 'grok-beta', messages: [{role: 'user', content: promptText}] })
+                });
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); return data.choices[0].message.content;
+            }
+            else if(modelProvider === 'anthropic') {
+                if(!keys.anthropic) throw new Error("Anthropic Key missing.");
+                // Anthropic requires specific CORS headers for direct browser fetch
+                const res = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'x-api-key': keys.anthropic, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'},
+                    body: JSON.stringify({ model: 'claude-3-5-sonnet-20241022', max_tokens: 1024, messages: [{role: 'user', content: promptText}] })
+                });
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); return data.content[0].text;
+            }
+            throw new Error("Provider not configured properly.");
         }
 
         window.magicOptimizePrompt = async () => {
             const ta = document.getElementById('prompt-content');
-            const original = ta.value.trim();
-            if(!original) return alert("Write a basic prompt first to optimize it!");
-            
-            const loader = document.getElementById('magic-loader');
-            loader.style.display = 'flex';
-            
+            if(!ta.value.trim()) return alert("Write a basic prompt first!");
+            document.getElementById('magic-loader').style.display = 'flex';
             try {
-                const aiPrompt = `You are an expert Prompt Engineer. I have written a basic, sloppy prompt. I want you to rewrite it into a highly professional, structured, and advanced prompt template. Keep any {{variables}} I used. Do not include any intro or outro text, JUST return the rewritten prompt itself.\n\nOriginal Prompt:\n${original}`;
-                const result = await callGeminiAPI(aiPrompt);
-                ta.value = result;
-                window.parseVariables();
-                window.showToast("✨ Magic Applied!");
-            } catch(e) {
-                alert("Error: " + e.message);
-            } finally {
-                loader.style.display = 'none';
-            }
+                // Default magic optimize uses whatever key is available, pref Gemini
+                let provider = 'gemini';
+                if(!localStorage.getItem('api_key_gemini')) {
+                    if(localStorage.getItem('api_key_openai')) provider = 'openai';
+                    else if(localStorage.getItem('api_key_grok')) provider = 'grok';
+                    else if(localStorage.getItem('api_key_anthropic')) provider = 'anthropic';
+                }
+                const result = await callOmniAPI(`Rewrite this sloppy prompt into an expert-level template. Keep {{variables}}. Return ONLY the prompt text:\n\n${ta.value}`, provider);
+                ta.value = result; window.parseVariables(); window.showToast("✨ Magic Applied via " + provider);
+            } catch(e) { alert(e.message); } finally { document.getElementById('magic-loader').style.display = 'none'; }
         }
 
         window.executeAI = async () => {
-            const p = window.prompts.find(x => x.id === currentViewId);
-            if(!p) return;
-            
+            const p = window.prompts.find(x => x.id === currentViewId); if(!p) return;
             let finalText = p.content;
-            const regex = /\{\{([^}]+)\}\}/g;
-            finalText = finalText.replace(regex, (match, vName) => {
-                const el = document.getElementById(`play_var_${vName}`);
-                return el && el.value.trim() ? el.value.trim() : match;
-            });
+            finalText = finalText.replace(/\{\{([^}]+)\}\}/g, (m, vName) => { const el = document.getElementById(`play_var_${vName}`); return el && el.value.trim() ? el.value.trim() : m; });
 
-            const loader = document.getElementById('play-loader');
+            const provider = document.getElementById('omni-model-select').value;
             const outputBox = document.getElementById('play-output');
-            loader.style.display = 'flex';
+            document.getElementById('play-loader').style.display = 'flex';
 
             try {
-                const result = await callGeminiAPI(finalText);
+                const result = await callOmniAPI(finalText, provider);
                 outputBox.innerHTML = marked.parse(result);
-                
-                let execs = parseInt(localStorage.getItem('ai_exec_count') || 0);
-                localStorage.setItem('ai_exec_count', execs + 1);
-                
-            } catch(e) {
-                outputBox.innerHTML = `<p class="text-red-500 font-bold">Error: ${e.message}</p>`;
-            } finally {
-                loader.style.display = 'none';
-            }
+                localStorage.setItem('ai_exec_count', parseInt(localStorage.getItem('ai_exec_count')||0) + 1);
+            } catch(e) { outputBox.innerHTML = `<p class="text-red-500 font-bold">Error: ${e.message}</p>`; } 
+            finally { document.getElementById('play-loader').style.display = 'none'; }
         }
 
-        // --- ANALYTICS ---
+        // --- ANALYTICS & BACKUP ---
         let categoryChartInst = null;
         window.renderAnalytics = () => {
             if (categoryChartInst) categoryChartInst.destroy();
             const cats = {};
-            window.prompts.forEach(p => { const c = p.category || 'Uncategorized'; cats[c] = (cats[c] || 0) + 1; });
+            window.prompts.forEach(p => { 
+                const col = window.collectionsData.find(c => c.id === p.collectionId);
+                const name = col ? col.name : 'Uncategorized';
+                cats[name] = (cats[name] || 0) + 1; 
+            });
             const ctx = document.getElementById('categoryChart').getContext('2d');
             Chart.defaults.color = '#737373';
-            categoryChartInst = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(cats),
-                    datasets: [{
-                        data: Object.values(cats),
-                        backgroundColor: ['#6366F1', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6'],
-                        borderWidth: 0,
-                        hoverOffset: 10
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-            });
+            categoryChartInst = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#6366F1', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6'], borderWidth: 0, hoverOffset: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
         }
-
-        // --- BACKUP ---
         window.exportDataFile = () => {
             const dataStr = JSON.stringify(window.prompts, null, 2);
-            const blob = new Blob([dataStr], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", url);
-            downloadAnchorNode.setAttribute("download", "promptvault_pro_backup.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([dataStr], {type: "application/json"})); a.download = "promptvault_pro_backup.json";
+            document.body.appendChild(a); a.click(); a.remove();
         }
     </script>
 </body>
