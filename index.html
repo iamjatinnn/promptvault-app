@@ -70,10 +70,14 @@
         }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; transform: translateX(-50%) scale(1); }
 
-        #login-overlay, #share-overlay {
+        #login-overlay {
             position: fixed; inset: 0; background: #000000; z-index: 100000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #share-overlay {
+            position: fixed; inset: 0; background: #000000; z-index: 100000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
         }
         #ptr-indicator { transition: height 0.2s cubic-bezier(0.1, 0.7, 0.1, 1); }
         
