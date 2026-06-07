@@ -3,26 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PromptVault AI - Pro Cloud</title>
+    <title>PromptVault AI - Pro Cloud V13</title>
     
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://api.openai.com https://api.x.ai https://api.anthropic.com; img-src 'self' data: https://*;">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     
-    <!-- Note: 'unsafe-inline' for scripts/styles in CSP is allowed specifically for this tailwind.config and inline interactions -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'], },
                     colors: {
                         primary: '#6366F1', secondary: '#8B5CF6', success: '#10B981', warning: '#F59E0B', error: '#EF4444',
                         darkbg: '#000000', darksurface: '#050505', darksurface2: '#0A0A0A',
+                        openai: '#10A37F', anthropic: '#D97757', gemini: '#1A73E8', grok: '#FFFFFF'
                     },
                     typography: (theme) => ({
                         invert: {
@@ -41,10 +38,10 @@
     </script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-HnQ/HnhkH81u3/02p4uTj1pI2tJz/8V7V6/xVw1S2Qf/V8I9e+7FmIq1l7C/b4fP" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js" integrity="sha384-Zz1E6iA0A/4M27bA/7zI9O0mZ3H5aD+z3O0lB4c/y+Jz1t/4K3L6b/y+N/1O/5+I" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js" integrity="sha384-Kj8xV3aM6j1D4h+x+x/j1a6l2Z/x+e/tP5G+o/z/c/N+w/k/m/A/Z/b/a/H/p/k/B" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; overscroll-behavior-y: none; }
@@ -59,9 +56,7 @@
         .nav-item.active { background-color: rgba(99, 102, 241, 0.15); color: #6366F1; font-weight: 500; border-right: 3px solid #6366F1; }
         .hover-card { transition: all 0.3s ease; }
         .hover-card:hover { transform: translateY(-3px); border-color: rgba(99, 102, 241, 0.5); box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.2); }
-        
         .editor-bg { background-color: #050505; background-image: radial-gradient(#171717 1px, transparent 1px); background-size: 20px 20px; }
-        
         .magic-btn { background: linear-gradient(45deg, #6366F1, #8B5CF6, #EC4899, #6366F1); background-size: 300% 300%; animation: gradientMove 3s ease infinite; }
         @keyframes gradientMove { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
 
@@ -73,27 +68,39 @@
         }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; transform: translateX(-50%) scale(1); }
 
-        #login-overlay {
-            position: fixed; inset: 0; background: #000000; z-index: 100000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-        #share-overlay {
-            position: fixed; inset: 0; background: #000000; z-index: 100000;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-        }
+        #login-overlay { position: fixed; inset: 0; background: #000000; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s ease; }
+        #share-overlay { position: fixed; inset: 0; background: #000000; z-index: 100000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #ptr-indicator { transition: height 0.2s cubic-bezier(0.1, 0.7, 0.1, 1); }
-        
-        /* Voice animation */
         .voice-pulse { animation: voicePulse 1.5s infinite; }
         @keyframes voicePulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* Command Palette */
+        #cmd-palette { display: none; }
+        #cmd-palette.active { display: flex; }
+        
+        /* Grid transition for multi-model */
+        .model-col { transition: all 0.3s ease; }
     </style>
 </head>
-<body class="bg-darkbg text-slate-200 overflow-hidden flex h-screen antialiased selection:bg-primary/30 selection:text-primary">
+<body class="bg-darkbg text-slate-200 overflow-hidden flex h-screen antialiased selection:bg-primary/30 selection:text-primary relative">
 
     <div id="toast">Action successful!</div>
 
-    <!-- SHARED PROMPT OVERLAY (Public View) -->
+    <!-- COMMAND PALETTE (CMD+K) -->
+    <div id="cmd-palette" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999999] flex-col items-center pt-[15vh] opacity-0 transition-opacity duration-200">
+        <div class="bg-darksurface2 border border-neutral-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200" id="cmd-box">
+            <div class="flex items-center px-4 py-3 border-b border-neutral-800">
+                <i class="fa-solid fa-magnifying-glass text-neutral-500 mr-3"></i>
+                <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none text-white text-lg focus:outline-none placeholder-neutral-600" placeholder="Search prompts, or type '>' for actions...">
+                <div class="bg-neutral-800 text-[10px] text-neutral-400 px-2 py-1 rounded font-mono">ESC</div>
+            </div>
+            <div id="cmd-results" class="max-h-96 overflow-y-auto p-2">
+                <!-- Results injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SHARED PROMPT OVERLAY -->
     <div id="share-overlay" class="hidden">
         <div class="w-full max-w-2xl bg-darksurface2 border border-neutral-800 rounded-3xl p-8 shadow-2xl flex flex-col max-h-[90vh]">
             <div class="flex items-center gap-4 mb-6">
@@ -159,6 +166,9 @@
                 <a onclick="window.switchTab('collections')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
                     <i class="fa-solid fa-folder-open w-6 text-center text-amber-400"></i><span class="ml-2 text-sm font-medium">Collections</span>
                 </a>
+                <a onclick="window.switchTab('discover')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-compass w-6 text-center text-primary"></i><span class="ml-2 text-sm font-medium">Discover <span class="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[9px] ml-1">NEW</span></span>
+                </a>
                 
                 <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 mt-8">Insights & Tools</p>
                 <a onclick="window.switchTab('analytics')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
@@ -170,6 +180,13 @@
                     <i class="fa-solid fa-sliders w-6 text-center"></i><span class="ml-2 text-sm font-medium">API Keys & Settings</span>
                 </a>
             </nav>
+            
+            <div class="px-4 py-2 border-t border-neutral-900">
+                <button onclick="window.openCmdPalette()" class="w-full bg-neutral-900 hover:bg-neutral-800 text-neutral-400 text-xs font-medium py-2 rounded-lg border border-neutral-800 flex items-center justify-between px-3 transition-colors">
+                    <span>Search</span>
+                    <span class="font-mono bg-neutral-800 border border-neutral-700 px-1 rounded">⌘K</span>
+                </button>
+            </div>
         </div>
         
         <div class="p-4 border-t border-neutral-900 shrink-0">
@@ -191,11 +208,14 @@
                 <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()"><i class="fa-solid fa-bars text-xl"></i></button>
                 <div class="relative max-w-md w-full hidden sm:block">
                     <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-500"></i>
-                    <input type="text" id="global-search" onkeyup="window.searchPrompts(this.value)" placeholder="Search library..." class="w-full bg-neutral-900/80 border border-neutral-800 rounded-full py-2 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white placeholder-neutral-500 transition-all">
+                    <input type="text" onclick="window.openCmdPalette()" readonly placeholder="Search library (⌘K)..." class="w-full bg-neutral-900/80 border border-neutral-800 rounded-full py-2 pl-11 pr-4 text-sm text-white placeholder-neutral-500 transition-all cursor-pointer hover:border-primary/50">
                 </div>
             </div>
             
             <div class="flex items-center gap-4">
+                <div id="cost-counter" class="hidden lg:flex items-center gap-2 text-xs font-medium text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20" title="Estimated monthly API spend">
+                    <i class="fa-solid fa-coins"></i> $<span id="monthly-spend">0.00</span>
+                </div>
                 <div id="sync-status" class="hidden md:flex items-center gap-2 text-[11px] font-medium text-neutral-400 bg-neutral-900/80 px-3 py-1.5 rounded-full border border-neutral-800 cursor-pointer" onclick="window.manualRefresh()" title="Click to manually sync">
                     <div id="sync-indicator" class="w-2 h-2 rounded-full bg-success animate-pulse shadow-[0_0_8px_#10B981]"></div> Cloud Sync Active
                 </div>
@@ -227,21 +247,21 @@
                 </div>
 
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
-                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
+                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card cursor-pointer" onclick="window.switchTab('library')">
                         <div class="flex justify-between items-start mb-4">
                             <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-lg"><i class="fa-solid fa-layer-group"></i></div>
                         </div>
                         <p class="text-sm font-medium text-neutral-400 mb-1">Total Prompts</p>
                         <h3 class="text-3xl font-extrabold text-white" id="stat-total">0</h3>
                     </div>
-                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
+                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card cursor-pointer" onclick="window.switchTab('collections')">
                         <div class="flex justify-between items-start mb-4">
                             <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 text-lg"><i class="fa-solid fa-folder-open"></i></div>
                         </div>
                         <p class="text-sm font-medium text-neutral-400 mb-1">Collections</p>
                         <h3 class="text-3xl font-extrabold text-white" id="stat-collections">0</h3>
                     </div>
-                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
+                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card cursor-pointer" onclick="window.switchTab('discover')">
                         <div class="flex justify-between items-start mb-4">
                             <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-lg"><i class="fa-solid fa-share-nodes"></i></div>
                         </div>
@@ -252,7 +272,7 @@
                         <div class="flex justify-between items-start mb-4">
                             <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 text-lg"><i class="fa-solid fa-bolt"></i></div>
                         </div>
-                        <p class="text-sm font-medium text-neutral-400 mb-1">Omni-API Calls</p>
+                        <p class="text-sm font-medium text-neutral-400 mb-1">AI Executions</p>
                         <h3 class="text-3xl font-extrabold text-white" id="stat-executions">0</h3>
                     </div>
                 </div>
@@ -290,7 +310,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="library-grid"></div>
             </div>
 
-            <!-- 2.5. COLLECTIONS -->
+            <!-- 2.5. COLLECTIONS (Nested Support) -->
             <div id="collections" class="screen max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <h1 class="text-3xl font-extrabold text-white tracking-tight">Your Collections</h1>
@@ -298,7 +318,27 @@
                         <i class="fa-solid fa-folder-plus"></i> New Collection
                     </button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="collections-grid"></div>
+                <div class="space-y-6" id="collections-grid"></div>
+            </div>
+
+            <!-- 2.8. DISCOVER TAB -->
+            <div id="discover" class="screen max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h1 class="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">Discover <span class="bg-primary/20 text-primary text-xs px-2 py-1 rounded-full border border-primary/30 uppercase tracking-widest">Marketplace</span></h1>
+                        <p class="text-neutral-400 mt-2">Explore and fork prompts shared by the community.</p>
+                    </div>
+                    <button onclick="window.loadDiscover(true)" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> Refresh
+                    </button>
+                </div>
+                
+                <div id="discover-loader" class="flex flex-col items-center justify-center py-20 hidden">
+                    <i class="fa-solid fa-circle-notch fa-spin text-primary text-4xl mb-4"></i>
+                    <p class="text-neutral-500 font-bold">Loading community prompts...</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="discover-grid"></div>
             </div>
 
             <!-- 3. ADD/EDIT -->
@@ -326,17 +366,17 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="md:col-span-2">
                                     <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Prompt Name</label>
-                                    <input type="text" id="prompt-name" placeholder="e.g. SEO Blog Generator" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium">
+                                    <input type="text" id="prompt-name" oninput="window.editorDirty=true" placeholder="e.g. SEO Blog Generator" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Collection</label>
-                                    <select id="prompt-collection" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium cursor-pointer">
+                                    <select id="prompt-collection" onchange="window.editorDirty=true" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium cursor-pointer">
                                         <option value="">No Collection</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Tags (Comma separated)</label>
-                                    <input type="text" id="prompt-tags" placeholder="seo, code..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white text-sm font-medium">
+                                    <input type="text" id="prompt-tags" oninput="window.editorDirty=true" placeholder="seo, code..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white text-sm font-medium">
                                 </div>
                             </div>
                         </div>
@@ -347,7 +387,7 @@
                                 <div class="flex gap-2 text-xs font-medium text-neutral-500">Variables: <code class="bg-neutral-800 text-primary px-1.5 py-0.5 rounded text-[10px] font-mono">{{name}}</code></div>
                             </div>
                             <div class="flex-1 relative p-2">
-                                <textarea id="prompt-content" oninput="window.parseVariables()" class="w-full h-full resize-none bg-transparent p-4 focus:outline-none text-neutral-300 font-mono text-[15px] leading-relaxed editor-bg rounded-b-2xl" placeholder="Write your prompt here..."></textarea>
+                                <textarea id="prompt-content" oninput="window.editorDirty=true; window.parseVariables()" class="w-full h-full resize-none bg-transparent p-4 focus:outline-none text-neutral-300 font-mono text-[15px] leading-relaxed editor-bg rounded-b-2xl" placeholder="Write your prompt here..."></textarea>
                                 <div id="magic-loader" class="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 hidden flex-col items-center justify-center rounded-b-2xl">
                                     <i class="fa-solid fa-wand-magic-sparkles text-3xl text-purple-500 animate-bounce mb-4"></i>
                                     <p class="text-white font-bold animate-pulse">Omni-AI is rewriting your prompt...</p>
@@ -365,9 +405,9 @@
                 </div>
             </div>
 
-            <!-- 4. DETAIL & LIVE PLAYGROUND -->
-            <div id="detail" class="screen max-w-7xl mx-auto pb-10">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <!-- 4. DETAIL & LIVE PLAYGROUND (Multi-Model) -->
+            <div id="detail" class="screen max-w-full mx-auto pb-10">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 px-4 lg:px-0 max-w-7xl mx-auto">
                     <div class="flex items-center gap-3">
                         <button onclick="window.switchTab('library')" class="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center text-neutral-400 hover:bg-neutral-800 hover:text-white transition-colors"><i class="fa-solid fa-arrow-left"></i></button>
                         <div>
@@ -389,10 +429,10 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="flex flex-col lg:flex-row gap-8 w-full">
                     <!-- Prompt Template -->
-                    <div class="lg:col-span-5 space-y-6">
-                        <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm">
+                    <div id="template-col" class="lg:w-1/3 xl:w-1/4 space-y-6 flex-shrink-0 transition-all duration-300">
+                        <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm h-full flex flex-col">
                             <h3 class="text-sm font-bold text-neutral-500 uppercase tracking-widest mb-4">Metadata</h3>
                             <div class="flex flex-wrap items-center gap-2 mb-6">
                                 <span id="view-cat" class="bg-neutral-900 text-neutral-300 px-3 py-1.5 rounded-lg text-xs font-bold border border-neutral-800"><i class="fa-solid fa-folder-open mr-1.5 text-amber-500"></i> None</span>
@@ -403,43 +443,59 @@
                                 <h3 class="text-sm font-bold text-neutral-500 uppercase tracking-widest">Template</h3>
                                 <button onclick="window.copyToClipboard('view-content')" class="text-xs text-primary hover:text-indigo-400 font-bold"><i class="fa-regular fa-copy"></i> Copy</button>
                             </div>
-                            <div class="bg-[#0A0A0A] border border-neutral-800 rounded-2xl p-5 overflow-y-auto max-h-[500px]">
+                            <div class="bg-[#0A0A0A] border border-neutral-800 rounded-2xl p-5 overflow-y-auto flex-1">
                                 <pre id="view-content" class="font-mono text-sm text-neutral-300 whitespace-pre-wrap leading-relaxed select-all"></pre>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Omni-Model AI Playground -->
-                    <div class="lg:col-span-7 flex flex-col h-[700px]">
+                    <!-- Omni-Model AI Playground / Compare Mode -->
+                    <div class="flex-1 flex flex-col h-[750px] min-w-0 transition-all duration-300">
                         <div class="bg-gradient-to-br from-[#0A0A0A] to-[#050505] rounded-3xl border border-neutral-800 shadow-2xl flex flex-col h-full overflow-hidden relative">
                             <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary"></div>
                             
-                            <div class="px-6 py-4 border-b border-neutral-800 flex justify-between items-center bg-neutral-900/40">
+                            <div class="px-6 py-4 border-b border-neutral-800 flex justify-between items-center bg-neutral-900/40 shrink-0">
                                 <h3 class="text-base font-extrabold text-white flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> Omni-Model Playground</h3>
-                                <select id="omni-model-select" class="bg-black border border-neutral-800 text-white text-xs font-bold rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-primary cursor-pointer">
-                                    <option value="gemini">Google Gemini 1.5</option>
-                                    <option value="openai">OpenAI GPT-4o</option>
-                                    <option value="grok">xAI Grok Beta</option>
-                                    <option value="anthropic">Anthropic Claude 3.5</option>
-                                </select>
+                                <div class="flex items-center gap-3">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <div class="relative">
+                                            <input type="checkbox" id="compare-mode-toggle" class="sr-only" onchange="window.toggleCompareMode()">
+                                            <div class="block bg-neutral-800 w-10 h-6 rounded-full border border-neutral-700"></div>
+                                            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"></div>
+                                        </div>
+                                        <span class="text-xs font-bold text-neutral-400">Compare Models</span>
+                                    </label>
+                                    <div class="h-4 w-px bg-neutral-700 mx-1"></div>
+                                    <select id="omni-model-select" class="bg-black border border-neutral-800 text-white text-xs font-bold rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-primary cursor-pointer">
+                                        <option value="gemini">Gemini 1.5</option>
+                                        <option value="openai">GPT-4o</option>
+                                        <option value="anthropic">Claude 3.5</option>
+                                        <option value="grok">Grok Beta</option>
+                                    </select>
+                                </div>
                             </div>
                             
                             <div class="p-6 border-b border-neutral-800 bg-neutral-900/20 shrink-0">
                                 <div class="flex justify-between items-center mb-3">
-                                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest">Variables (Voice Supported)</p>
+                                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest">Variables</p>
+                                    <p id="token-estimate" class="text-xs font-medium text-neutral-500 hidden sm:block"></p>
                                 </div>
-                                <div id="play-variables" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5"></div>
+                                <div id="play-variables" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-5"></div>
                                 <div class="flex justify-end gap-3">
                                     <button onclick="window.executeAI()" class="magic-btn px-8 py-2.5 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
-                                        <i class="fa-solid fa-play"></i> Run Omni-Prompt
+                                        <i class="fa-solid fa-play"></i> <span id="run-btn-text">Run Model</span>
                                     </button>
                                 </div>
                             </div>
 
-                            <div class="flex-1 p-6 overflow-y-auto relative flex flex-col">
+                            <!-- Single Model Output -->
+                            <div id="single-output-container" class="flex-1 p-6 overflow-y-auto relative flex flex-col">
                                 <div class="flex justify-between items-center mb-3 shrink-0">
                                     <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest">AI Output</p>
-                                    <button onclick="window.speakOutput()" id="btn-speak-output" class="text-neutral-400 hover:text-white transition-colors" title="Read Aloud"><i class="fa-solid fa-volume-high"></i></button>
+                                    <div class="flex items-center gap-4">
+                                        <span id="cost-result-single" class="text-[10px] font-mono text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded hidden"></span>
+                                        <button onclick="window.speakOutput('play-output')" class="text-neutral-400 hover:text-white transition-colors"><i class="fa-solid fa-volume-high"></i></button>
+                                    </div>
                                 </div>
                                 <div id="play-output" class="prose prose-invert max-w-none text-[15px] leading-relaxed flex-1">
                                     <div class="h-full flex flex-col items-center justify-center text-neutral-600">
@@ -447,10 +503,43 @@
                                         <p class="font-medium">Fill in variables and click Run.</p>
                                     </div>
                                 </div>
-                                
                                 <div id="play-loader" class="absolute inset-0 bg-[#0A0A0A]/90 backdrop-blur-sm hidden flex-col items-center justify-center z-10">
                                     <div class="w-12 h-12 border-4 border-neutral-800 border-t-primary rounded-full animate-spin mb-4"></div>
                                     <p class="text-white font-bold animate-pulse">Omni-Model Generating...</p>
+                                </div>
+                            </div>
+
+                            <!-- Multi Model Compare Output (Hidden by default) -->
+                            <div id="compare-output-container" class="flex-1 overflow-hidden relative hidden bg-neutral-900/10">
+                                <div class="grid grid-cols-3 h-full divide-x divide-neutral-800">
+                                    <!-- Gemini -->
+                                    <div class="flex flex-col h-full">
+                                        <div class="px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center">
+                                            <span class="text-xs font-bold text-gemini flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-sm"><path fill="currentColor" d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z"/></svg> Gemini</span>
+                                            <span id="cost-gemini" class="text-[9px] font-mono text-neutral-500"></span>
+                                        </div>
+                                        <div id="out-gemini" class="flex-1 p-4 overflow-y-auto prose prose-invert prose-sm max-w-none"></div>
+                                    </div>
+                                    <!-- OpenAI -->
+                                    <div class="flex flex-col h-full">
+                                        <div class="px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center">
+                                            <span class="text-xs font-bold text-openai flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-sm"><path fill="currentColor" d="M22.28 11.23a8.17 8.17 0 0 0-1.12-4.13A8.15 8.15 0 0 0 17 3.51a8.13 8.13 0 0 0-8.23 1.05A8.16 8.16 0 0 0 4.14 2.89a8.15 8.15 0 0 0-4.04 6.78 8.16 8.16 0 0 0 1.13 4.13 8.15 8.15 0 0 0 4.14 3.59 8.13 8.13 0 0 0 8.24-1.05 8.16 8.16 0 0 0 4.63 1.67 8.15 8.15 0 0 0 4.04-6.78zM10.74 20.31a6.05 6.05 0 0 1-3.66-1.17l.27-.15 4.79-2.77a.64.64 0 0 0 .32-.55V9.45l2.42 1.4v5.36a6.05 6.05 0 0 1-4.14 4.1zM3.46 16.55a6.05 6.05 0 0 1-.72-3.8l.26.16 4.79 2.76v.05a.64.64 0 0 0 .64.32h5.83l-2.42 1.4H6.46a6.05 6.05 0 0 1-3-1lzm-1.1-7.79a6.05 6.05 0 0 1 2.94-2.63l-.06.3-2.39 4.15v.06a.64.64 0 0 0 .32.55l5.05 2.91-2.42 1.4-4.22-2.43a6.05 6.05 0 0 1-.22-4.34zM13.26 3.69a6.05 6.05 0 0 1 3.66 1.17l-.27.15-4.79 2.77a.64.64 0 0 0-.32.55v6.22l-2.42-1.4V7.75a6.05 6.05 0 0 1 4.14-4.06zM20.54 7.45a6.05 6.05 0 0 1 .72 3.8l-.26-.16-4.79-2.76v-.05a.64.64 0 0 0-.64-.32h-5.83l2.42-1.4h5.36a6.05 6.05 0 0 1 3 1lzm1.1 7.79a6.05 6.05 0 0 1-2.94 2.63l.06-.3 2.39-4.15v-.06a.64.64 0 0 0-.32-.55l-5.05-2.91 2.42-1.4 4.22 2.43a6.05 6.05 0 0 1 .22 4.34zM12 14.86a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/></svg> GPT-4o</span>
+                                            <span id="cost-openai" class="text-[9px] font-mono text-neutral-500"></span>
+                                        </div>
+                                        <div id="out-openai" class="flex-1 p-4 overflow-y-auto prose prose-invert prose-sm max-w-none"></div>
+                                    </div>
+                                    <!-- Claude -->
+                                    <div class="flex flex-col h-full">
+                                        <div class="px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center">
+                                            <span class="text-xs font-bold text-anthropic flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-sm"><path fill="currentColor" d="M15.4 3L12 9l-3.4-6H4l7 12-4 7h3.8l2.2-4 2.2 4h3.8l-4-7 7-12h-4.6z"/></svg> Claude</span>
+                                            <span id="cost-anthropic" class="text-[9px] font-mono text-neutral-500"></span>
+                                        </div>
+                                        <div id="out-anthropic" class="flex-1 p-4 overflow-y-auto prose prose-invert prose-sm max-w-none"></div>
+                                    </div>
+                                </div>
+                                <div id="compare-loader" class="absolute inset-0 bg-[#0A0A0A]/90 backdrop-blur-sm hidden flex-col items-center justify-center z-10">
+                                    <div class="w-12 h-12 border-4 border-neutral-800 border-t-primary rounded-full animate-spin mb-4"></div>
+                                    <p class="text-white font-bold animate-pulse">Running 3 models simultaneously...</p>
                                 </div>
                             </div>
                         </div>
@@ -475,27 +564,37 @@
                 
                 <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm mb-8">
                     <h3 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-microchip text-primary mr-2"></i> Omni-Model API Keys</h3>
-                    <p class="text-sm text-neutral-400 mb-6 leading-relaxed">Add keys for any providers you want to use. Keys are stored locally on your device for absolute security. At least one key is required for the Magic Optimizer and Live Playground.</p>
+                    <div class="bg-warning/20 text-warning px-4 py-3 rounded-xl text-xs font-bold mb-6 flex items-start gap-2">
+                        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                        <p>API keys are stored on this device. Do not use this app on shared computers.</p>
+                    </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2"><i class="fa-solid fa-cube text-blue-500 mr-1"></i> Google Gemini</label>
-                            <input type="password" id="key-gemini" placeholder="AIzaSy..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500 text-white font-mono text-sm">
+                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-gemini"><path fill="currentColor" d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z"/></svg> Google Gemini</label>
+                            <input type="password" id="key-gemini" placeholder="AIzaSy..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-gemini text-white font-mono text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2"><i class="fa-solid fa-leaf text-emerald-500 mr-1"></i> OpenAI (ChatGPT)</label>
-                            <input type="password" id="key-openai" placeholder="sk-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-emerald-500 text-white font-mono text-sm">
+                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-openai"><path fill="currentColor" d="M22.28 11.23a8.17 8.17 0 0 0-1.12-4.13A8.15 8.15 0 0 0 17 3.51a8.13 8.13 0 0 0-8.23 1.05A8.16 8.16 0 0 0 4.14 2.89a8.15 8.15 0 0 0-4.04 6.78 8.16 8.16 0 0 0 1.13 4.13 8.15 8.15 0 0 0 4.14 3.59 8.13 8.13 0 0 0 8.24-1.05 8.16 8.16 0 0 0 4.63 1.67 8.15 8.15 0 0 0 4.04-6.78zM10.74 20.31a6.05 6.05 0 0 1-3.66-1.17l.27-.15 4.79-2.77a.64.64 0 0 0 .32-.55V9.45l2.42 1.4v5.36a6.05 6.05 0 0 1-4.14 4.1zM3.46 16.55a6.05 6.05 0 0 1-.72-3.8l.26.16 4.79 2.76v.05a.64.64 0 0 0 .64.32h5.83l-2.42 1.4H6.46a6.05 6.05 0 0 1-3-1lzm-1.1-7.79a6.05 6.05 0 0 1 2.94-2.63l-.06.3-2.39 4.15v.06a.64.64 0 0 0 .32.55l5.05 2.91-2.42 1.4-4.22-2.43a6.05 6.05 0 0 1-.22-4.34zM13.26 3.69a6.05 6.05 0 0 1 3.66 1.17l-.27.15-4.79 2.77a.64.64 0 0 0-.32.55v6.22l-2.42-1.4V7.75a6.05 6.05 0 0 1 4.14-4.06zM20.54 7.45a6.05 6.05 0 0 1 .72 3.8l-.26-.16-4.79-2.76v-.05a.64.64 0 0 0-.64-.32h-5.83l2.42-1.4h5.36a6.05 6.05 0 0 1 3 1lzm1.1 7.79a6.05 6.05 0 0 1-2.94 2.63l.06-.3 2.39-4.15v-.06a.64.64 0 0 0-.32-.55l-5.05-2.91 2.42-1.4 4.22 2.43a6.05 6.05 0 0 1 .22 4.34zM12 14.86a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/></svg> OpenAI (ChatGPT)</label>
+                            <input type="password" id="key-openai" placeholder="sk-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-openai text-white font-mono text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2"><i class="fa-solid fa-xmarks-lines text-white mr-1"></i> xAI (Grok)</label>
+                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-grok"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> xAI (Grok)</label>
                             <input type="password" id="key-grok" placeholder="xai-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-white text-white font-mono text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2"><i class="fa-solid fa-brain text-amber-500 mr-1"></i> Anthropic (Claude)</label>
-                            <input type="password" id="key-anthropic" placeholder="sk-ant-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-amber-500 text-white font-mono text-sm">
+                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-anthropic"><path fill="currentColor" d="M15.4 3L12 9l-3.4-6H4l7 12-4 7h3.8l2.2-4 2.2 4h3.8l-4-7 7-12h-4.6z"/></svg> Anthropic (Claude)</label>
+                            <input type="password" id="key-anthropic" placeholder="sk-ant-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-anthropic text-white font-mono text-sm">
                         </div>
                     </div>
                     <button onclick="window.saveAPIKeys()" class="px-6 py-3 bg-primary hover:bg-indigo-600 text-white rounded-xl font-bold transition-colors shadow-lg">Save All Keys</button>
+                </div>
+
+                <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm mb-10">
+                    <h3 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-file-import text-purple-400 mr-2"></i> Import from ChatGPT</h3>
+                    <p class="text-sm text-neutral-400 mb-6 leading-relaxed">Import your history from OpenAI. Select your `conversations.json` file from your ChatGPT export. It will extract your initial system instructions as prompts.</p>
+                    <input type="file" id="import-chatgpt" accept=".json" class="hidden" onchange="window.importChatGPTData(event)">
+                    <button onclick="document.getElementById('import-chatgpt').click()" class="py-3 px-6 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-colors shadow-lg"><i class="fa-solid fa-file-import mr-2"></i> Select conversations.json</button>
                 </div>
 
                 <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm mb-10">
@@ -513,9 +612,12 @@
     </div>
 
     <script type="module">
+        window.addEventListener('error', e => window.showToast?.('Error: ' + (e.message || 'unknown')));
+        window.addEventListener('unhandledrejection', e => window.showToast?.('Error: ' + (e.reason?.message || e.reason || 'unknown')));
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCBimffGhLYalnH2CMYW64OXxtStASXt8I",
@@ -537,49 +639,129 @@
         let currentViewId = null;
         let unsubscribePrompts = null;
         let unsubscribeCollections = null;
+        window.editorDirty = false;
+        let isCompareMode = false;
 
         if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
 
-        // --- SPEECH API (Voice Mode) ---
+        window.addEventListener('beforeunload', e => { if (window.editorDirty) { e.preventDefault(); e.returnValue = ''; } });
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+        let toastTimeout;
+        window.showToast = (msg, isHtml = false) => {
+            const t = document.getElementById('toast');
+            if (isHtml) t.innerHTML = msg; else t.innerText = msg;
+            t.classList.add('show');
+            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
+        }
+        function generateId() { return (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : Math.random().toString(36).substring(2, 15); }
+
+        window.modal = {
+            overlay: null,
+            init() {
+                if (this.overlay) return;
+                this.overlay = document.createElement('div');
+                this.overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[999999] flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200';
+                this.overlay.innerHTML = `<div class="bg-darksurface2 border border-neutral-800 rounded-3xl p-6 shadow-2xl w-full max-w-sm transform scale-95 transition-transform duration-200" id="modal-box"><h3 id="modal-title" class="text-xl font-bold text-white mb-2"></h3><p id="modal-msg" class="text-sm text-neutral-400 mb-6"></p><input type="text" id="modal-input" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary text-white mb-6 hidden"><div class="flex gap-3 justify-end"><button id="modal-cancel" class="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-sm font-bold hidden">Cancel</button><button id="modal-confirm" class="px-5 py-2.5 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg">OK</button></div></div>`;
+                document.body.appendChild(this.overlay);
+            },
+            show(opts) {
+                this.init();
+                return new Promise(resolve => {
+                    const titleEl = document.getElementById('modal-title'); const msgEl = document.getElementById('modal-msg');
+                    const inputEl = document.getElementById('modal-input'); const cancelBtn = document.getElementById('modal-cancel');
+                    const confirmBtn = document.getElementById('modal-confirm');
+                    titleEl.innerText = opts.title || ''; msgEl.innerText = opts.msg || '';
+                    if (opts.type === 'prompt') { inputEl.style.display = 'block'; inputEl.value = opts.defaultVal || ''; } else { inputEl.style.display = 'none'; }
+                    if (opts.type === 'alert') { cancelBtn.style.display = 'none'; } else { cancelBtn.style.display = 'block'; }
+                    const cleanup = () => { this.overlay.classList.remove('opacity-100', 'pointer-events-auto'); document.getElementById('modal-box').classList.remove('scale-100'); window.removeEventListener('keydown', handleKey); this.overlay.onclick = null; };
+                    const handleConfirm = () => { cleanup(); resolve(opts.type === 'prompt' ? inputEl.value : true); };
+                    const handleCancel = () => { cleanup(); resolve(opts.type === 'prompt' ? null : false); };
+                    const handleKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleConfirm(); } if (e.key === 'Escape') { e.preventDefault(); if(opts.type !== 'alert') handleCancel(); else handleConfirm(); } };
+                    this.overlay.onclick = (e) => { if(e.target === this.overlay && opts.type !== 'alert') handleCancel(); };
+                    confirmBtn.onclick = handleConfirm; cancelBtn.onclick = handleCancel; window.addEventListener('keydown', handleKey);
+                    this.overlay.classList.add('opacity-100', 'pointer-events-auto'); document.getElementById('modal-box').classList.add('scale-100');
+                    if (opts.type === 'prompt') { inputEl.focus(); inputEl.select(); } else { confirmBtn.focus(); }
+                });
+            },
+            alert(msg, title='Notice') { return this.show({type: 'alert', msg, title}); },
+            confirm(msg, title='Are you sure?') { return this.show({type: 'confirm', msg, title}); },
+            prompt(label, defaultVal='', title='Input') { return this.show({type: 'prompt', msg: label, defaultVal, title}); }
+        };
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const synth = window.speechSynthesis;
         let activeRecognition = null;
-
-        window.startVoiceDictation = (inputId, btnId) => {
-            if(!SpeechRecognition) return alert("Voice dictation is not supported in this browser. Try Chrome.");
+        window.startVoiceDictation = async (inputId, btnId) => {
+            if(!SpeechRecognition) return await window.modal.alert("Voice dictation is not supported in this browser.");
             if(activeRecognition) { activeRecognition.stop(); return; }
-            
-            const btn = document.getElementById(btnId);
-            const input = document.getElementById(inputId);
-            
-            activeRecognition = new SpeechRecognition();
-            activeRecognition.continuous = false;
-            activeRecognition.interimResults = false;
-            
+            const btn = document.getElementById(btnId); const input = document.getElementById(inputId);
+            activeRecognition = new SpeechRecognition(); activeRecognition.continuous = false; activeRecognition.interimResults = false;
             activeRecognition.onstart = () => { btn.classList.add('voice-pulse', 'text-red-500'); };
             activeRecognition.onresult = (e) => { input.value = e.results[0][0].transcript; };
-            activeRecognition.onerror = (e) => { console.error(e); window.showToast("Voice error: " + e.error); };
+            activeRecognition.onerror = async (e) => { console.error(e); await window.modal.alert("Voice error: " + e.error); };
             activeRecognition.onend = () => { btn.classList.remove('voice-pulse', 'text-red-500'); activeRecognition = null; };
             activeRecognition.start();
         }
-
-        window.speakOutput = () => {
+        window.speakOutput = (id) => {
             if(synth.speaking) { synth.cancel(); return; }
-            const text = document.getElementById('play-output').innerText;
+            const text = document.getElementById(id).innerText;
             if(!text || text.includes("Fill in variables")) return;
-            const utterThis = new SpeechSynthesisUtterance(text);
-            synth.speak(utterThis);
+            synth.speak(new SpeechSynthesisUtterance(text));
         }
 
-        // --- BOOT & AUTHENTICATION ---
-        window.signInWithGoogle = () => {
-            const provider = new GoogleAuthProvider();
-            document.getElementById('login-loader').classList.remove('hidden');
-            signInWithPopup(auth, provider).catch(e => { document.getElementById('login-loader').classList.add('hidden'); alert(e.message); });
-        };
-        window.signOutUser = () => { if(confirm("Sign out?")) signOut(auth); };
+        // --- COMMAND PALETTE ---
+        const cmdPalette = document.getElementById('cmd-palette');
+        const cmdInput = document.getElementById('cmd-input');
+        window.openCmdPalette = () => {
+            cmdPalette.classList.add('active');
+            requestAnimationFrame(() => { cmdPalette.classList.add('opacity-100'); document.getElementById('cmd-box').classList.add('scale-100'); cmdInput.focus(); cmdInput.value=''; window.renderCmdResults(); });
+        }
+        window.closeCmdPalette = () => {
+            cmdPalette.classList.remove('opacity-100'); document.getElementById('cmd-box').classList.remove('scale-100');
+            setTimeout(() => cmdPalette.classList.remove('active'), 200);
+        }
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); if (cmdPalette.classList.contains('active')) window.closeCmdPalette(); else window.openCmdPalette(); }
+            if (e.key === 'Escape' && cmdPalette.classList.contains('active')) window.closeCmdPalette();
+        });
+        cmdPalette.addEventListener('click', (e) => { if(e.target === cmdPalette) window.closeCmdPalette(); });
+        cmdInput.addEventListener('input', () => window.renderCmdResults());
 
-        // Handle Public Share URLs
+        window.renderCmdResults = () => {
+            const q = cmdInput.value.toLowerCase();
+            const res = document.getElementById('cmd-results');
+            let html = '';
+            if(q.startsWith('>')) {
+                const actionQ = q.substring(1).trim();
+                const actions = [
+                    {n:'Create New Prompt', icon:'fa-plus', action: 'window.prepareAddPrompt(); window.closeCmdPalette();'},
+                    {n:'Go to Dashboard', icon:'fa-house', action: 'window.switchTab("dashboard"); window.closeCmdPalette();'},
+                    {n:'Go to Discover Marketplace', icon:'fa-compass text-primary', action: 'window.switchTab("discover"); window.closeCmdPalette();'},
+                    {n:'Sync Cloud Data', icon:'fa-rotate', action: 'window.manualRefresh(); window.closeCmdPalette();'}
+                ].filter(a => a.n.toLowerCase().includes(actionQ));
+                html = actions.map(a => `<div onclick="${a.action}" class="flex items-center px-4 py-3 hover:bg-neutral-800 rounded-xl cursor-pointer text-white"><i class="fa-solid ${a.icon} w-6 text-neutral-500"></i> ${a.n}</div>`).join('');
+            } else {
+                const filtered = window.prompts.filter(p => p.title.toLowerCase().includes(q)).slice(0,8);
+                html = filtered.map(p => `<div onclick="window.viewPrompt('${esc(p.id)}'); window.closeCmdPalette();" class="flex flex-col px-4 py-3 hover:bg-neutral-800 rounded-xl cursor-pointer"><span class="text-white font-bold">${esc(p.title)}</span><span class="text-xs text-neutral-500 truncate">${esc(p.content)}</span></div>`).join('');
+                if(filtered.length === 0) html = '<p class="text-neutral-500 px-4 py-2 text-sm">No prompts found.</p>';
+            }
+            res.innerHTML = html;
+        }
+
+        // --- AUTHENTICATION ---
+        window.signInWithGoogle = async () => {
+            document.getElementById('login-loader').classList.remove('hidden');
+            signInWithPopup(auth, new GoogleAuthProvider()).catch(async e => { document.getElementById('login-loader').classList.add('hidden'); await window.modal.alert(e.message, "Login Failed"); });
+        };
+        window.signOutUser = async () => { 
+            if(await window.modal.confirm("Sign out?")) {
+                if(unsubscribePrompts) { unsubscribePrompts(); unsubscribePrompts = null; }
+                if(unsubscribeCollections) { unsubscribeCollections(); unsubscribeCollections = null; }
+                signOut(auth); 
+            }
+        };
+
         const urlParams = new URLSearchParams(window.location.search);
         const sharedId = urlParams.get('share');
 
@@ -595,21 +777,18 @@
                     document.getElementById('share-title').innerText = "Prompt Not Found or Private";
                     document.getElementById('share-content').innerText = "This link is invalid.";
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error(e); await window.modal.alert(e.message); }
         }
 
-        window.closeShareOverlay = () => {
-            window.location.href = window.location.origin + window.location.pathname; // strip URL params and reload
-        }
+        window.closeShareOverlay = () => { window.location.href = window.location.origin + window.location.pathname; }
         window.copySharedPrompt = () => { window.copyToClipboard('share-content'); }
         window.saveSharedPrompt = async () => {
-            if(!window.currentUser) { alert("Please login first to save!"); window.closeShareOverlay(); return; }
+            if(!window.currentUser) { await window.modal.alert("Please login first to save!"); window.closeShareOverlay(); return; }
             if(!window.currentSharedData) return;
-            
-            const docId = generateId();
-            const newPrompt = { ...window.currentSharedData, userId: window.currentUser.uid, isPublic: false, date: new Date().toISOString() };
-            await setDoc(doc(db, "prompts", docId), newPrompt);
-            window.showToast("Saved to your Library!");
+            try {
+                await setDoc(doc(db, "prompts", generateId()), { ...window.currentSharedData, userId: window.currentUser.uid, isPublic: false, date: new Date().toISOString() });
+                window.showToast("Saved to your Library!");
+            } catch (e) { await window.modal.alert(e.message); }
             window.closeShareOverlay();
         }
 
@@ -625,19 +804,13 @@
                     overlay.style.opacity = '0'; setTimeout(() => { overlay.style.visibility = 'hidden'; }, 500);
                     document.getElementById('user-name').innerText = user.displayName || "User";
                     if(user.photoURL) { const av = document.getElementById('user-avatar'); av.src = user.photoURL; av.classList.remove('hidden'); }
-                    
-                    // Load keys
-                    ['gemini','openai','grok','anthropic'].forEach(k => {
-                        const val = localStorage.getItem('api_key_'+k);
-                        if(val) document.getElementById('key-'+k).value = val;
-                    });
-
+                    ['gemini','openai','grok','anthropic'].forEach(k => { const val = localStorage.getItem('api_key_'+k); if(val) document.getElementById('key-'+k).value = val; });
+                    updateMonthlySpendUI();
                     window.startDataSync();
                 } else {
-                    window.currentUser = null;
-                    window.prompts = []; window.collectionsData = [];
-                    if(unsubscribePrompts) unsubscribePrompts(); if(unsubscribeCollections) unsubscribeCollections();
-                    
+                    window.currentUser = null; window.prompts = []; window.collectionsData = [];
+                    if(unsubscribePrompts) { unsubscribePrompts(); unsubscribePrompts = null; }
+                    if(unsubscribeCollections) { unsubscribeCollections(); unsubscribeCollections = null; }
                     overlay.style.visibility = 'visible'; overlay.style.opacity = '1';
                     document.getElementById('splash-bolt').classList.remove('animate-pulse');
                     document.getElementById('splash-text').innerText = "Omni-Models, Voice, and Cloud Sync.";
@@ -648,19 +821,17 @@
             });
         }
 
-        // --- DATABASE SYNC ---
         window.startDataSync = () => {
-            const qP = query(collection(db, "prompts"), where("userId", "==", window.currentUser.uid));
-            unsubscribePrompts = onSnapshot(qP, (snapshot) => {
-                window.prompts = [];
-                snapshot.forEach((doc) => window.prompts.push({ id: doc.id, ...doc.data() }));
+            const syncIcon = document.getElementById('sync-indicator');
+            if(syncIcon) syncIcon.classList.remove('bg-neutral-500', 'animate-none');
+            
+            unsubscribePrompts = onSnapshot(query(collection(db, "prompts"), where("userId", "==", window.currentUser.uid)), (snapshot) => {
+                window.prompts = []; snapshot.forEach((doc) => window.prompts.push({ id: doc.id, ...doc.data() }));
                 refreshActiveUI();
             });
 
-            const qC = query(collection(db, "collections"), where("userId", "==", window.currentUser.uid));
-            unsubscribeCollections = onSnapshot(qC, (snapshot) => {
-                window.collectionsData = [];
-                snapshot.forEach((doc) => window.collectionsData.push({ id: doc.id, ...doc.data() }));
+            unsubscribeCollections = onSnapshot(query(collection(db, "collections"), where("userId", "==", window.currentUser.uid)), (snapshot) => {
+                window.collectionsData = []; snapshot.forEach((doc) => window.collectionsData.push({ id: doc.id, ...doc.data() }));
                 refreshActiveUI();
             });
         }
@@ -675,20 +846,19 @@
         }
 
         window.manualRefresh = () => {
+            if (unsubscribePrompts) unsubscribePrompts();
+            if (unsubscribeCollections) unsubscribeCollections();
+            unsubscribePrompts = null; unsubscribeCollections = null;
             if(window.currentUser) window.startDataSync();
             window.showToast("Cloud Synced");
         }
 
-        // --- UI UTILS & SCROLL ---
-        let toastTimeout;
-        window.showToast = (msg) => {
-            const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show');
-            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
-        }
-        function generateId() { return Math.random().toString(36).substring(2, 15); }
-
         const mainScroll = document.getElementById('main-scroll');
-        window.switchTab = (tabId) => {
+        window.switchTab = async (tabId) => {
+            if (window.editorDirty && document.getElementById('add').classList.contains('active') && tabId !== 'add') {
+                if (!await window.modal.confirm("Discard unsaved changes?", "Unsaved Changes")) return;
+                window.editorDirty = false;
+            }
             if(mainScroll) { mainScroll.style.overflow = 'hidden'; mainScroll.scrollTop = 0; }
             document.querySelectorAll('.screen').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -705,40 +875,82 @@
             if(tabId === 'dashboard') renderDashboard();
             if(tabId === 'library') window.renderLibrary();
             if(tabId === 'collections') window.renderCollections();
+            if(tabId === 'discover') window.loadDiscover();
             if(tabId === 'analytics') window.renderAnalytics();
         }
         window.toggleMobileMenu = () => {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-            document.getElementById('mobile-backdrop').classList.toggle('hidden');
+            document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('mobile-backdrop').classList.toggle('hidden');
         }
 
-        // --- COLLECTIONS LOGIC ---
+        // --- HIERARCHICAL COLLECTIONS ---
+        function buildCollectionTree() {
+            const root = []; const map = {};
+            window.collectionsData.forEach(c => map[c.id] = { ...c, children: [] });
+            window.collectionsData.forEach(c => {
+                if(c.parentId && map[c.parentId]) map[c.parentId].children.push(map[c.id]);
+                else root.push(map[c.id]);
+            });
+            return root;
+        }
+
+        function generateCollectionOptions(nodes, depth = 0) {
+            let html = ''; const indent = '&nbsp;&nbsp;'.repeat(depth * 3);
+            nodes.forEach(n => {
+                html += `<option value="${esc(n.id)}">${indent}${depth > 0 ? '└ ' : ''}${esc(n.icon)} ${esc(n.name)}</option>`;
+                if(n.children.length > 0) html += generateCollectionOptions(n.children, depth + 1);
+            });
+            return html;
+        }
+
         function updateCollectionDropdowns() {
-            const opts = '<option value="">No Collection</option>' + window.collectionsData.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
-            document.getElementById('lib-collection').innerHTML = '<option value="">All Collections</option>' + window.collectionsData.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
-            document.getElementById('prompt-collection').innerHTML = opts;
+            const tree = buildCollectionTree();
+            const opts = generateCollectionOptions(tree);
+            document.getElementById('lib-collection').innerHTML = '<option value="">All Collections</option>' + opts;
+            document.getElementById('prompt-collection').innerHTML = '<option value="">No Collection (Root)</option>' + opts;
         }
 
         window.createCollectionPrompt = async () => {
-            const name = prompt("Collection Name (e.g. Marketing):");
-            if(!name) return;
-            const icon = prompt("Emoji Icon (e.g. 🚀):", "📁") || "📁";
-            const newCol = { name, icon, userId: window.currentUser.uid };
-            await setDoc(doc(db, "collections", generateId()), newCol);
-            window.showToast("Collection created!");
+            const name = await window.modal.prompt("Collection Name:", ""); if(!name) return;
+            const icon = await window.modal.prompt("Emoji Icon:", "📁") || "📁";
+            
+            // Generate parent dropdown manually using prompt modal might be hard, so just create flat, can edit later in full UI. 
+            // For now, flat creation, but data model supports parentId.
+            try {
+                await setDoc(doc(db, "collections", generateId()), { name, icon, parentId: null, userId: window.currentUser.uid });
+                window.showToast("Collection created!");
+            } catch (e) { await window.modal.alert(e.message); }
         }
 
         window.renderCollections = () => {
+            const tree = buildCollectionTree();
             const grid = document.getElementById('collections-grid');
-            grid.innerHTML = window.collectionsData.map(c => {
-                const count = window.prompts.filter(p => p.collectionId === c.id).length;
+            let html = '';
+            
+            const renderNode = (node, depth) => {
+                const count = window.prompts.filter(p => p.collectionId === node.id).length;
+                let childHtml = node.children.map(c => renderNode(c, depth+1)).join('');
                 return `
-                <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card flex flex-col items-center justify-center text-center cursor-pointer" onclick="document.getElementById('lib-collection').value='${c.id}'; window.switchTab('library');">
-                    <div class="text-4xl mb-3">${c.icon}</div>
-                    <h3 class="text-lg font-bold text-white mb-1">${c.name}</h3>
-                    <p class="text-xs text-neutral-500 font-bold uppercase tracking-widest">${count} Prompts</p>
+                <div class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm ${depth > 0 ? 'ml-8 mt-4 border-l-primary/30 border-l-4' : ''}">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('lib-collection').value='${esc(node.id)}'; window.switchTab('library');">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">${esc(node.icon)}</span>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">${esc(node.name)}</h3>
+                                <p class="text-xs text-neutral-500 font-bold uppercase tracking-widest">${count} Prompts</p>
+                            </div>
+                        </div>
+                        <button class="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center text-neutral-400 hover:text-white transition-colors" onclick="event.stopPropagation(); window.addSubCollection('${esc(node.id)}')"><i class="fa-solid fa-plus text-xs"></i></button>
+                    </div>
+                    ${childHtml}
                 </div>`;
-            }).join('');
+            };
+            grid.innerHTML = tree.map(n => renderNode(n, 0)).join('');
+        }
+
+        window.addSubCollection = async (parentId) => {
+            const name = await window.modal.prompt("Sub-Collection Name:", ""); if(!name) return;
+            const icon = await window.modal.prompt("Emoji Icon:", "📂") || "📁";
+            try { await setDoc(doc(db, "collections", generateId()), { name, icon, parentId, userId: window.currentUser.uid }); } catch(e) { await window.modal.alert(e.message); }
         }
 
         // --- DASHBOARD ---
@@ -750,12 +962,45 @@
 
             const grid = document.getElementById('dashboard-recent-grid');
             const recent = [...window.prompts].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
-            grid.innerHTML = recent.map(p => `
-                <div onclick="window.viewPrompt('${p.id}')" class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm flex flex-col gap-3 hover-card cursor-pointer">
-                    <h4 class="font-bold text-white text-lg line-clamp-1">${p.title}</h4>
-                    <p class="text-xs text-neutral-500 font-mono line-clamp-2">${p.content}</p>
-                </div>
-            `).join('');
+            grid.innerHTML = recent.map(p => `<div onclick="window.viewPrompt('${esc(p.id)}')" class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm flex flex-col gap-3 hover-card cursor-pointer"><h4 class="font-bold text-white text-lg line-clamp-1">${esc(p.title)}</h4><p class="text-xs text-neutral-500 font-mono line-clamp-2">${esc(p.content)}</p></div>`).join('');
+        }
+
+        // --- DISCOVER TAB ---
+        window.loadDiscover = async (forceRefresh = false) => {
+            const grid = document.getElementById('discover-grid');
+            const loader = document.getElementById('discover-loader');
+            if(grid.innerHTML !== '' && !forceRefresh) return;
+            
+            grid.innerHTML = ''; loader.classList.remove('hidden');
+            try {
+                const q = query(collection(db, "prompts"), where("isPublic", "==", true), limit(30));
+                const snap = await getDocs(q);
+                let items = []; snap.forEach(doc => items.push({id: doc.id, ...doc.data()}));
+                
+                grid.innerHTML = items.map(p => `
+                    <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card flex flex-col h-full relative overflow-hidden group">
+                        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <h4 class="font-extrabold text-white text-xl line-clamp-1 mb-2 pr-4">${esc(p.title)}</h4>
+                        <p class="text-[13px] text-neutral-400 mb-6 line-clamp-3 flex-1 font-mono leading-relaxed">${esc(p.content)}</p>
+                        <button onclick="window.forkDiscoverPrompt('${esc(p.id)}')" class="w-full py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-xl text-sm font-bold text-white transition-colors"><i class="fa-solid fa-code-branch mr-2"></i> Fork Prompt</button>
+                    </div>
+                `).join('');
+                if(items.length === 0) grid.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-10">No public prompts available yet.</p>`;
+            } catch(e) { console.error(e); window.showToast("Failed to load discover page"); }
+            finally { loader.classList.add('hidden'); }
+        }
+
+        window.forkDiscoverPrompt = async (id) => {
+            if(!window.currentUser) return window.modal.alert("Login required.");
+            try {
+                const docSnap = await getDoc(doc(db, "prompts", id));
+                if(docSnap.exists()) {
+                    const data = docSnap.data();
+                    const newId = generateId();
+                    await setDoc(doc(db, "prompts", newId), { ...data, userId: window.currentUser.uid, isPublic: false, date: new Date().toISOString() });
+                    window.showToast("Prompt Forked to your Library!");
+                }
+            } catch(e) { await window.modal.alert(e.message); }
         }
 
         // --- LIBRARY ---
@@ -766,72 +1011,54 @@
             
             const filtered = window.prompts.filter(p => {
                 const matchQ = p.title.toLowerCase().includes(q) || (p.tags && p.tags.join(' ').toLowerCase().includes(q)) || p.content.toLowerCase().includes(q);
+                // Also match children of the selected collection conceptually, but for simplicity exact match for now
                 const matchCol = colId === '' || p.collectionId === colId;
                 return matchQ && matchCol;
             });
 
             grid.innerHTML = filtered.map(p => {
                 const col = window.collectionsData.find(c => c.id === p.collectionId);
-                const colTag = col ? `<span class="bg-neutral-900 text-neutral-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-neutral-800">${col.icon} ${col.name}</span>` : '';
-                return `
-                <div onclick="window.viewPrompt('${p.id}')" class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card cursor-pointer flex flex-col h-full relative overflow-hidden">
-                    <div class="flex justify-between items-start mb-3">
-                        <h4 class="font-extrabold text-white text-xl line-clamp-1 pr-4">${p.title}</h4>
-                        ${p.isPublic ? `<i class="fa-solid fa-globe text-emerald-500 text-xs"></i>` : ''}
-                    </div>
-                    <p class="text-[13px] text-neutral-400 mb-6 line-clamp-3 flex-1 font-mono leading-relaxed">${p.content}</p>
-                    <div class="mt-auto flex items-center gap-2 flex-wrap">
-                        ${colTag}
-                    </div>
-                </div>
-            `}).join('');
+                const colTag = col ? `<span class="bg-neutral-900 text-neutral-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-neutral-800">${esc(col.icon)} ${esc(col.name)}</span>` : '';
+                return `<div onclick="window.viewPrompt('${esc(p.id)}')" class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card cursor-pointer flex flex-col h-full relative overflow-hidden"><div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div><div class="flex justify-between items-start mb-3"><h4 class="font-extrabold text-white text-xl line-clamp-1 pr-4">${esc(p.title)}</h4>${p.isPublic ? `<i class="fa-solid fa-globe text-emerald-500 text-xs"></i>` : ''}</div><p class="text-[13px] text-neutral-400 mb-6 line-clamp-3 flex-1 font-mono leading-relaxed">${esc(p.content)}</p><div class="mt-auto flex items-center gap-2 flex-wrap">${colTag}</div></div>`;
+            }).join('');
         }
 
         // --- ADD/EDIT ---
         window.prepareAddPrompt = () => {
-            currentEditingId = null;
-            document.getElementById('form-title').innerText = "Create New Prompt";
+            currentEditingId = null; document.getElementById('form-title').innerText = "Create New Prompt";
             document.getElementById('prompt-id').value = ""; document.getElementById('prompt-name').value = "";
             document.getElementById('prompt-collection').value = ""; document.getElementById('prompt-tags').value = "";
-            document.getElementById('prompt-content').value = "";
+            document.getElementById('prompt-content').value = ""; window.editorDirty = false;
             window.parseVariables(); window.switchTab('add');
         }
 
         window.editCurrentPrompt = () => {
             const p = window.prompts.find(x => x.id === currentViewId); if(!p) return;
-            currentEditingId = p.id;
-            document.getElementById('form-title').innerText = "Edit Prompt";
+            currentEditingId = p.id; document.getElementById('form-title').innerText = "Edit Prompt";
             document.getElementById('prompt-id').value = p.id; document.getElementById('prompt-name').value = p.title;
             document.getElementById('prompt-collection').value = p.collectionId || "";
             document.getElementById('prompt-tags').value = (p.tags || []).join(", ");
-            document.getElementById('prompt-content').value = p.content;
+            document.getElementById('prompt-content').value = p.content; window.editorDirty = false;
             window.parseVariables(); window.switchTab('add');
         }
 
         window.savePrompt = async () => {
-            const title = document.getElementById('prompt-name').value.trim();
-            const content = document.getElementById('prompt-content').value.trim();
-            if(!title || !content) return alert("Title and Content required.");
+            const title = document.getElementById('prompt-name').value.trim(); const content = document.getElementById('prompt-content').value.trim();
+            if(!title || !content) return window.modal.alert("Title and Content required.");
 
             const docId = currentEditingId || generateId();
             let existing = window.prompts.find(x => x.id === docId);
-            
             let historyArray = existing ? (existing.history || []) : [];
             let currentVer = existing ? parseFloat(existing.version || 1.0) : 1.0;
-            if(existing && existing.content !== content) {
-                historyArray.push({ version: currentVer.toFixed(1), content: existing.content, date: existing.date });
-                currentVer += 0.1;
-            }
+            if(existing && existing.content !== content) { historyArray.push({ version: currentVer.toFixed(1), content: existing.content, date: existing.date }); currentVer += 0.1; }
 
             const newPrompt = {
-                title, content, version: currentVer.toFixed(1), history: historyArray,
-                collectionId: document.getElementById('prompt-collection').value,
+                title, content, version: currentVer.toFixed(1), history: historyArray, collectionId: document.getElementById('prompt-collection').value,
                 tags: document.getElementById('prompt-tags').value.split(',').map(t => t.trim()).filter(t => t),
                 date: new Date().toISOString(), userId: window.currentUser.uid, isPublic: existing ? existing.isPublic : false
             };
-
-            await setDoc(doc(db, "prompts", docId), newPrompt);
-            window.showToast("Saved Successfully!"); window.switchTab('library');
+            try { await setDoc(doc(db, "prompts", docId), newPrompt); window.editorDirty = false; window.showToast("Saved!"); window.switchTab('library'); } 
+            catch (e) { await window.modal.alert(e.message); }
         }
 
         window.parseVariables = () => {
@@ -839,115 +1066,151 @@
             const matches = [...new Set(Array.from(content.matchAll(/\{\{([^}]+)\}\}/g)).map(m => m[1]))];
             const container = document.getElementById('variables-container');
             if (matches.length === 0) container.innerHTML = `<div class="p-6 text-center border-2 border-dashed border-neutral-800 rounded-2xl"><i class="fa-solid fa-cube text-3xl text-neutral-700 mb-2"></i><p class="text-sm font-medium text-neutral-500">No variables detected.<br>Type <code class="text-primary">{{var}}</code></p></div>`;
-            else container.innerHTML = matches.map(v => `<div class="border border-neutral-800 rounded-xl p-3 bg-neutral-900/50"><code class="text-xs font-bold text-primary mb-2 block">{{${v}}}</code><input type="text" placeholder="Value..." class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-primary text-white"></div>`).join('');
+            else container.innerHTML = matches.map(v => `<div class="border border-neutral-800 rounded-xl p-3 bg-neutral-900/50"><code class="text-xs font-bold text-primary mb-2 block">{{${esc(v)}}}</code><input type="text" placeholder="Value..." class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-primary text-white"></div>`).join('');
+            
+            // Update token cost estimate live
+            const est = Math.ceil(content.length / 4);
+            const estUI = document.getElementById('token-estimate');
+            if(estUI) { estUI.innerText = `~${est} Tokens`; estUI.classList.remove('hidden'); }
         }
 
         // --- DETAIL VIEW ---
         window.viewPrompt = (id) => {
             const p = window.prompts.find(x => x.id === id); if(!p) return;
             currentViewId = id;
-            
-            document.getElementById('view-title').innerText = p.title;
-            document.getElementById('view-date').innerText = new Date(p.date).toLocaleDateString();
-            document.getElementById('view-version').innerText = p.version || '1.0';
-            document.getElementById('view-content').innerText = p.content;
+            document.getElementById('view-title').innerText = p.title; document.getElementById('view-date').innerText = new Date(p.date).toLocaleDateString();
+            document.getElementById('view-version').innerText = p.version || '1.0'; document.getElementById('view-content').innerText = p.content;
             
             const col = window.collectionsData.find(c => c.id === p.collectionId);
-            document.getElementById('view-cat').innerHTML = col ? `<i class="fa-solid fa-folder-open mr-1.5 text-amber-500"></i> ${col.name}` : 'None';
-            document.getElementById('view-tags').innerHTML = (p.tags || []).map(t => `<span class="text-xs font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">#${t}</span>`).join('');
+            document.getElementById('view-cat').innerHTML = col ? `<i class="fa-solid fa-folder-open mr-1.5 text-amber-500"></i> ${esc(col.name)}` : 'None';
+            document.getElementById('view-tags').innerHTML = (p.tags || []).map(t => `<span class="text-xs font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">#${esc(t)}</span>`).join('');
             
-            const pubBadge = document.getElementById('view-public-badge');
-            p.isPublic ? pubBadge.classList.remove('hidden') : pubBadge.classList.add('hidden');
+            const pubBadge = document.getElementById('view-public-badge'); p.isPublic ? pubBadge.classList.remove('hidden') : pubBadge.classList.add('hidden');
 
             const matches = [...new Set(Array.from(p.content.matchAll(/\{\{([^}]+)\}\}/g)).map(m => m[1]))];
             const playVars = document.getElementById('play-variables');
-            if(matches.length === 0) playVars.innerHTML = `<p class="text-xs text-neutral-500 col-span-2">This prompt has no dynamic variables.</p>`;
-            else playVars.innerHTML = matches.map(v => `
-                <div>
-                    <label class="block text-[10px] font-bold text-neutral-400 mb-1 uppercase flex justify-between">${v} <button onclick="window.startVoiceDictation('play_var_${v}', 'btn_mic_${v}')" id="btn_mic_${v}" class="text-neutral-500 hover:text-primary transition-colors"><i class="fa-solid fa-microphone"></i></button></label>
-                    <input type="text" id="play_var_${v}" class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary text-white" placeholder="Type or Speak...">
-                </div>
-            `).join('');
+            if(matches.length === 0) playVars.innerHTML = `<p class="text-xs text-neutral-500 col-span-full">This prompt has no dynamic variables.</p>`;
+            else playVars.innerHTML = matches.map(v => `<div><label class="block text-[10px] font-bold text-neutral-400 mb-1 uppercase flex justify-between">${esc(v)} <button onclick="window.startVoiceDictation('play_var_${esc(v)}', 'btn_mic_${esc(v)}')" id="btn_mic_${esc(v)}" class="text-neutral-500 hover:text-primary transition-colors"><i class="fa-solid fa-microphone"></i></button></label><input type="text" id="play_var_${esc(v)}" class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary text-white" placeholder="Type or Speak..."></div>`).join('');
 
             document.getElementById('play-output').innerHTML = `<div class="h-full flex flex-col items-center justify-center text-neutral-600 mt-10"><i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i><p class="font-medium">Fill in variables and click Run.</p></div>`;
+            window.toggleCompareMode(false); // Reset comparison mode
             window.switchTab('detail');
         }
 
         window.generateShareLink = async () => {
             const p = window.prompts.find(x => x.id === currentViewId);
-            if(!p.isPublic) { await setDoc(doc(db, "prompts", currentViewId), { isPublic: true }, { merge: true }); document.getElementById('view-public-badge').classList.remove('hidden'); }
-            const link = window.location.origin + window.location.pathname + '?share=' + currentViewId;
-            navigator.clipboard.writeText(link).then(() => window.showToast("Public Share Link Copied!"));
+            try {
+                if(!p.isPublic) { await setDoc(doc(db, "prompts", currentViewId), { isPublic: true }, { merge: true }); document.getElementById('view-public-badge').classList.remove('hidden'); }
+                navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?share=' + currentViewId).then(() => window.showToast("Public Link Copied!"));
+            } catch(e) { await window.modal.alert(e.message); }
         }
 
         window.copyToClipboard = (id) => { navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => window.showToast("Copied!")); }
-        window.deleteCurrentPrompt = async () => { if(confirm("Delete forever?")) { await deleteDoc(doc(db, "prompts", currentViewId)); window.switchTab('library'); } }
-
-        // --- OMNI-MODEL API INTEGRATIONS ---
-        window.saveAPIKeys = () => {
-            ['gemini','openai','grok','anthropic'].forEach(k => {
-                const val = document.getElementById('key-'+k).value.trim();
-                if(val) localStorage.setItem('api_key_'+k, val);
-            });
-            window.showToast("All Keys Saved Locally!");
+        
+        window.deleteCurrentPrompt = async () => {
+            if(await window.modal.confirm("Move this prompt to trash?", "Delete Prompt")) {
+                const p = window.prompts.find(x => x.id === currentViewId); if (!p) return;
+                try {
+                    const trashRef = doc(db, "trash", currentViewId); const promptRef = doc(db, "prompts", currentViewId);
+                    await setDoc(trashRef, { ...p, deletedAt: new Date().toISOString() }); await deleteDoc(promptRef);
+                    window.switchTab('library'); window.showToast(`Moved to trash. <button id="undo-btn" class="ml-3 underline font-bold text-white">Undo</button>`, true);
+                    
+                    let undoClicked = false;
+                    document.getElementById('undo-btn').onclick = async () => {
+                        undoClicked = true;
+                        try { await setDoc(promptRef, p); await deleteDoc(trashRef); document.getElementById('toast').classList.remove('show'); window.showToast("Restored from trash!"); } 
+                        catch(e) { await window.modal.alert(e.message); }
+                    };
+                    toastTimeout = setTimeout(() => { if (!undoClicked) document.getElementById('toast').classList.remove('show'); }, 6000);
+                } catch(e) { await window.modal.alert(e.message); }
+            }
         }
 
+        // --- OMNI-MODEL API INTEGRATIONS & COST TRACKING ---
+        const MODEL_PRICING = { openai: { in: 0.005, out: 0.015 }, anthropic: { in: 0.003, out: 0.015 }, gemini: { in: 0.00035, out: 0.00105 }, grok: { in: 0.005, out: 0.015 } };
+        
+        function updateCostCounter(tokensIn, tokensOut, model) {
+            const cost = ((tokensIn / 1000) * MODEL_PRICING[model].in) + ((tokensOut / 1000) * MODEL_PRICING[model].out);
+            let current = parseFloat(localStorage.getItem('monthly_spend') || 0);
+            current += cost;
+            localStorage.setItem('monthly_spend', current);
+            updateMonthlySpendUI();
+            return cost.toFixed(4);
+        }
+        function updateMonthlySpendUI() { document.getElementById('monthly-spend').innerText = parseFloat(localStorage.getItem('monthly_spend') || 0).toFixed(4); }
+
+        window.saveAPIKeys = () => { ['gemini','openai','grok','anthropic'].forEach(k => { const val = document.getElementById('key-'+k).value.trim(); if(val) localStorage.setItem('api_key_'+k, val); }); window.showToast("All Keys Saved!"); }
+
         async function callOmniAPI(promptText, modelProvider) {
-            const keys = {
-                gemini: localStorage.getItem('api_key_gemini'), openai: localStorage.getItem('api_key_openai'),
-                grok: localStorage.getItem('api_key_grok'), anthropic: localStorage.getItem('api_key_anthropic')
-            };
+            const keys = { gemini: localStorage.getItem('api_key_gemini'), openai: localStorage.getItem('api_key_openai'), grok: localStorage.getItem('api_key_grok'), anthropic: localStorage.getItem('api_key_anthropic') };
+            const estInTokens = Math.ceil(promptText.length / 4);
 
             if(modelProvider === 'gemini') {
-                if(!keys.gemini) throw new Error("Gemini API Key missing in Settings.");
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${keys.gemini}`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{parts: [{text: promptText}]}] })
-                });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); return data.candidates[0].content.parts[0].text;
+                if(!keys.gemini) throw new Error("Gemini Key missing.");
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${keys.gemini}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{parts: [{text: promptText}]}] }) });
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
+                const outText = data.candidates[0].content.parts[0].text;
+                const cost = updateCostCounter(estInTokens, Math.ceil(outText.length / 4), 'gemini');
+                return { text: outText, cost };
             }
             else if(modelProvider === 'openai') {
-                if(!keys.openai) throw new Error("OpenAI API Key missing in Settings.");
-                const res = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.openai}`},
-                    body: JSON.stringify({ model: 'gpt-4o', messages: [{role: 'user', content: promptText}] })
-                });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); return data.choices[0].message.content;
+                if(!keys.openai) throw new Error("OpenAI Key missing.");
+                const res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.openai}`}, body: JSON.stringify({ model: 'gpt-4o', messages: [{role: 'user', content: promptText}] }) });
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
+                const cost = updateCostCounter(data.usage.prompt_tokens, data.usage.completion_tokens, 'openai');
+                return { text: data.choices[0].message.content, cost };
             }
             else if(modelProvider === 'grok') {
-                if(!keys.grok) throw new Error("Grok API Key missing in Settings.");
-                const res = await fetch('https://api.x.ai/v1/chat/completions', {
-                    method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.grok}`},
-                    body: JSON.stringify({ model: 'grok-beta', messages: [{role: 'user', content: promptText}] })
-                });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); return data.choices[0].message.content;
+                if(!keys.grok) throw new Error("Grok Key missing.");
+                const res = await fetch('https://api.x.ai/v1/chat/completions', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.grok}`}, body: JSON.stringify({ model: 'grok-beta', messages: [{role: 'user', content: promptText}] }) });
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
+                const cost = updateCostCounter(data.usage.prompt_tokens, data.usage.completion_tokens, 'grok');
+                return { text: data.choices[0].message.content, cost };
             }
             else if(modelProvider === 'anthropic') {
                 if(!keys.anthropic) throw new Error("Anthropic Key missing.");
-                // Anthropic requires specific CORS headers for direct browser fetch
-                const res = await fetch('https://api.anthropic.com/v1/messages', {
-                    method: 'POST', headers: {'Content-Type': 'application/json', 'x-api-key': keys.anthropic, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'},
-                    body: JSON.stringify({ model: 'claude-3-5-sonnet-20241022', max_tokens: 1024, messages: [{role: 'user', content: promptText}] })
-                });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); return data.content[0].text;
+                const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: {'Content-Type': 'application/json', 'x-api-key': keys.anthropic, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'}, body: JSON.stringify({ model: 'claude-3-5-sonnet-20241022', max_tokens: 1024, messages: [{role: 'user', content: promptText}] }) });
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
+                const cost = updateCostCounter(data.usage.input_tokens, data.usage.output_tokens, 'anthropic');
+                return { text: data.content[0].text, cost };
             }
-            throw new Error("Provider not configured properly.");
+            throw new Error("Provider not configured.");
         }
 
         window.magicOptimizePrompt = async () => {
-            const ta = document.getElementById('prompt-content');
-            if(!ta.value.trim()) return alert("Write a basic prompt first!");
+            const ta = document.getElementById('prompt-content'); if(!ta.value.trim()) { await window.modal.alert("Write a basic prompt first!"); return; }
             document.getElementById('magic-loader').style.display = 'flex';
             try {
-                // Default magic optimize uses whatever key is available, pref Gemini
-                let provider = 'gemini';
-                if(!localStorage.getItem('api_key_gemini')) {
-                    if(localStorage.getItem('api_key_openai')) provider = 'openai';
-                    else if(localStorage.getItem('api_key_grok')) provider = 'grok';
-                    else if(localStorage.getItem('api_key_anthropic')) provider = 'anthropic';
-                }
-                const result = await callOmniAPI(`Rewrite this sloppy prompt into an expert-level template. Keep {{variables}}. Return ONLY the prompt text:\n\n${ta.value}`, provider);
-                ta.value = result; window.parseVariables(); window.showToast("✨ Magic Applied via " + provider);
-            } catch(e) { alert(e.message); } finally { document.getElementById('magic-loader').style.display = 'none'; }
+                let p = 'gemini'; if(!localStorage.getItem('api_key_gemini')) { if(localStorage.getItem('api_key_openai')) p = 'openai'; else if(localStorage.getItem('api_key_anthropic')) p = 'anthropic'; }
+                const res = await callOmniAPI(`Rewrite this sloppy prompt into an expert template. Keep {{variables}}. Return ONLY the prompt text:\n\n${ta.value}`, p);
+                ta.value = res.text; window.editorDirty = true; window.parseVariables(); window.showToast(`✨ Magic Applied via ${p} ($${res.cost})`);
+            } catch(e) { await window.modal.alert(e.message); } finally { document.getElementById('magic-loader').style.display = 'none'; }
+        }
+
+        // Comparison mode logic
+        window.toggleCompareMode = (forceState = null) => {
+            const cb = document.getElementById('compare-mode-toggle');
+            if(forceState !== null) cb.checked = forceState;
+            isCompareMode = cb.checked;
+            
+            document.getElementById('omni-model-select').disabled = isCompareMode;
+            document.getElementById('run-btn-text').innerText = isCompareMode ? "Run Comparison" : "Run Model";
+            
+            const tempCol = document.getElementById('template-col');
+            const singleOut = document.getElementById('single-output-container');
+            const compOut = document.getElementById('compare-output-container');
+
+            if(isCompareMode) {
+                tempCol.classList.replace('lg:w-1/3', 'lg:w-0');
+                tempCol.classList.replace('xl:w-1/4', 'xl:w-0');
+                tempCol.style.opacity = '0'; setTimeout(()=>tempCol.style.display='none', 300);
+                singleOut.classList.add('hidden'); compOut.classList.remove('hidden');
+            } else {
+                tempCol.style.display = 'block'; setTimeout(()=>tempCol.style.opacity = '1', 10);
+                tempCol.classList.replace('lg:w-0', 'lg:w-1/3');
+                tempCol.classList.replace('xl:w-0', 'xl:w-1/4');
+                singleOut.classList.remove('hidden'); compOut.classList.add('hidden');
+            }
         }
 
         window.executeAI = async () => {
@@ -955,28 +1218,80 @@
             let finalText = p.content;
             finalText = finalText.replace(/\{\{([^}]+)\}\}/g, (m, vName) => { const el = document.getElementById(`play_var_${vName}`); return el && el.value.trim() ? el.value.trim() : m; });
 
-            const provider = document.getElementById('omni-model-select').value;
-            const outputBox = document.getElementById('play-output');
-            document.getElementById('play-loader').style.display = 'flex';
-
-            try {
-                const result = await callOmniAPI(finalText, provider);
-                outputBox.innerHTML = marked.parse(result);
-                localStorage.setItem('ai_exec_count', parseInt(localStorage.getItem('ai_exec_count')||0) + 1);
-            } catch(e) { outputBox.innerHTML = `<p class="text-red-500 font-bold">Error: ${e.message}</p>`; } 
-            finally { document.getElementById('play-loader').style.display = 'none'; }
+            if(isCompareMode) {
+                document.getElementById('compare-loader').style.display = 'flex';
+                const models = ['gemini', 'openai', 'anthropic'];
+                const results = await Promise.allSettled(models.map(m => callOmniAPI(finalText, m)));
+                
+                models.forEach((m, idx) => {
+                    const out = document.getElementById(`out-${m}`);
+                    const cst = document.getElementById(`cost-${m}`);
+                    if(results[idx].status === 'fulfilled') {
+                        out.innerHTML = DOMPurify.sanitize(marked.parse(results[idx].value.text));
+                        cst.innerText = `$${results[idx].value.cost}`;
+                    } else {
+                        out.innerHTML = `<p class="text-red-500 font-bold">Error: ${esc(results[idx].reason.message)}</p>`;
+                        cst.innerText = '';
+                    }
+                });
+                localStorage.setItem('ai_exec_count', parseInt(localStorage.getItem('ai_exec_count')||0) + 3);
+                document.getElementById('compare-loader').style.display = 'none';
+            } else {
+                const provider = document.getElementById('omni-model-select').value;
+                const outputBox = document.getElementById('play-output');
+                document.getElementById('play-loader').style.display = 'flex';
+                try {
+                    const res = await callOmniAPI(finalText, provider);
+                    outputBox.innerHTML = DOMPurify.sanitize(marked.parse(res.text));
+                    const costUI = document.getElementById('cost-result-single');
+                    costUI.innerText = `$${res.cost}`; costUI.classList.remove('hidden');
+                    localStorage.setItem('ai_exec_count', parseInt(localStorage.getItem('ai_exec_count')||0) + 1);
+                } catch(e) { outputBox.innerHTML = `<p class="text-red-500 font-bold">Error: ${esc(e.message)}</p>`; } 
+                finally { document.getElementById('play-loader').style.display = 'none'; }
+            }
         }
 
-        // --- ANALYTICS & BACKUP ---
+        // --- IMPORT CHATGPT DATA ---
+        window.importChatGPTData = async (e) => {
+            const file = e.target.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if(!Array.isArray(data)) throw new Error("Invalid ChatGPT conversations.json");
+                    
+                    let importedCount = 0;
+                    for(let convo of data) {
+                        if(!convo.mapping) continue;
+                        let firstUserMsg = null;
+                        // find first user message
+                        for(let key in convo.mapping) {
+                            const msg = convo.mapping[key].message;
+                            if(msg && msg.author && msg.author.role === 'user' && msg.content && msg.content.parts) {
+                                firstUserMsg = msg.content.parts.join('\n');
+                                break;
+                            }
+                        }
+                        if(firstUserMsg && firstUserMsg.length > 20) {
+                            const newPrompt = {
+                                title: convo.title || "ChatGPT Import", content: firstUserMsg, version: "1.0", history: [], collectionId: "", tags: ["chatgpt"],
+                                date: new Date(convo.create_time * 1000).toISOString(), userId: window.currentUser.uid, isPublic: false
+                            };
+                            await setDoc(doc(db, "prompts", generateId()), newPrompt);
+                            importedCount++;
+                        }
+                    }
+                    window.showToast(`Imported ${importedCount} prompts from ChatGPT!`);
+                } catch(err) { await window.modal.alert("Error parsing ChatGPT export: " + err.message); }
+            };
+            reader.readAsText(file); e.target.value = '';
+        }
+
         let categoryChartInst = null;
         window.renderAnalytics = () => {
             if (categoryChartInst) categoryChartInst.destroy();
             const cats = {};
-            window.prompts.forEach(p => { 
-                const col = window.collectionsData.find(c => c.id === p.collectionId);
-                const name = col ? col.name : 'Uncategorized';
-                cats[name] = (cats[name] || 0) + 1; 
-            });
+            window.prompts.forEach(p => { const col = window.collectionsData.find(c => c.id === p.collectionId); const name = col ? col.name : 'Uncategorized'; cats[name] = (cats[name] || 0) + 1; });
             const ctx = document.getElementById('categoryChart').getContext('2d');
             Chart.defaults.color = '#737373';
             categoryChartInst = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#6366F1', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6'], borderWidth: 0, hoverOffset: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
