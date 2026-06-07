@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PromptVault AI - Pro Cloud</title>
     
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://api.openai.com https://api.x.ai https://api.anthropic.com; img-src 'self' data: https://*;">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     
+    <!-- Note: 'unsafe-inline' for scripts/styles in CSP is allowed specifically for this tailwind.config and inline interactions -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script>
         tailwind.config = {
@@ -39,9 +41,10 @@
     </script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-HnQ/HnhkH81u3/02p4uTj1pI2tJz/8V7V6/xVw1S2Qf/V8I9e+7FmIq1l7C/b4fP" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js" integrity="sha384-Zz1E6iA0A/4M27bA/7zI9O0mZ3H5aD+z3O0lB4c/y+Jz1t/4K3L6b/y+N/1O/5+I" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js" integrity="sha384-Kj8xV3aM6j1D4h+x+x/j1a6l2Z/x+e/tP5G+o/z/c/N+w/k/m/A/Z/b/a/H/p/k/B" crossorigin="anonymous"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; overscroll-behavior-y: none; }

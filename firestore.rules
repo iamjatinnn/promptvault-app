@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /prompts/{id} {
+      allow read: if resource.data.isPublic == true || (request.auth != null && request.auth.uid == resource.data.userId);
+      allow create: if request.auth != null 
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.title is string
+                    && request.resource.data.content is string
+                    && request.resource.data.title.size() <= 200
+                    && request.resource.data.content.size() <= 50000;
+      allow update: if request.auth != null 
+                    && request.auth.uid == resource.data.userId 
+                    && request.resource.data.userId == resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    match /collections/{id} {
+      allow read, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId && request.resource.data.userId == resource.data.userId;
+    }
+    match /trash/{id} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
