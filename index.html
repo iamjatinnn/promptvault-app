@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+import os
+
+html_content = """<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PromptVault AI - Pro Cloud V13</title>
+    <title>PromptVault AI - Pro Explorer</title>
     
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://api.openai.com https://api.x.ai https://api.anthropic.com; img-src 'self' data: https://*;">
     <link rel="manifest" href="manifest.json">
@@ -19,19 +21,10 @@
                     colors: {
                         primary: '#6366F1', secondary: '#8B5CF6', success: '#10B981', warning: '#F59E0B', error: '#EF4444',
                         darkbg: '#000000', darksurface: '#050505', darksurface2: '#0A0A0A',
-                        openai: '#10A37F', anthropic: '#D97757', gemini: '#1A73E8', grok: '#FFFFFF'
+                        openai: '#10A37F', anthropic: '#D97757', gemini: '#1A73E8', grok: '#FFFFFF',
+                        cat_coding: '#166534', cat_writing: '#1e3a8a', cat_marketing: '#9a3412', cat_design: '#6b21a8'
                     },
-                    typography: (theme) => ({
-                        invert: {
-                            css: {
-                                '--tw-prose-body': theme('colors.neutral[300]'),
-                                '--tw-prose-headings': theme('colors.white'),
-                                '--tw-prose-links': theme('colors.primary'),
-                                '--tw-prose-code': theme('colors.indigo[300]'),
-                                '--tw-prose-pre-bg': theme('colors.neutral[900]'),
-                            }
-                        }
-                    })
+                    typography: (theme) => ({ invert: { css: { '--tw-prose-body': theme('colors.neutral[300]'), '--tw-prose-headings': theme('colors.white'), '--tw-prose-links': theme('colors.primary'), '--tw-prose-code': theme('colors.indigo[300]'), '--tw-prose-pre-bg': theme('colors.neutral[900]') } } })
                 }
             }
         }
@@ -52,6 +45,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #404040; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
         
         .nav-item.active { background-color: rgba(99, 102, 241, 0.15); color: #6366F1; font-weight: 500; border-right: 3px solid #6366F1; }
         .hover-card { transition: all 0.3s ease; }
@@ -60,40 +54,23 @@
         .magic-btn { background: linear-gradient(45deg, #6366F1, #8B5CF6, #EC4899, #6366F1); background-size: 300% 300%; animation: gradientMove 3s ease infinite; }
         @keyframes gradientMove { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
 
-        #toast {
-            visibility: hidden; min-width: 250px; background-color: #10B981; color: #fff; text-align: center;
-            border-radius: 12px; padding: 14px; position: fixed; z-index: 999999; left: 50%; bottom: 30px;
-            transform: translateX(-50%) scale(0.9); font-size: 14px; box-shadow: 0px 10px 25px rgba(0,0,0,0.5);
-            opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        #toast { visibility: hidden; min-width: 250px; background-color: #10B981; color: #fff; text-align: center; border-radius: 12px; padding: 14px; position: fixed; z-index: 999999; left: 50%; bottom: 30px; transform: translateX(-50%) scale(0.9); font-size: 14px; box-shadow: 0px 10px 25px rgba(0,0,0,0.5); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; transform: translateX(-50%) scale(1); }
 
-        #login-overlay { position: fixed; inset: 0; background: #000000; z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s ease; }
+        #login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        #login-overlay.active { display: flex; }
+        
         #share-overlay { position: fixed; inset: 0; background: #000000; z-index: 100000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #ptr-indicator { transition: height 0.2s cubic-bezier(0.1, 0.7, 0.1, 1); }
         .voice-pulse { animation: voicePulse 1.5s infinite; }
         @keyframes voicePulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        
-        .cat-coding { background-color: #14532d; color: #4ade80; border: 1px solid #166534; }
-        .cat-writing { background-color: #1e3a8a; color: #60a5fa; border: 1px solid #1e40af; }
-        .cat-marketing { background-color: #7c2d12; color: #f97316; border: 1px solid #9a3412; }
-        .cat-design { background-color: #4c1d95; color: #c084fc; border: 1px solid #5b21b6; }
-        .cat-business { background-color: #78350f; color: #fbbf24; border: 1px solid #92400e; }
-        .cat-education { background-color: #164e63; color: #22d3ee; border: 1px solid #155e75; }
-        .cat-productivity { background-color: #881337; color: #fb7185; border: 1px solid #9f1239; }
-        .cat-creative { background-color: #831843; color: #f472b6; border: 1px solid #9d174d; }
-        .cat-research { background-color: #312e81; color: #818cf8; border: 1px solid #3730a3; }
-        .cat-other { background-color: #1e293b; color: #94a3b8; border: 1px solid #334155; }
-        .filter-pill { cursor: pointer; padding: 6px 16px; border-radius: 999px; font-size: 11px; font-weight: bold; white-space: nowrap; transition: all 0.2s; border: 1px solid #262626; color: #94a3b8; background-color: #0A0A0A; }
-        .filter-pill:hover { background-color: #171717; color: white; }
-        .filter-pill.active { background-color: #6366F1; color: white; border-color: #6366F1; }
-        /* Command Palette */
         #cmd-palette { display: none; }
         #cmd-palette.active { display: flex; }
-        
-        /* Grid transition for multi-model */
         .model-col { transition: all 0.3s ease; }
+        
+        .cat-pill.active { background-color: #6366F1; color: white; border-color: #6366F1; }
+        .tab-btn.active { border-bottom: 2px solid #6366F1; color: white; font-weight: bold; }
     </style>
 </head>
 <body class="bg-darkbg text-slate-200 overflow-hidden flex h-screen antialiased selection:bg-primary/30 selection:text-primary relative">
@@ -108,9 +85,7 @@
                 <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none text-white text-lg focus:outline-none placeholder-neutral-600" placeholder="Search prompts, or type '>' for actions...">
                 <div class="bg-neutral-800 text-[10px] text-neutral-400 px-2 py-1 rounded font-mono">ESC</div>
             </div>
-            <div id="cmd-results" class="max-h-96 overflow-y-auto p-2">
-                <!-- Results injected here -->
-            </div>
+            <div id="cmd-results" class="max-h-96 overflow-y-auto p-2"></div>
         </div>
     </div>
 
@@ -121,21 +96,262 @@
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-lg">
                     <i class="fa-solid fa-share-nodes text-xl"></i>
                 </div>
-                
-                <div class="mb-10">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-white"><i class="fa-solid fa-fire text-red-500 mr-2"></i> Trending This Week</h3>
-                        <button onclick="window.switchTab('explore')" class="text-primary text-sm font-bold hover:text-indigo-400 flex items-center gap-1 transition-colors">Explore Marketplace <i class="fa-solid fa-arrow-right text-xs"></i></button>
+                <div>
+                    <p class="text-xs font-bold text-primary uppercase tracking-widest mb-1">Shared Prompt Template</p>
+                    <h2 id="share-title" class="text-2xl font-extrabold text-white">Loading...</h2>
+                </div>
+            </div>
+            <div class="bg-[#0A0A0A] border border-neutral-800 rounded-2xl p-5 overflow-y-auto mb-6 flex-1">
+                <pre id="share-content" class="font-mono text-sm text-neutral-300 whitespace-pre-wrap leading-relaxed select-all"></pre>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="window.copySharedPrompt()" class="flex-1 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-bold transition-colors"><i class="fa-regular fa-copy mr-2"></i> Copy Prompt</button>
+                <button onclick="window.saveSharedPrompt()" class="flex-1 py-3 bg-primary hover:bg-indigo-600 text-white rounded-xl font-bold transition-colors shadow-lg"><i class="fa-solid fa-cloud-arrow-down mr-2"></i> Save to Library</button>
+            </div>
+            <button onclick="window.closeShareOverlay()" class="mt-4 text-xs text-neutral-500 hover:text-white font-medium">Continue to App</button>
+        </div>
+    </div>
+
+    <!-- LOGIN MODAL -->
+    <div id="login-overlay">
+        <div class="w-full max-w-sm bg-darksurface2 border border-neutral-800 rounded-3xl p-8 shadow-2xl flex flex-col items-center relative">
+            <button onclick="document.getElementById('login-overlay').classList.remove('active')" class="absolute top-4 right-4 text-neutral-500 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white mb-4 shadow-[0_0_30px_rgba(99,102,241,0.5)]">
+                <i class="fa-solid fa-bolt text-3xl"></i>
+            </div>
+            <h1 class="text-2xl font-extrabold text-white mb-2 tracking-tight">Sign in to PromptVault</h1>
+            <p class="text-neutral-400 mb-8 text-center text-sm">Save, fork, and manage your AI workflows in the cloud.</p>
+            
+            <button onclick="window.signInWithGoogle()" class="w-full px-6 py-3 bg-white text-black hover:bg-neutral-200 rounded-xl font-bold flex items-center justify-center gap-3 transition-transform hover:scale-[1.02] shadow-lg">
+                <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Continue with Google
+            </button>
+            <div id="login-loader" class="mt-4 hidden"><i class="fa-solid fa-circle-notch fa-spin text-primary text-xl"></i></div>
+        </div>
+    </div>
+
+    <div id="mobile-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden md:hidden" onclick="window.toggleMobileMenu()"></div>
+
+    <!-- LEFT SIDEBAR -->
+    <aside id="sidebar" class="fixed md:relative w-64 h-full bg-darksurface2 border-r border-neutral-900 flex flex-col justify-between z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 shadow-2xl md:shadow-none">
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <div class="h-16 flex items-center justify-between px-6 border-b border-neutral-900 shrink-0">
+                <div class="flex items-center cursor-pointer" onclick="window.switchTab('explore')">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white mr-3 shadow-lg shadow-primary/30">
+                        <i class="fa-solid fa-bolt"></i>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="dashboard-trending-grid"></div>
+                    <span class="text-xl font-bold tracking-tight text-white">PromptVault</span>
+                </div>
+                <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1.5">
+                <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3">Community</p>
+                <a onclick="window.switchTab('explore')" class="nav-item active flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-compass w-6 text-center text-primary"></i><span class="ml-2 text-sm font-bold text-white">Explore</span>
+                </a>
+                <a onclick="window.switchTab('feed')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-rss w-6 text-center"></i><span class="ml-2 text-sm font-medium">Feed</span>
+                </a>
+
+                <div id="auth-nav-sections" class="hidden">
+                    <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 mt-8">My Library</p>
+                    <a onclick="window.switchTab('dashboard')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-house w-6 text-center"></i><span class="ml-2 text-sm font-medium">Dashboard</span>
+                    </a>
+                    <a onclick="window.switchTab('library')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-book-open w-6 text-center"></i><span class="ml-2 text-sm font-medium">Prompts</span>
+                    </a>
+                    <a onclick="window.switchTab('collections')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-folder-open w-6 text-center text-amber-400"></i><span class="ml-2 text-sm font-medium">Collections</span>
+                    </a>
+                    
+                    <p class="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 mt-8">Tools & System</p>
+                    <a onclick="window.switchTab('analytics')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-chart-pie w-6 text-center"></i><span class="ml-2 text-sm font-medium">Analytics</span>
+                    </a>
+                    <a onclick="window.switchTab('settings')" class="nav-item flex items-center px-3 py-2.5 rounded-xl text-neutral-400 hover:bg-neutral-900 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-sliders w-6 text-center"></i><span class="ml-2 text-sm font-medium">Settings & API</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="px-4 py-2 border-t border-neutral-900">
+                <button onclick="window.openCmdPalette()" class="w-full bg-neutral-900 hover:bg-neutral-800 text-neutral-400 text-xs font-medium py-2 rounded-lg border border-neutral-800 flex items-center justify-between px-3 transition-colors">
+                    <span>Search</span>
+                    <span class="font-mono bg-neutral-800 border border-neutral-700 px-1 rounded">⌘K</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-4 border-t border-neutral-900 shrink-0">
+            <!-- Logged IN Profile -->
+            <div id="sidebar-profile" class="hidden flex items-center p-3 rounded-xl bg-neutral-900/40 border border-neutral-800/50 hover:bg-neutral-800/50 transition-colors cursor-pointer" onclick="window.viewProfile('me')">
+                <img id="user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-neutral-700">
+                <div class="ml-3 overflow-hidden flex-1">
+                    <p id="user-name" class="text-sm font-bold text-white truncate">User</p>
+                    <button onclick="event.stopPropagation(); window.signOutUser()" class="text-xs text-red-400 hover:text-red-300 font-medium flex items-center gap-1 mt-0.5"><i class="fa-solid fa-arrow-right-from-bracket text-[10px]"></i> Sign Out</button>
+                </div>
+            </div>
+            <!-- Logged OUT Button -->
+            <div id="sidebar-login" class="flex flex-col gap-2">
+                <p class="text-xs text-neutral-500 text-center font-medium mb-1">Sign in to save prompts</p>
+                <button onclick="document.getElementById('login-overlay').classList.add('active')" class="w-full py-2.5 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-bold transition-colors shadow-lg">Sign In</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col relative w-full overflow-hidden bg-darkbg">
+        
+        <header class="h-16 glass flex items-center justify-between px-4 md:px-8 z-30 sticky top-0 shrink-0">
+            <div class="flex items-center flex-1 gap-4">
+                <button class="md:hidden text-neutral-400 hover:text-white" onclick="window.toggleMobileMenu()"><i class="fa-solid fa-bars text-xl"></i></button>
+                <div class="relative max-w-md w-full hidden sm:block">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-500"></i>
+                    <input type="text" onclick="window.openCmdPalette()" readonly placeholder="Search community prompts (⌘K)..." class="w-full bg-neutral-900/80 border border-neutral-800 rounded-full py-2 pl-11 pr-4 text-sm text-white placeholder-neutral-500 transition-all cursor-pointer hover:border-primary/50">
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div id="cost-counter" class="hidden lg:flex items-center gap-2 text-xs font-medium text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20" title="Estimated monthly API spend">
+                    <i class="fa-solid fa-coins"></i> $<span id="monthly-spend">0.00</span>
+                </div>
+                <div id="sync-status" class="hidden md:flex items-center gap-2 text-[11px] font-medium text-neutral-400 bg-neutral-900/80 px-3 py-1.5 rounded-full border border-neutral-800 cursor-pointer" onclick="window.manualRefresh()" title="Click to manually sync">
+                    <div id="sync-indicator" class="w-2 h-2 rounded-full bg-success animate-pulse shadow-[0_0_8px_#10B981]"></div> Cloud Sync Active
+                </div>
+                
+                <button onclick="window.prepareAddPrompt()" class="hidden md:flex bg-primary hover:bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-[0_4px_14px_rgba(99,102,241,0.3)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.4)] hover:-translate-y-0.5 items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> New Prompt
+                </button>
+                <button onclick="window.prepareAddPrompt()" class="md:hidden w-10 h-10 flex items-center justify-center bg-primary text-white rounded-full shadow-[0_4px_14px_rgba(99,102,241,0.3)]">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="ptr-indicator" class="w-full flex justify-center items-center h-0 overflow-hidden bg-darkbg z-20">
+            <div class="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] border border-neutral-800 text-neutral-400">
+                <i id="ptr-icon" class="fa-solid fa-arrow-down text-lg"></i>
+            </div>
+        </div>
+
+        <main id="main-scroll" class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+            
+            <!-- 0. EXPLORE PAGE (Default) -->
+            <div id="explore" class="screen active max-w-7xl mx-auto">
+                <div class="mb-6">
+                    <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">Explore Prompts</h1>
+                    <p class="text-neutral-400 text-sm">Discover, fork, and learn from top community workflows.</p>
+                </div>
+                
+                <div class="sticky top-0 z-10 bg-darkbg pt-2 pb-4 border-b border-neutral-900 mb-6">
+                    <!-- Categories -->
+                    <div id="explore-cats" class="flex gap-2 overflow-x-auto hide-scrollbar mb-4 pb-1">
+                        <button onclick="window.setExploreCat('')" class="cat-pill active px-4 py-1.5 rounded-full border border-neutral-700 text-neutral-300 text-sm font-bold whitespace-nowrap transition-colors">All</button>
+                        <button onclick="window.setExploreCat('Coding')" class="cat-pill px-4 py-1.5 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300 text-sm font-bold whitespace-nowrap transition-colors">Coding</button>
+                        <button onclick="window.setExploreCat('Writing')" class="cat-pill px-4 py-1.5 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300 text-sm font-bold whitespace-nowrap transition-colors">Writing</button>
+                        <button onclick="window.setExploreCat('Marketing')" class="cat-pill px-4 py-1.5 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300 text-sm font-bold whitespace-nowrap transition-colors">Marketing</button>
+                        <button onclick="window.setExploreCat('Design')" class="cat-pill px-4 py-1.5 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300 text-sm font-bold whitespace-nowrap transition-colors">Design</button>
+                        <button onclick="window.setExploreCat('Business')" class="cat-pill px-4 py-1.5 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300 text-sm font-bold whitespace-nowrap transition-colors">Business</button>
+                        <button onclick="window.setExploreCat('Education')" class="cat-pill px-4 py-1.5 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300 text-sm font-bold whitespace-nowrap transition-colors">Education</button>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-500"></i>
+                            <input type="text" id="explore-search" onkeyup="window.renderExplore()" placeholder="Search community..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white transition-all">
+                        </div>
+                        <select id="explore-model" onchange="window.renderExplore()" class="bg-neutral-900 border border-neutral-800 rounded-xl py-2.5 px-4 text-sm font-bold focus:outline-none focus:ring-1 focus:ring-primary/50 text-white cursor-pointer appearance-none min-w-[150px]">
+                            <option value="">All Models</option>
+                            <option value="ChatGPT">ChatGPT</option>
+                            <option value="Claude">Claude</option>
+                            <option value="Gemini">Gemini</option>
+                            <option value="Grok">Grok</option>
+                            <option value="Any">Any</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="explore-loader" class="flex flex-col items-center justify-center py-20">
+                    <div class="w-10 h-10 border-4 border-neutral-800 border-t-primary rounded-full animate-spin mb-4"></div>
+                    <p class="text-neutral-500 font-bold animate-pulse">Loading community prompts...</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="explore-grid"></div>
+            </div>
+
+            <!-- 0.5. FEED PAGE -->
+            <div id="feed" class="screen max-w-5xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-extrabold text-white tracking-tight">Feed</h1>
+                </div>
+                
+                <div class="flex gap-6 border-b border-neutral-800 mb-6">
+                    <button onclick="window.setFeedTab('latest')" id="tab-latest" class="tab-btn active pb-3 text-sm font-medium text-neutral-400 hover:text-white transition-colors">Latest</button>
+                    <button onclick="window.setFeedTab('trending')" id="tab-trending" class="tab-btn pb-3 text-sm font-medium text-neutral-400 hover:text-white transition-colors">Trending</button>
+                </div>
+
+                <div class="flex flex-col gap-6" id="feed-grid"></div>
+            </div>
+
+            <!-- 0.8. USER PROFILE -->
+            <div id="profile" class="screen max-w-5xl mx-auto">
+                <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm mb-8 flex items-center gap-6 relative overflow-hidden">
+                    <div class="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-primary via-purple-500 to-emerald-500 opacity-50"></div>
+                    <img id="prof-avatar" src="" class="w-24 h-24 rounded-full border-4 border-neutral-900 shadow-xl object-cover bg-neutral-800">
+                    <div class="flex-1">
+                        <h2 id="prof-name" class="text-3xl font-extrabold text-white mb-1">Loading...</h2>
+                        <p class="text-sm text-neutral-400 mb-3" id="prof-email"></p>
+                        <div class="flex gap-4 text-sm font-bold">
+                            <span class="text-white"><span class="text-primary" id="prof-stat-prompts">0</span> Prompts</span>
+                            <span class="text-white"><span class="text-red-500" id="prof-stat-likes">0</span> Likes Received</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-6 border-b border-neutral-800 mb-6">
+                    <button onclick="window.setProfTab('prompts')" id="ptab-prompts" class="tab-btn active pb-3 text-sm font-medium text-neutral-400 hover:text-white transition-colors">Public Prompts</button>
+                    <button onclick="window.setProfTab('liked')" id="ptab-liked" class="tab-btn pb-3 text-sm font-medium text-neutral-400 hover:text-white transition-colors">Liked</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="profile-grid"></div>
+            </div>
+
+            <!-- 1. DASHBOARD -->
+            <div id="dashboard" class="screen max-w-7xl mx-auto">
+                <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-extrabold text-white mb-1 tracking-tight">Welcome Back <i class="fa-solid fa-sparkles text-amber-400 ml-1"></i></h1>
+                        <p class="text-neutral-400 text-sm">Supercharge your workflows with Omni-Models, Voice, and Live Execution.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card cursor-pointer" onclick="window.switchTab('library')">
+                        <div class="flex justify-between items-start mb-4"><div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-lg"><i class="fa-solid fa-layer-group"></i></div></div>
+                        <p class="text-sm font-medium text-neutral-400 mb-1">Total Prompts</p>
+                        <h3 class="text-3xl font-extrabold text-white" id="stat-total">0</h3>
+                    </div>
+                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card cursor-pointer" onclick="window.switchTab('collections')">
+                        <div class="flex justify-between items-start mb-4"><div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 text-lg"><i class="fa-solid fa-folder-open"></i></div></div>
+                        <p class="text-sm font-medium text-neutral-400 mb-1">Collections</p>
+                        <h3 class="text-3xl font-extrabold text-white" id="stat-collections">0</h3>
+                    </div>
+                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card cursor-pointer" onclick="window.switchTab('explore')">
+                        <div class="flex justify-between items-start mb-4"><div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-lg"><i class="fa-solid fa-share-nodes"></i></div></div>
+                        <p class="text-sm font-medium text-neutral-400 mb-1">Shared Publicly</p>
+                        <h3 class="text-3xl font-extrabold text-white" id="stat-shared">0</h3>
+                    </div>
+                    <div class="bg-darksurface p-6 rounded-2xl border border-neutral-800 shadow-sm relative overflow-hidden group hover-card">
+                        <div class="flex justify-between items-start mb-4"><div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 text-lg"><i class="fa-solid fa-bolt"></i></div></div>
+                        <p class="text-sm font-medium text-neutral-400 mb-1">AI Executions</p>
+                        <h3 class="text-3xl font-extrabold text-white" id="stat-executions">0</h3>
+                    </div>
                 </div>
 
                 <div>
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-xl font-bold text-white">Recently Edited</h3>
-                        <button onclick="window.switchTab('library')" class="text-primary text-sm font-bold hover:text-indigo-400 flex items-center gap-1 transition-colors">View Library <i class="fa-solid fa-arrow-right text-xs"></i></button>
-                    </div>
-
                         <button onclick="window.switchTab('library')" class="text-primary text-sm font-bold hover:text-indigo-400 flex items-center gap-1 transition-colors">View Library <i class="fa-solid fa-arrow-right text-xs"></i></button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="dashboard-recent-grid"></div>
@@ -145,7 +361,7 @@
             <!-- 2. LIBRARY -->
             <div id="library" class="screen max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <h1 class="text-3xl font-extrabold text-white tracking-tight">Prompt Library</h1>
+                    <h1 class="text-3xl font-extrabold text-white tracking-tight">My Prompt Library</h1>
                     <button onclick="window.prepareAddPrompt()" class="px-5 py-2.5 bg-primary hover:bg-indigo-600 text-white rounded-full text-sm font-bold transition-all shadow-[0_4px_14px_rgba(99,102,241,0.3)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.4)] flex items-center gap-2">
                         <i class="fa-solid fa-plus"></i> Create Prompt
                     </button>
@@ -166,7 +382,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="library-grid"></div>
             </div>
 
-            <!-- 2.5. COLLECTIONS (Nested Support) -->
+            <!-- 2.5. COLLECTIONS -->
             <div id="collections" class="screen max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <h1 class="text-3xl font-extrabold text-white tracking-tight">Your Collections</h1>
@@ -177,49 +393,6 @@
                 <div class="space-y-6" id="collections-grid"></div>
             </div>
 
-            
-            <!-- 2.8. EXPLORE TAB -->
-            <div id="explore" class="screen max-w-7xl mx-auto pb-10">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h1 class="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">Explore <span class="bg-primary/20 text-primary text-xs px-2 py-1 rounded-full border border-primary/30 uppercase tracking-widest">Marketplace</span></h1>
-                        <p class="text-neutral-400 mt-2">Discover, like, and fork prompts from the community.</p>
-                    </div>
-                    <button onclick="window.loadExplore(true)" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
-                        <i class="fa-solid fa-rotate-right"></i> Refresh
-                    </button>
-                </div>
-                
-                <div class="bg-darksurface p-5 rounded-3xl border border-neutral-800 shadow-sm mb-8 flex flex-col gap-5">
-                    <div class="flex gap-4">
-                        <div class="relative flex-1">
-                            <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-500"></i>
-                            <input type="text" id="explore-search" onkeyup="window.renderExplore()" placeholder="Search titles, descriptions, tags..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white transition-all">
-                        </div>
-                        <select id="explore-sort" onchange="window.renderExplore()" class="bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary/50 text-white cursor-pointer appearance-none">
-                            <option value="likes">Most Liked</option>
-                            <option value="forks">Most Forked</option>
-                            <option value="newest">Newest</option>
-                        </select>
-                    </div>
-                    <div class="flex gap-2 overflow-x-auto pb-2 hide-scrollbar items-center">
-                        <span class="text-[10px] font-bold text-neutral-500 mr-2 uppercase tracking-widest shrink-0">Category</span>
-                        <div id="filter-cats" class="flex gap-2 shrink-0"></div>
-                    </div>
-                    <div class="flex gap-2 overflow-x-auto pb-2 hide-scrollbar items-center border-t border-neutral-900 pt-4">
-                        <span class="text-[10px] font-bold text-neutral-500 mr-2 uppercase tracking-widest shrink-0">AI Model</span>
-                        <div id="filter-mods" class="flex gap-2 shrink-0"></div>
-                    </div>
-                </div>
-
-                <div id="explore-loader" class="flex flex-col items-center justify-center py-20 hidden">
-                    <i class="fa-solid fa-circle-notch fa-spin text-primary text-4xl mb-4"></i>
-                    <p class="text-neutral-500 font-bold">Loading community prompts...</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="explore-grid"></div>
-            </div>
-
             <!-- 3. ADD/EDIT -->
             <div id="add" class="screen max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col">
                 <div class="flex justify-between items-center mb-6 shrink-0">
@@ -228,6 +401,10 @@
                         <h1 class="text-2xl font-extrabold text-white tracking-tight" id="form-title">Create New Prompt</h1>
                     </div>
                     <div class="flex gap-3">
+                        <div class="flex items-center gap-2 bg-neutral-900 px-3 py-1.5 rounded-full border border-neutral-800">
+                            <input type="checkbox" id="prompt-public" class="cursor-pointer w-4 h-4 rounded bg-neutral-800 border-neutral-700 text-primary focus:ring-primary">
+                            <label for="prompt-public" class="text-xs font-bold text-neutral-400 cursor-pointer">Public</label>
+                        </div>
                         <button onclick="window.magicOptimizePrompt()" class="magic-btn px-5 py-2.5 text-white rounded-full text-sm font-bold transition-all shadow-lg flex items-center gap-2" title="Requires API Key in Settings">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> <span class="hidden sm:inline">AI Optimize</span>
                         </button>
@@ -243,34 +420,32 @@
                         
                         <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm shrink-0">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                
-                                <div class="md:col-span-3">
-                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Prompt Name</label>
-                                    <input type="text" id="prompt-name" oninput="window.editorDirty=true" placeholder="e.g. SEO Blog Generator" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium">
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Prompt Title</label>
+                                    <input type="text" id="prompt-name" oninput="window.editorDirty=true" placeholder="e.g. SEO Blog Generator" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-bold text-lg">
                                 </div>
-                                <div class="md:col-span-3">
-                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Short Description</label>
-                                    <input type="text" id="prompt-desc" oninput="window.editorDirty=true" placeholder="A brief 1-2 sentence description of what this prompt does..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium">
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Short Description (For Community)</label>
+                                    <input type="text" id="prompt-desc" oninput="window.editorDirty=true" placeholder="1-2 sentences explaining what this does..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium text-sm italic">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Category</label>
-                                    <select id="prompt-category" onchange="window.editorDirty=true" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium cursor-pointer appearance-none"></select>
+                                    <select id="prompt-cat" onchange="window.editorDirty=true" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium cursor-pointer">
+                                        <option value="Other">Other</option><option value="Coding">Coding</option><option value="Writing">Writing</option><option value="Marketing">Marketing</option><option value="Design">Design</option><option value="Business">Business</option><option value="Education">Education</option><option value="Productivity">Productivity</option><option value="Creative">Creative</option><option value="Research">Research</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Target Model</label>
-                                    <select id="prompt-target-model" onchange="window.editorDirty=true" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium cursor-pointer appearance-none"></select>
+                                    <select id="prompt-target-model" onchange="window.editorDirty=true" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium cursor-pointer">
+                                        <option value="Any">Any Model</option><option value="ChatGPT">ChatGPT</option><option value="Claude">Claude</option><option value="Gemini">Gemini</option><option value="Grok">Grok</option><option value="Llama">Llama</option><option value="Mistral">Mistral</option>
+                                    </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Collection</label>
-                                    <select id="prompt-collection" onchange="window.editorDirty=true" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium cursor-pointer appearance-none">
+                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Personal Collection (Optional)</label>
+                                    <select id="prompt-collection" onchange="window.editorDirty=true" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white font-medium cursor-pointer">
                                         <option value="">No Collection</option>
                                     </select>
                                 </div>
-                                <div class="md:col-span-3">
-                                    <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Tags (Comma separated)</label>
-                                    <input type="text" id="prompt-tags" oninput="window.editorDirty=true" placeholder="seo, code..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white text-sm font-medium">
-                                </div>
-                            </div>
                                 <div>
                                     <label class="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-widest">Tags (Comma separated)</label>
                                     <input type="text" id="prompt-tags" oninput="window.editorDirty=true" placeholder="seo, code..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-white text-sm font-medium">
@@ -302,67 +477,63 @@
                 </div>
             </div>
 
-            <!-- 4. DETAIL & LIVE PLAYGROUND (Multi-Model) -->
+            <!-- 4. DETAIL & LIVE PLAYGROUND -->
             <div id="detail" class="screen max-w-full mx-auto pb-10">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 px-4 lg:px-0 max-w-7xl mx-auto">
                     <div class="flex items-center gap-3">
-                        <button onclick="window.switchTab('library')" class="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center text-neutral-400 hover:bg-neutral-800 hover:text-white transition-colors"><i class="fa-solid fa-arrow-left"></i></button>
+                        <button onclick="window.switchTab(window.currentUser ? 'library' : 'explore')" class="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center text-neutral-400 hover:bg-neutral-800 hover:text-white transition-colors"><i class="fa-solid fa-arrow-left"></i></button>
                         <div>
                             <h1 class="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3" id="view-title">Title</h1>
                             <div class="flex items-center gap-3 mt-1.5 text-xs font-medium">
+                                <img id="view-author-avatar" src="" class="w-5 h-5 rounded-full border border-neutral-700 hidden">
+                                <span id="view-author-name" class="text-neutral-300 font-bold hover:text-primary cursor-pointer hidden"></span>
+                                <span class="text-neutral-600">•</span>
                                 <span class="bg-primary/20 text-primary px-2 py-0.5 rounded border border-primary/30">v<span id="view-version">1.0</span></span>
-                                <span class="text-neutral-500">Updated <span id="view-date"></span></span>
+                                <span class="text-neutral-500" id="view-date"></span>
                                 <span id="view-public-badge" class="hidden bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30"><i class="fa-solid fa-globe mr-1"></i> Public</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex gap-2 flex-wrap">
-                        <button onclick="window.generateShareLink()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-lg"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                    <div class="flex gap-2 flex-wrap" id="view-actions">
+                        <button onclick="window.generateShareLink()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2"><i class="fa-solid fa-share-nodes"></i> Share</button>
                         <select id="version-selector" onchange="window.loadHistoricalVersion(this.value)" class="bg-neutral-900 border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary hidden sm:block">
                             <option value="current">Current Version</option>
                         </select>
-                        <button onclick="window.editCurrentPrompt()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2"><i class="fa-solid fa-pen"></i> Edit</button>
-                        <button onclick="window.deleteCurrentPrompt()" class="w-9 h-9 flex items-center justify-center rounded-lg border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-colors"><i class="fa-regular fa-trash-can"></i></button>
+                        <button id="btn-edit" onclick="window.editCurrentPrompt()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2 hidden"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button id="btn-delete" onclick="window.deleteCurrentPrompt()" class="w-9 h-9 flex items-center justify-center rounded-lg border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-colors hidden"><i class="fa-regular fa-trash-can"></i></button>
+                        <button id="btn-fork" onclick="window.forkPrompt(window.currentViewId)" class="px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-lg hidden"><i class="fa-solid fa-code-branch"></i> Fork</button>
                     </div>
                 </div>
 
                 <div class="flex flex-col lg:flex-row gap-8 w-full">
-                    <!-- Prompt Template -->
                     <div id="template-col" class="lg:w-1/3 xl:w-1/4 space-y-6 flex-shrink-0 transition-all duration-300">
                         <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm h-full flex flex-col">
                             
-                            <h3 class="text-sm font-bold text-neutral-500 uppercase tracking-widest mb-4">Metadata</h3>
-                            <div class="flex items-center gap-4 mb-4 pb-4 border-b border-neutral-800">
-                                <img id="view-author-avatar" src="" class="w-10 h-10 rounded-full border border-neutral-700">
-                                <div>
-                                    <p id="view-author-name" class="text-sm font-bold text-white"></p>
-                                    <p class="text-[10px] text-neutral-500 uppercase tracking-widest">Author</p>
-                                </div>
-                            </div>
-                            <p id="view-desc" class="text-sm text-neutral-300 italic mb-6 leading-relaxed"></p>
-                            
-                            <div class="flex flex-wrap items-center gap-2 mb-6">
-                                <span id="view-cat"></span>
-                                <span id="view-model"></span>
-                                <span id="view-tags" class="flex gap-2 flex-wrap"></span>
-                            </div>
-                            
-                            <div class="flex gap-4 mb-6">
-                                <button onclick="window.toggleLike(event, currentViewId)" class="flex-1 py-2 bg-neutral-900 hover:bg-neutral-800 rounded-xl border border-neutral-800 transition-colors flex items-center justify-center gap-2 text-white font-bold"><span id="view-likes"></span></button>
-                                <button onclick="window.forkPrompt(event, currentViewId)" class="flex-1 py-2 bg-neutral-900 hover:bg-neutral-800 rounded-xl border border-neutral-800 transition-colors flex items-center justify-center gap-2 text-white font-bold"><span id="view-forks"></span></button>
-                            </div>
+                            <p id="view-desc" class="text-sm text-neutral-400 italic mb-6 hidden"></p>
 
+                            <div class="flex flex-wrap items-center gap-2 mb-6 border-b border-neutral-900 pb-6">
+                                <span id="view-cat" class="px-3 py-1.5 rounded-lg text-xs font-bold border"></span>
+                                <span id="view-model" class="bg-neutral-900 text-neutral-300 px-3 py-1.5 rounded-lg text-xs font-bold border border-neutral-800"></span>
+                            </div>
+                            
                             <div class="flex justify-between items-center mb-3">
                                 <h3 class="text-sm font-bold text-neutral-500 uppercase tracking-widest">Template</h3>
                                 <button onclick="window.copyToClipboard('view-content')" class="text-xs text-primary hover:text-indigo-400 font-bold"><i class="fa-regular fa-copy"></i> Copy</button>
                             </div>
-                            <div class="bg-[#0A0A0A] border border-neutral-800 rounded-2xl p-5 overflow-y-auto flex-1">
+                            <div class="bg-[#0A0A0A] border border-neutral-800 rounded-2xl p-5 overflow-y-auto flex-1 mb-4">
                                 <pre id="view-content" class="font-mono text-sm text-neutral-300 whitespace-pre-wrap leading-relaxed select-all"></pre>
+                            </div>
+                            
+                            <div class="flex justify-between items-center pt-4 border-t border-neutral-900">
+                                <div class="flex gap-4">
+                                    <button id="btn-like-detail" onclick="window.toggleLike(window.currentViewId)" class="flex items-center gap-1.5 text-sm font-bold text-neutral-400 hover:text-white transition-colors"><i class="fa-regular fa-heart"></i> <span id="view-likes">0</span></button>
+                                    <span class="flex items-center gap-1.5 text-sm font-bold text-neutral-500"><i class="fa-solid fa-code-branch"></i> <span id="view-forks">0</span></span>
+                                </div>
+                                <div id="view-tags" class="flex gap-1 flex-wrap justify-end"></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Omni-Model AI Playground / Compare Mode -->
                     <div class="flex-1 flex flex-col h-[750px] min-w-0 transition-all duration-300">
                         <div class="bg-gradient-to-br from-[#0A0A0A] to-[#050505] rounded-3xl border border-neutral-800 shadow-2xl flex flex-col h-full overflow-hidden relative">
                             <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary"></div>
@@ -371,18 +542,14 @@
                                 <h3 class="text-base font-extrabold text-white flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> Omni-Model Playground</h3>
                                 <div class="flex items-center gap-3">
                                     <label class="flex items-center gap-2 cursor-pointer">
-                                        <div class="relative">
-                                            <input type="checkbox" id="compare-mode-toggle" class="sr-only" onchange="window.toggleCompareMode()">
-                                            <div class="block bg-neutral-800 w-10 h-6 rounded-full border border-neutral-700"></div>
-                                            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"></div>
-                                        </div>
-                                        <span class="text-xs font-bold text-neutral-400">Compare Models</span>
+                                        <div class="relative"><input type="checkbox" id="compare-mode-toggle" class="sr-only" onchange="window.toggleCompareMode()"><div class="block bg-neutral-800 w-10 h-6 rounded-full border border-neutral-700"></div><div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"></div></div>
+                                        <span class="text-xs font-bold text-neutral-400">Compare</span>
                                     </label>
                                     <div class="h-4 w-px bg-neutral-700 mx-1"></div>
                                     <select id="omni-model-select" class="bg-black border border-neutral-800 text-white text-xs font-bold rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-primary cursor-pointer">
-                                        <option value="gemini">Gemini 1.5</option>
                                         <option value="openai">GPT-4o</option>
                                         <option value="anthropic">Claude 3.5</option>
+                                        <option value="gemini">Gemini 1.5</option>
                                         <option value="grok">Grok Beta</option>
                                     </select>
                                 </div>
@@ -401,7 +568,6 @@
                                 </div>
                             </div>
 
-                            <!-- Single Model Output -->
                             <div id="single-output-container" class="flex-1 p-6 overflow-y-auto relative flex flex-col">
                                 <div class="flex justify-between items-center mb-3 shrink-0">
                                     <p class="text-xs font-bold text-neutral-500 uppercase tracking-widest">AI Output</p>
@@ -410,50 +576,17 @@
                                         <button onclick="window.speakOutput('play-output')" class="text-neutral-400 hover:text-white transition-colors"><i class="fa-solid fa-volume-high"></i></button>
                                     </div>
                                 </div>
-                                <div id="play-output" class="prose prose-invert max-w-none text-[15px] leading-relaxed flex-1">
-                                    <div class="h-full flex flex-col items-center justify-center text-neutral-600">
-                                        <i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i>
-                                        <p class="font-medium">Fill in variables and click Run.</p>
-                                    </div>
-                                </div>
-                                <div id="play-loader" class="absolute inset-0 bg-[#0A0A0A]/90 backdrop-blur-sm hidden flex-col items-center justify-center z-10">
-                                    <div class="w-12 h-12 border-4 border-neutral-800 border-t-primary rounded-full animate-spin mb-4"></div>
-                                    <p class="text-white font-bold animate-pulse">Omni-Model Generating...</p>
-                                </div>
+                                <div id="play-output" class="prose prose-invert max-w-none text-[15px] leading-relaxed flex-1"><div class="h-full flex flex-col items-center justify-center text-neutral-600"><i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i><p class="font-medium">Fill in variables and click Run.</p></div></div>
+                                <div id="play-loader" class="absolute inset-0 bg-[#0A0A0A]/90 backdrop-blur-sm hidden flex-col items-center justify-center z-10"><div class="w-12 h-12 border-4 border-neutral-800 border-t-primary rounded-full animate-spin mb-4"></div><p class="text-white font-bold animate-pulse">Omni-Model Generating...</p></div>
                             </div>
 
-                            <!-- Multi Model Compare Output (Hidden by default) -->
                             <div id="compare-output-container" class="flex-1 overflow-hidden relative hidden bg-neutral-900/10">
                                 <div class="grid grid-cols-3 h-full divide-x divide-neutral-800">
-                                    <!-- Gemini -->
-                                    <div class="flex flex-col h-full">
-                                        <div class="px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center">
-                                            <span class="text-xs font-bold text-gemini flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-sm"><path fill="currentColor" d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z"/></svg> Gemini</span>
-                                            <span id="cost-gemini" class="text-[9px] font-mono text-neutral-500"></span>
-                                        </div>
-                                        <div id="out-gemini" class="flex-1 p-4 overflow-y-auto prose prose-invert prose-sm max-w-none"></div>
-                                    </div>
-                                    <!-- OpenAI -->
-                                    <div class="flex flex-col h-full">
-                                        <div class="px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center">
-                                            <span class="text-xs font-bold text-openai flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-sm"><path fill="currentColor" d="M22.28 11.23a8.17 8.17 0 0 0-1.12-4.13A8.15 8.15 0 0 0 17 3.51a8.13 8.13 0 0 0-8.23 1.05A8.16 8.16 0 0 0 4.14 2.89a8.15 8.15 0 0 0-4.04 6.78 8.16 8.16 0 0 0 1.13 4.13 8.15 8.15 0 0 0 4.14 3.59 8.13 8.13 0 0 0 8.24-1.05 8.16 8.16 0 0 0 4.63 1.67 8.15 8.15 0 0 0 4.04-6.78zM10.74 20.31a6.05 6.05 0 0 1-3.66-1.17l.27-.15 4.79-2.77a.64.64 0 0 0 .32-.55V9.45l2.42 1.4v5.36a6.05 6.05 0 0 1-4.14 4.1zM3.46 16.55a6.05 6.05 0 0 1-.72-3.8l.26.16 4.79 2.76v.05a.64.64 0 0 0 .64.32h5.83l-2.42 1.4H6.46a6.05 6.05 0 0 1-3-1lzm-1.1-7.79a6.05 6.05 0 0 1 2.94-2.63l-.06.3-2.39 4.15v.06a.64.64 0 0 0 .32.55l5.05 2.91-2.42 1.4-4.22-2.43a6.05 6.05 0 0 1-.22-4.34zM13.26 3.69a6.05 6.05 0 0 1 3.66 1.17l-.27.15-4.79 2.77a.64.64 0 0 0-.32.55v6.22l-2.42-1.4V7.75a6.05 6.05 0 0 1 4.14-4.06zM20.54 7.45a6.05 6.05 0 0 1 .72 3.8l-.26-.16-4.79-2.76v-.05a.64.64 0 0 0-.64-.32h-5.83l2.42-1.4h5.36a6.05 6.05 0 0 1 3 1lzm1.1 7.79a6.05 6.05 0 0 1-2.94 2.63l.06-.3 2.39-4.15v-.06a.64.64 0 0 0-.32-.55l-5.05-2.91 2.42-1.4 4.22 2.43a6.05 6.05 0 0 1 .22 4.34zM12 14.86a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/></svg> GPT-4o</span>
-                                            <span id="cost-openai" class="text-[9px] font-mono text-neutral-500"></span>
-                                        </div>
-                                        <div id="out-openai" class="flex-1 p-4 overflow-y-auto prose prose-invert prose-sm max-w-none"></div>
-                                    </div>
-                                    <!-- Claude -->
-                                    <div class="flex flex-col h-full">
-                                        <div class="px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center">
-                                            <span class="text-xs font-bold text-anthropic flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-sm"><path fill="currentColor" d="M15.4 3L12 9l-3.4-6H4l7 12-4 7h3.8l2.2-4 2.2 4h3.8l-4-7 7-12h-4.6z"/></svg> Claude</span>
-                                            <span id="cost-anthropic" class="text-[9px] font-mono text-neutral-500"></span>
-                                        </div>
-                                        <div id="out-anthropic" class="flex-1 p-4 overflow-y-auto prose prose-invert prose-sm max-w-none"></div>
-                                    </div>
+                                    <div class="flex flex-col h-full"><div class="px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center"><span class="text-xs font-bold text-gemini flex items-center gap-1.5"><i class="fa-solid fa-sparkles"></i> Gemini</span><span id="cost-gemini" class="text-[9px] font-mono text-neutral-500"></span></div><div id="out-gemini" class="flex-1 p-4 overflow-y-auto prose prose-invert prose-sm max-w-none"></div></div>
+                                    <div class="flex flex-col h-full"><div class="px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center"><span class="text-xs font-bold text-openai flex items-center gap-1.5"><i class="fa-solid fa-leaf"></i> GPT-4o</span><span id="cost-openai" class="text-[9px] font-mono text-neutral-500"></span></div><div id="out-openai" class="flex-1 p-4 overflow-y-auto prose prose-invert prose-sm max-w-none"></div></div>
+                                    <div class="flex flex-col h-full"><div class="px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-center"><span class="text-xs font-bold text-anthropic flex items-center gap-1.5"><i class="fa-solid fa-brain"></i> Claude</span><span id="cost-anthropic" class="text-[9px] font-mono text-neutral-500"></span></div><div id="out-anthropic" class="flex-1 p-4 overflow-y-auto prose prose-invert prose-sm max-w-none"></div></div>
                                 </div>
-                                <div id="compare-loader" class="absolute inset-0 bg-[#0A0A0A]/90 backdrop-blur-sm hidden flex-col items-center justify-center z-10">
-                                    <div class="w-12 h-12 border-4 border-neutral-800 border-t-primary rounded-full animate-spin mb-4"></div>
-                                    <p class="text-white font-bold animate-pulse">Running 3 models simultaneously...</p>
-                                </div>
+                                <div id="compare-loader" class="absolute inset-0 bg-[#0A0A0A]/90 backdrop-blur-sm hidden flex-col items-center justify-center z-10"><div class="w-12 h-12 border-4 border-neutral-800 border-t-primary rounded-full animate-spin mb-4"></div><p class="text-white font-bold animate-pulse">Running 3 models simultaneously...</p></div>
                             </div>
                         </div>
                     </div>
@@ -471,34 +604,19 @@
                 </div>
             </div>
 
-            <!-- 6. SETTINGS & API KEYS -->
+            <!-- 6. SETTINGS -->
             <div id="settings" class="screen max-w-5xl mx-auto">
                 <h1 class="text-3xl font-extrabold text-white tracking-tight mb-8">Settings & Omni-API Keys</h1>
                 
                 <div class="bg-darksurface p-8 rounded-3xl border border-neutral-800 shadow-sm mb-8">
                     <h3 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-microchip text-primary mr-2"></i> Omni-Model API Keys</h3>
-                    <div class="bg-warning/20 text-warning px-4 py-3 rounded-xl text-xs font-bold mb-6 flex items-start gap-2">
-                        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
-                        <p>API keys are stored on this device. Do not use this app on shared computers.</p>
-                    </div>
+                    <div class="bg-warning/20 text-warning px-4 py-3 rounded-xl text-xs font-bold mb-6 flex items-start gap-2"><i class="fa-solid fa-triangle-exclamation mt-0.5"></i><p>API keys are stored on this device. Do not use this app on shared computers.</p></div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-gemini"><path fill="currentColor" d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z"/></svg> Google Gemini</label>
-                            <input type="password" id="key-gemini" placeholder="AIzaSy..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-gemini text-white font-mono text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-openai"><path fill="currentColor" d="M22.28 11.23a8.17 8.17 0 0 0-1.12-4.13A8.15 8.15 0 0 0 17 3.51a8.13 8.13 0 0 0-8.23 1.05A8.16 8.16 0 0 0 4.14 2.89a8.15 8.15 0 0 0-4.04 6.78 8.16 8.16 0 0 0 1.13 4.13 8.15 8.15 0 0 0 4.14 3.59 8.13 8.13 0 0 0 8.24-1.05 8.16 8.16 0 0 0 4.63 1.67 8.15 8.15 0 0 0 4.04-6.78zM10.74 20.31a6.05 6.05 0 0 1-3.66-1.17l.27-.15 4.79-2.77a.64.64 0 0 0 .32-.55V9.45l2.42 1.4v5.36a6.05 6.05 0 0 1-4.14 4.1zM3.46 16.55a6.05 6.05 0 0 1-.72-3.8l.26.16 4.79 2.76v.05a.64.64 0 0 0 .64.32h5.83l-2.42 1.4H6.46a6.05 6.05 0 0 1-3-1lzm-1.1-7.79a6.05 6.05 0 0 1 2.94-2.63l-.06.3-2.39 4.15v.06a.64.64 0 0 0 .32.55l5.05 2.91-2.42 1.4-4.22-2.43a6.05 6.05 0 0 1-.22-4.34zM13.26 3.69a6.05 6.05 0 0 1 3.66 1.17l-.27.15-4.79 2.77a.64.64 0 0 0-.32.55v6.22l-2.42-1.4V7.75a6.05 6.05 0 0 1 4.14-4.06zM20.54 7.45a6.05 6.05 0 0 1 .72 3.8l-.26-.16-4.79-2.76v-.05a.64.64 0 0 0-.64-.32h-5.83l2.42-1.4h5.36a6.05 6.05 0 0 1 3 1lzm1.1 7.79a6.05 6.05 0 0 1-2.94 2.63l.06-.3 2.39-4.15v-.06a.64.64 0 0 0-.32-.55l-5.05-2.91 2.42-1.4 4.22 2.43a6.05 6.05 0 0 1 .22 4.34zM12 14.86a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/></svg> OpenAI (ChatGPT)</label>
-                            <input type="password" id="key-openai" placeholder="sk-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-openai text-white font-mono text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-grok"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> xAI (Grok)</label>
-                            <input type="password" id="key-grok" placeholder="xai-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-white text-white font-mono text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><svg width="1em" height="1em" viewBox="0 0 24 24" class="text-anthropic"><path fill="currentColor" d="M15.4 3L12 9l-3.4-6H4l7 12-4 7h3.8l2.2-4 2.2 4h3.8l-4-7 7-12h-4.6z"/></svg> Anthropic (Claude)</label>
-                            <input type="password" id="key-anthropic" placeholder="sk-ant-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-anthropic text-white font-mono text-sm">
-                        </div>
+                        <div><label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="fa-solid fa-sparkles text-gemini"></i> Google Gemini</label><input type="password" id="key-gemini" placeholder="AIzaSy..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-gemini text-white font-mono text-sm"></div>
+                        <div><label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="fa-solid fa-leaf text-openai"></i> OpenAI (ChatGPT)</label><input type="password" id="key-openai" placeholder="sk-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-openai text-white font-mono text-sm"></div>
+                        <div><label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="fa-solid fa-xmarks-lines text-grok"></i> xAI (Grok)</label><input type="password" id="key-grok" placeholder="xai-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-white text-white font-mono text-sm"></div>
+                        <div><label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="fa-solid fa-brain text-anthropic"></i> Anthropic (Claude)</label><input type="password" id="key-anthropic" placeholder="sk-ant-..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-anthropic text-white font-mono text-sm"></div>
                     </div>
                     <button onclick="window.saveAPIKeys()" class="px-6 py-3 bg-primary hover:bg-indigo-600 text-white rounded-xl font-bold transition-colors shadow-lg">Save All Keys</button>
                 </div>
@@ -528,11 +646,9 @@
         window.addEventListener('error', e => window.showToast?.('Error: ' + (e.message || 'unknown')));
         window.addEventListener('unhandledrejection', e => window.showToast?.('Error: ' + (e.reason?.message || e.reason || 'unknown')));
 
-        
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc, query, where, limit, onSnapshot, orderBy, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, limit, onSnapshot, updateDoc, increment, orderBy, startAfter } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCBimffGhLYalnH2CMYW64OXxtStASXt8I",
@@ -547,89 +663,48 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.prompts = [];
-        window.collectionsData = [];
-        window.currentUser = null;
-        let currentEditingId = null;
-        let currentViewId = null;
-        let unsubscribePrompts = null;
-        let unsubscribeCollections = null;
-        window.editorDirty = false;
-        let isCompareMode = false;
-
-        
-        window.publicPrompts = [];
-        window.exploreFilterCategory = 'All';
-        window.exploreFilterModel = 'All Models';
-        const CATEGORIES = ['All', 'Coding', 'Writing', 'Marketing', 'Design', 'Business', 'Education', 'Productivity', 'Creative', 'Research', 'Other'];
-        const MODELS = ['All Models', 'Claude', 'ChatGPT', 'Gemini', 'Grok', 'Llama', 'Mistral', 'Other'];
-
-        window.initFilters = () => {
-            document.getElementById('filter-cats').innerHTML = CATEGORIES.map(c => `<button onclick="window.setExploreFilter('cat', '${c}')" class="filter-pill ${c==='All'?'active':''} cat-btn" data-val="${c}">${c}</button>`).join('');
-            document.getElementById('filter-mods').innerHTML = MODELS.map(m => `<button onclick="window.setExploreFilter('mod', '${m}')" class="filter-pill ${m==='All Models'?'active':''} mod-btn" data-val="${m}">${m}</button>`).join('');
-            
-            document.getElementById('prompt-category').innerHTML = '<option value="Other">Other</option>' + CATEGORIES.filter(c=>c!=='All'&&c!=='Other').map(c => `<option value="${c}">${c}</option>`).join('');
-            document.getElementById('prompt-target-model').innerHTML = '<option value="Any">Any</option>' + MODELS.filter(m=>m!=='All Models').map(c => `<option value="${c}">${c}</option>`).join('');
-        }
-
-        window.setExploreFilter = (type, val) => {
-            if(type === 'cat') { window.exploreFilterCategory = val; document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b.dataset.val === val)); } 
-            else { window.exploreFilterModel = val; document.querySelectorAll('.mod-btn').forEach(b => b.classList.toggle('active', b.dataset.val === val)); }
-            window.renderExplore();
-        }
-        
-        window.addEventListener('load', () => window.initFilters());
+        window.prompts = []; window.collectionsData = []; window.currentUser = null; window.userLikes = new Set();
+        window.exploreData = []; window.feedLatestData = []; window.feedTrendingData = []; window.profileData = [];
+        let currentEditingId = null; let currentViewId = null; let unsubscribePrompts = null; let unsubscribeCollections = null;
+        window.editorDirty = false; let isCompareMode = false; window.booted = false;
 
         if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
-
         window.addEventListener('beforeunload', e => { if (window.editorDirty) { e.preventDefault(); e.returnValue = ''; } });
+        
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const timeAgo = (ds) => { const s=Math.floor((new Date()-new Date(ds))/1000); let i=s/31536000; if(i>1)return Math.floor(i)+"y ago"; i=s/2592000; if(i>1)return Math.floor(i)+"m ago"; i=s/86400; if(i>1)return Math.floor(i)+"d ago"; i=s/3600; if(i>1)return Math.floor(i)+"h ago"; i=s/60; if(i>1)return Math.floor(i)+" min ago"; return "just now"; }
 
         let toastTimeout;
-        window.showToast = (msg, isHtml = false) => {
-            const t = document.getElementById('toast');
-            if (isHtml) t.innerHTML = msg; else t.innerText = msg;
-            t.classList.add('show');
-            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
-        }
+        window.showToast = (msg, isHtml = false) => { const t = document.getElementById('toast'); if (isHtml) t.innerHTML = msg; else t.innerText = msg; t.classList.add('show'); clearTimeout(toastTimeout); toastTimeout = setTimeout(() => t.classList.remove('show'), 3000); }
         function generateId() { return (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : Math.random().toString(36).substring(2, 15); }
 
         window.modal = {
             overlay: null,
             init() {
                 if (this.overlay) return;
-                this.overlay = document.createElement('div');
-                this.overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[999999] flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200';
+                this.overlay = document.createElement('div'); this.overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[999999] flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200';
                 this.overlay.innerHTML = `<div class="bg-darksurface2 border border-neutral-800 rounded-3xl p-6 shadow-2xl w-full max-w-sm transform scale-95 transition-transform duration-200" id="modal-box"><h3 id="modal-title" class="text-xl font-bold text-white mb-2"></h3><p id="modal-msg" class="text-sm text-neutral-400 mb-6"></p><input type="text" id="modal-input" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 px-4 focus:outline-none focus:border-primary text-white mb-6 hidden"><div class="flex gap-3 justify-end"><button id="modal-cancel" class="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-sm font-bold hidden">Cancel</button><button id="modal-confirm" class="px-5 py-2.5 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg">OK</button></div></div>`;
                 document.body.appendChild(this.overlay);
             },
             show(opts) {
-                this.init();
-                return new Promise(resolve => {
-                    const titleEl = document.getElementById('modal-title'); const msgEl = document.getElementById('modal-msg');
-                    const inputEl = document.getElementById('modal-input'); const cancelBtn = document.getElementById('modal-cancel');
-                    const confirmBtn = document.getElementById('modal-confirm');
-                    titleEl.innerText = opts.title || ''; msgEl.innerText = opts.msg || '';
-                    if (opts.type === 'prompt') { inputEl.style.display = 'block'; inputEl.value = opts.defaultVal || ''; } else { inputEl.style.display = 'none'; }
-                    if (opts.type === 'alert') { cancelBtn.style.display = 'none'; } else { cancelBtn.style.display = 'block'; }
-                    const cleanup = () => { this.overlay.classList.remove('opacity-100', 'pointer-events-auto'); document.getElementById('modal-box').classList.remove('scale-100'); window.removeEventListener('keydown', handleKey); this.overlay.onclick = null; };
-                    const handleConfirm = () => { cleanup(); resolve(opts.type === 'prompt' ? inputEl.value : true); };
-                    const handleCancel = () => { cleanup(); resolve(opts.type === 'prompt' ? null : false); };
-                    const handleKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleConfirm(); } if (e.key === 'Escape') { e.preventDefault(); if(opts.type !== 'alert') handleCancel(); else handleConfirm(); } };
-                    this.overlay.onclick = (e) => { if(e.target === this.overlay && opts.type !== 'alert') handleCancel(); };
-                    confirmBtn.onclick = handleConfirm; cancelBtn.onclick = handleCancel; window.addEventListener('keydown', handleKey);
+                this.init(); return new Promise(resolve => {
+                    const tEl = document.getElementById('modal-title'); const mEl = document.getElementById('modal-msg'); const iEl = document.getElementById('modal-input'); const cBtn = document.getElementById('modal-cancel'); const okBtn = document.getElementById('modal-confirm');
+                    tEl.innerText = opts.title||''; mEl.innerText = opts.msg||'';
+                    if(opts.type==='prompt') { iEl.style.display='block'; iEl.value=opts.defaultVal||''; } else iEl.style.display='none';
+                    if(opts.type==='alert') cBtn.style.display='none'; else cBtn.style.display='block';
+                    const cleanup = () => { this.overlay.classList.remove('opacity-100', 'pointer-events-auto'); document.getElementById('modal-box').classList.remove('scale-100'); window.removeEventListener('keydown', handleKey); this.overlay.onclick=null; };
+                    const handleConfirm = () => { cleanup(); resolve(opts.type==='prompt'?iEl.value:true); }; const handleCancel = () => { cleanup(); resolve(opts.type==='prompt'?null:false); };
+                    const handleKey = (e) => { if(e.key==='Enter'){e.preventDefault();handleConfirm();} if(e.key==='Escape'){e.preventDefault();if(opts.type!=='alert')handleCancel();else handleConfirm();} };
+                    this.overlay.onclick = (e) => { if(e.target===this.overlay && opts.type!=='alert') handleCancel(); };
+                    okBtn.onclick=handleConfirm; cBtn.onclick=handleCancel; window.addEventListener('keydown', handleKey);
                     this.overlay.classList.add('opacity-100', 'pointer-events-auto'); document.getElementById('modal-box').classList.add('scale-100');
-                    if (opts.type === 'prompt') { inputEl.focus(); inputEl.select(); } else { confirmBtn.focus(); }
+                    if(opts.type==='prompt'){iEl.focus(); iEl.select();} else okBtn.focus();
                 });
             },
-            alert(msg, title='Notice') { return this.show({type: 'alert', msg, title}); },
-            confirm(msg, title='Are you sure?') { return this.show({type: 'confirm', msg, title}); },
-            prompt(label, defaultVal='', title='Input') { return this.show({type: 'prompt', msg: label, defaultVal, title}); }
+            alert(msg, title='Notice') { return this.show({type: 'alert', msg, title}); }, confirm(msg, title='Are you sure?') { return this.show({type: 'confirm', msg, title}); }, prompt(label, defaultVal='', title='Input') { return this.show({type: 'prompt', msg: label, defaultVal, title}); }
         };
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const synth = window.speechSynthesis;
-        let activeRecognition = null;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; const synth = window.speechSynthesis; let activeRecognition = null;
         window.startVoiceDictation = async (inputId, btnId) => {
             if(!SpeechRecognition) return await window.modal.alert("Voice dictation is not supported in this browser.");
             if(activeRecognition) { activeRecognition.stop(); return; }
@@ -638,56 +713,29 @@
             activeRecognition.onstart = () => { btn.classList.add('voice-pulse', 'text-red-500'); };
             activeRecognition.onresult = (e) => { input.value = e.results[0][0].transcript; };
             activeRecognition.onerror = async (e) => { console.error(e); await window.modal.alert("Voice error: " + e.error); };
-            activeRecognition.onend = () => { btn.classList.remove('voice-pulse', 'text-red-500'); activeRecognition = null; };
-            activeRecognition.start();
+            activeRecognition.onend = () => { btn.classList.remove('voice-pulse', 'text-red-500'); activeRecognition = null; }; activeRecognition.start();
         }
-        window.speakOutput = (id) => {
-            if(synth.speaking) { synth.cancel(); return; }
-            const text = document.getElementById(id).innerText;
-            if(!text || text.includes("Fill in variables")) return;
-            synth.speak(new SpeechSynthesisUtterance(text));
-        }
+        window.speakOutput = (id) => { if(synth.speaking) { synth.cancel(); return; } const text = document.getElementById(id).innerText; if(!text || text.includes("Fill in variables")) return; synth.speak(new SpeechSynthesisUtterance(text)); }
 
-        // --- COMMAND PALETTE ---
-        const cmdPalette = document.getElementById('cmd-palette');
-        const cmdInput = document.getElementById('cmd-input');
-        window.openCmdPalette = () => {
-            cmdPalette.classList.add('active');
-            requestAnimationFrame(() => { cmdPalette.classList.add('opacity-100'); document.getElementById('cmd-box').classList.add('scale-100'); cmdInput.focus(); cmdInput.value=''; window.renderCmdResults(); });
-        }
-        window.closeCmdPalette = () => {
-            cmdPalette.classList.remove('opacity-100'); document.getElementById('cmd-box').classList.remove('scale-100');
-            setTimeout(() => cmdPalette.classList.remove('active'), 200);
-        }
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); if (cmdPalette.classList.contains('active')) window.closeCmdPalette(); else window.openCmdPalette(); }
-            if (e.key === 'Escape' && cmdPalette.classList.contains('active')) window.closeCmdPalette();
-        });
+        const cmdPalette = document.getElementById('cmd-palette'); const cmdInput = document.getElementById('cmd-input');
+        window.openCmdPalette = () => { cmdPalette.classList.add('active'); requestAnimationFrame(() => { cmdPalette.classList.add('opacity-100'); document.getElementById('cmd-box').classList.add('scale-100'); cmdInput.focus(); cmdInput.value=''; window.renderCmdResults(); }); }
+        window.closeCmdPalette = () => { cmdPalette.classList.remove('opacity-100'); document.getElementById('cmd-box').classList.remove('scale-100'); setTimeout(() => cmdPalette.classList.remove('active'), 200); }
+        window.addEventListener('keydown', (e) => { if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();if(cmdPalette.classList.contains('active'))window.closeCmdPalette();else window.openCmdPalette();} if(e.key==='Escape'&&cmdPalette.classList.contains('active'))window.closeCmdPalette(); });
         cmdPalette.addEventListener('click', (e) => { if(e.target === cmdPalette) window.closeCmdPalette(); });
         cmdInput.addEventListener('input', () => window.renderCmdResults());
-
         window.renderCmdResults = () => {
-            const q = cmdInput.value.toLowerCase();
-            const res = document.getElementById('cmd-results');
-            let html = '';
+            const q = cmdInput.value.toLowerCase(); const res = document.getElementById('cmd-results'); let html = '';
             if(q.startsWith('>')) {
-                const actionQ = q.substring(1).trim();
-                const actions = [
-                    {n:'Create New Prompt', icon:'fa-plus', action: 'window.prepareAddPrompt(); window.closeCmdPalette();'},
-                    {n:'Go to Dashboard', icon:'fa-house', action: 'window.switchTab("dashboard"); window.closeCmdPalette();'},
-                    {n:'Go to Discover Marketplace', icon:'fa-compass text-primary', action: 'window.switchTab("discover"); window.closeCmdPalette();'},
-                    {n:'Sync Cloud Data', icon:'fa-rotate', action: 'window.manualRefresh(); window.closeCmdPalette();'}
-                ].filter(a => a.n.toLowerCase().includes(actionQ));
-                html = actions.map(a => `<div onclick="${a.action}" class="flex items-center px-4 py-3 hover:bg-neutral-800 rounded-xl cursor-pointer text-white"><i class="fa-solid ${a.icon} w-6 text-neutral-500"></i> ${a.n}</div>`).join('');
+                const actions = [{n:'Create New Prompt', icon:'fa-plus', action: 'window.prepareAddPrompt();'}, {n:'Go to Dashboard', icon:'fa-house', action: 'window.switchTab("dashboard");'}, {n:'Explore Community', icon:'fa-compass text-primary', action: 'window.switchTab("explore");'}, {n:'Sync Cloud Data', icon:'fa-rotate', action: 'window.manualRefresh();'}].filter(a => a.n.toLowerCase().includes(q.substring(1).trim()));
+                html = actions.map(a => `<div onclick="${a.action}; window.closeCmdPalette();" class="flex items-center px-4 py-3 hover:bg-neutral-800 rounded-xl cursor-pointer text-white"><i class="fa-solid ${a.icon} w-6 text-neutral-500"></i> ${a.n}</div>`).join('');
             } else {
-                const filtered = window.prompts.filter(p => p.title.toLowerCase().includes(q)).slice(0,8);
+                const filtered = (window.exploreData||[]).filter(p => p.title.toLowerCase().includes(q)).slice(0,8);
                 html = filtered.map(p => `<div onclick="window.viewPrompt('${esc(p.id)}'); window.closeCmdPalette();" class="flex flex-col px-4 py-3 hover:bg-neutral-800 rounded-xl cursor-pointer"><span class="text-white font-bold">${esc(p.title)}</span><span class="text-xs text-neutral-500 truncate">${esc(p.content)}</span></div>`).join('');
                 if(filtered.length === 0) html = '<p class="text-neutral-500 px-4 py-2 text-sm">No prompts found.</p>';
             }
             res.innerHTML = html;
         }
 
-        // --- AUTHENTICATION ---
         window.signInWithGoogle = async () => {
             document.getElementById('login-loader').classList.remove('hidden');
             signInWithPopup(auth, new GoogleAuthProvider()).catch(async e => { document.getElementById('login-loader').classList.add('hidden'); await window.modal.alert(e.message, "Login Failed"); });
@@ -702,120 +750,94 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const sharedId = urlParams.get('share');
-
         async function loadSharedPrompt(id) {
             try {
                 const docSnap = await getDoc(doc(db, "prompts", id));
                 if (docSnap.exists() && docSnap.data().isPublic) {
-                    const data = docSnap.data();
-                    document.getElementById('share-title').innerText = data.title;
-                    document.getElementById('share-content').innerText = data.content;
-                    window.currentSharedData = data;
-                } else {
-                    document.getElementById('share-title').innerText = "Prompt Not Found or Private";
-                    document.getElementById('share-content').innerText = "This link is invalid.";
-                }
+                    const data = docSnap.data(); document.getElementById('share-title').innerText = data.title; document.getElementById('share-content').innerText = data.content; window.currentSharedData = data;
+                } else { document.getElementById('share-title').innerText = "Prompt Not Found or Private"; document.getElementById('share-content').innerText = "This link is invalid."; }
             } catch(e) { console.error(e); await window.modal.alert(e.message); }
         }
-
         window.closeShareOverlay = () => { window.location.href = window.location.origin + window.location.pathname; }
-        window.copySharedPrompt = () => { window.copyToClipboard('share-content'); }
+        window.copySharedPrompt = () => { window.copyToClipboardText(document.getElementById('share-content').innerText); }
         window.saveSharedPrompt = async () => {
             if(!window.currentUser) { await window.modal.alert("Please login first to save!"); window.closeShareOverlay(); return; }
             if(!window.currentSharedData) return;
-            try {
-                await setDoc(doc(db, "prompts", generateId()), { ...window.currentSharedData, userId: window.currentUser.uid, isPublic: false, date: new Date().toISOString() });
-                window.showToast("Saved to your Library!");
-            } catch (e) { await window.modal.alert(e.message); }
+            try { await setDoc(doc(db, "prompts", generateId()), { ...window.currentSharedData, userId: window.currentUser.uid, isPublic: false, date: new Date().toISOString() }); window.showToast("Saved to your Library!"); } catch (e) { await window.modal.alert(e.message); }
             window.closeShareOverlay();
         }
 
         if(sharedId) {
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('share-overlay').style.display = 'flex';
-            loadSharedPrompt(sharedId);
+            document.getElementById('share-overlay').style.display = 'flex'; loadSharedPrompt(sharedId);
         } else {
-            onAuthStateChanged(auth, (user) => {
-                const overlay = document.getElementById('login-overlay');
+            onAuthStateChanged(auth, async (user) => {
+                const overlay = document.getElementById('login-overlay'); overlay.style.display = 'none'; overlay.classList.remove('active');
                 if (user) {
                     window.currentUser = user;
-                    overlay.style.opacity = '0'; setTimeout(() => { overlay.style.visibility = 'hidden'; }, 500);
+                    document.getElementById('auth-nav-sections').classList.remove('hidden');
+                    document.getElementById('sidebar-login').classList.add('hidden');
+                    document.getElementById('sidebar-profile').classList.remove('hidden');
                     document.getElementById('user-name').innerText = user.displayName || "User";
                     if(user.photoURL) { const av = document.getElementById('user-avatar'); av.src = user.photoURL; av.classList.remove('hidden'); }
+                    
+                    try { await setDoc(doc(db, "users", user.uid), { displayName: user.displayName, photoURL: user.photoURL, lastLogin: new Date().toISOString() }, {merge:true}); } catch(e){}
+                    
+                    const likesSnap = await getDocs(query(collection(db, "likes"), where("userId", "==", user.uid)));
+                    window.userLikes = new Set(); likesSnap.forEach(d => window.userLikes.add(d.data().promptId));
+
                     ['gemini','openai','grok','anthropic'].forEach(k => { const val = localStorage.getItem('api_key_'+k); if(val) document.getElementById('key-'+k).value = val; });
                     updateMonthlySpendUI();
-                    
-                    // Save user to DB
-                    setDoc(doc(db, "users", user.uid), {
-                        displayName: user.displayName || user.email.split('@')[0],
-                        photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${user.email}&background=6366F1&color=fff`,
-                        email: user.email,
-                        lastLogin: new Date().toISOString()
-                    }, { merge: true });
-                    
                     window.startDataSync();
-
                 } else {
-                    window.currentUser = null; window.prompts = []; window.collectionsData = [];
+                    window.currentUser = null; window.prompts = []; window.collectionsData = []; window.userLikes = new Set();
                     if(unsubscribePrompts) { unsubscribePrompts(); unsubscribePrompts = null; }
                     if(unsubscribeCollections) { unsubscribeCollections(); unsubscribeCollections = null; }
-                    overlay.style.visibility = 'visible'; overlay.style.opacity = '1';
-                    document.getElementById('splash-bolt').classList.remove('animate-pulse');
-                    document.getElementById('splash-text').innerText = "Omni-Models, Voice, and Cloud Sync.";
-                    document.getElementById('login-content').classList.remove('hidden');
-                    requestAnimationFrame(() => document.getElementById('login-content').classList.remove('opacity-0', 'translate-y-4'));
-                    document.getElementById('login-loader').classList.add('hidden');
+                    
+                    document.getElementById('auth-nav-sections').classList.add('hidden');
+                    document.getElementById('sidebar-login').classList.remove('hidden');
+                    document.getElementById('sidebar-profile').classList.add('hidden');
                 }
+                
+                if(!window.booted) { window.booted = true; window.switchTab('explore'); }
             });
         }
 
         window.startDataSync = () => {
-            const syncIcon = document.getElementById('sync-indicator');
-            if(syncIcon) syncIcon.classList.remove('bg-neutral-500', 'animate-none');
-            
+            const syncIcon = document.getElementById('sync-indicator'); if(syncIcon) syncIcon.classList.remove('bg-neutral-500', 'animate-none');
             unsubscribePrompts = onSnapshot(query(collection(db, "prompts"), where("userId", "==", window.currentUser.uid)), (snapshot) => {
                 window.prompts = []; snapshot.forEach((doc) => window.prompts.push({ id: doc.id, ...doc.data() }));
                 refreshActiveUI();
             });
-
             unsubscribeCollections = onSnapshot(query(collection(db, "collections"), where("userId", "==", window.currentUser.uid)), (snapshot) => {
                 window.collectionsData = []; snapshot.forEach((doc) => window.collectionsData.push({ id: doc.id, ...doc.data() }));
                 refreshActiveUI();
             });
         }
-
         function refreshActiveUI() {
             updateCollectionDropdowns();
-            const activeId = document.querySelector('.screen.active')?.id || 'dashboard';
+            const activeId = document.querySelector('.screen.active')?.id || 'explore';
             if(activeId === 'dashboard') renderDashboard();
             if(activeId === 'library') window.renderLibrary();
             if(activeId === 'collections') window.renderCollections();
             if(activeId === 'analytics') window.renderAnalytics();
         }
-
         window.manualRefresh = () => {
-            if (unsubscribePrompts) unsubscribePrompts();
-            if (unsubscribeCollections) unsubscribeCollections();
-            unsubscribePrompts = null; unsubscribeCollections = null;
-            if(window.currentUser) 
-                    // Save user to DB
-                    setDoc(doc(db, "users", user.uid), {
-                        displayName: user.displayName || user.email.split('@')[0],
-                        photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${user.email}&background=6366F1&color=fff`,
-                        email: user.email,
-                        lastLogin: new Date().toISOString()
-                    }, { merge: true });
-                    
-                    window.startDataSync();
-
+            if(window.currentUser) {
+                if(unsubscribePrompts) unsubscribePrompts(); if(unsubscribeCollections) unsubscribeCollections();
+                unsubscribePrompts = null; unsubscribeCollections = null; window.startDataSync();
+            }
+            if(document.getElementById('explore').classList.contains('active')) window.loadExplore(true);
+            if(document.getElementById('feed').classList.contains('active')) window.loadFeed(true);
             window.showToast("Cloud Synced");
         }
 
         const mainScroll = document.getElementById('main-scroll');
         window.switchTab = async (tabId) => {
+            if(!window.currentUser && ['dashboard','library','collections','analytics','settings','add'].includes(tabId)) {
+                return document.getElementById('login-overlay').classList.add('active');
+            }
             if (window.editorDirty && document.getElementById('add').classList.contains('active') && tabId !== 'add') {
-                if (!await window.modal.confirm("Discard unsaved changes?", "Unsaved Changes")) return;
-                window.editorDirty = false;
+                if (!await window.modal.confirm("Discard unsaved changes?", "Unsaved Changes")) return; window.editorDirty = false;
             }
             if(mainScroll) { mainScroll.style.overflow = 'hidden'; mainScroll.scrollTop = 0; }
             document.querySelectorAll('.screen').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
@@ -833,86 +855,216 @@
             if(tabId === 'dashboard') renderDashboard();
             if(tabId === 'library') window.renderLibrary();
             if(tabId === 'collections') window.renderCollections();
-            if(tabId === 'discover') window.loadDiscover();
+            if(tabId === 'explore') window.loadExplore();
+            if(tabId === 'feed') window.loadFeed();
             if(tabId === 'analytics') window.renderAnalytics();
         }
-        window.toggleMobileMenu = () => {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('mobile-backdrop').classList.toggle('hidden');
-        }
+        window.toggleMobileMenu = () => { document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('mobile-backdrop').classList.toggle('hidden'); }
 
-        // --- HIERARCHICAL COLLECTIONS ---
-        function buildCollectionTree() {
-            const root = []; const map = {};
-            window.collectionsData.forEach(c => map[c.id] = { ...c, children: [] });
-            window.collectionsData.forEach(c => {
-                if(c.parentId && map[c.parentId]) map[c.parentId].children.push(map[c.id]);
-                else root.push(map[c.id]);
-            });
-            return root;
-        }
+        // --- COMMON CARD RENDERER ---
+        const catColors = { 'Coding': 'bg-green-900/30 text-green-400 border-green-800', 'Writing': 'bg-blue-900/30 text-blue-400 border-blue-800', 'Marketing': 'bg-orange-900/30 text-orange-400 border-orange-800', 'Design': 'bg-purple-900/30 text-purple-400 border-purple-800', 'Business': 'bg-yellow-900/30 text-yellow-400 border-yellow-800', 'Education': 'bg-cyan-900/30 text-cyan-400 border-cyan-800', 'Productivity': 'bg-rose-900/30 text-rose-400 border-rose-800', 'Creative': 'bg-pink-900/30 text-pink-400 border-pink-800', 'Research': 'bg-indigo-900/30 text-indigo-400 border-indigo-800' };
 
-        function generateCollectionOptions(nodes, depth = 0) {
-            let html = ''; const indent = '&nbsp;&nbsp;'.repeat(depth * 3);
-            nodes.forEach(n => {
-                html += `<option value="${esc(n.id)}">${indent}${depth > 0 ? '└ ' : ''}${esc(n.icon)} ${esc(n.name)}</option>`;
-                if(n.children.length > 0) html += generateCollectionOptions(n.children, depth + 1);
-            });
-            return html;
-        }
-
-        function updateCollectionDropdowns() {
-            const tree = buildCollectionTree();
-            const opts = generateCollectionOptions(tree);
-            document.getElementById('lib-collection').innerHTML = '<option value="">All Collections</option>' + opts;
-            document.getElementById('prompt-collection').innerHTML = '<option value="">No Collection (Root)</option>' + opts;
-        }
-
-        window.createCollectionPrompt = async () => {
-            const name = await window.modal.prompt("Collection Name:", ""); if(!name) return;
-            const icon = await window.modal.prompt("Emoji Icon:", "📁") || "📁";
+        function renderPromptCard(p) {
+            const isLiked = window.userLikes && window.userLikes.has(p.id);
+            const likeIcon = isLiked ? 'fa-solid text-red-500' : 'fa-regular text-neutral-400';
+            const cColor = catColors[p.category] || 'bg-neutral-800 text-neutral-300 border-neutral-700';
             
-            // Generate parent dropdown manually using prompt modal might be hard, so just create flat, can edit later in full UI. 
-            // For now, flat creation, but data model supports parentId.
-            try {
-                await setDoc(doc(db, "collections", generateId()), { name, icon, parentId: null, userId: window.currentUser.uid });
-                window.showToast("Collection created!");
-            } catch (e) { await window.modal.alert(e.message); }
-        }
-
-        window.renderCollections = () => {
-            const tree = buildCollectionTree();
-            const grid = document.getElementById('collections-grid');
-            let html = '';
-            
-            const renderNode = (node, depth) => {
-                const count = window.prompts.filter(p => p.collectionId === node.id).length;
-                let childHtml = node.children.map(c => renderNode(c, depth+1)).join('');
-                return `
-                <div class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm ${depth > 0 ? 'ml-8 mt-4 border-l-primary/30 border-l-4' : ''}">
-                    <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('lib-collection').value='${esc(node.id)}'; window.switchTab('library');">
-                        <div class="flex items-center gap-3">
-                            <span class="text-3xl">${esc(node.icon)}</span>
-                            <div>
-                                <h3 class="text-lg font-bold text-white">${esc(node.name)}</h3>
-                                <p class="text-xs text-neutral-500 font-bold uppercase tracking-widest">${count} Prompts</p>
-                            </div>
-                        </div>
-                        <button class="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center text-neutral-400 hover:text-white transition-colors" onclick="event.stopPropagation(); window.addSubCollection('${esc(node.id)}')"><i class="fa-solid fa-plus text-xs"></i></button>
+            return `
+            <div class="bg-darksurface p-5 rounded-3xl border border-neutral-800 shadow-sm hover-card flex flex-col h-full relative cursor-pointer" onclick="window.viewPrompt('${esc(p.id)}')">
+                <div class="flex items-center gap-3 mb-4">
+                    <img src="${esc(p.authorAvatar || 'https://ui-avatars.com/api/?name=U&background=333&color=fff')}" class="w-8 h-8 rounded-full border border-neutral-700 object-cover bg-neutral-800">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-white hover:text-primary truncate" onclick="event.stopPropagation(); window.viewProfile('${esc(p.userId)}')">${esc(p.authorDisplayName || 'Unknown')}</p>
+                        <p class="text-[10px] text-neutral-500">${timeAgo(p.createdAt || p.date)}</p>
                     </div>
-                    ${childHtml}
-                </div>`;
-            };
-            grid.innerHTML = tree.map(n => renderNode(n, 0)).join('');
+                </div>
+                <h4 class="font-extrabold text-white text-lg line-clamp-1 mb-1 pr-4">${esc(p.title)}</h4>
+                ${p.description ? `<p class="text-[11px] text-neutral-400 italic line-clamp-2 mb-3">${esc(p.description)}</p>` : ''}
+                <div class="flex gap-2 mb-3 flex-wrap">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${cColor}">${esc(p.category || 'Other')}</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-900 text-white border border-neutral-700">${esc(p.targetModel || 'Any')}</span>
+                </div>
+                <p class="text-[12px] text-neutral-500 mb-5 line-clamp-3 font-mono flex-1 leading-relaxed">${esc(p.content)}</p>
+                <div class="mt-auto flex items-center justify-between border-t border-neutral-900 pt-4">
+                    <div class="flex gap-4">
+                        <button onclick="event.stopPropagation(); window.toggleLike('${esc(p.id)}')" class="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-white transition-colors"><i class="${likeIcon} fa-heart"></i> <span id="card-like-${esc(p.id)}">${p.likes || 0}</span></button>
+                        <button onclick="event.stopPropagation(); window.forkPrompt('${esc(p.id)}')" class="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-white transition-colors"><i class="fa-solid fa-code-branch"></i> ${p.forks || 0}</button>
+                    </div>
+                    <button onclick="event.stopPropagation(); window.copyToClipboardText('${esc(p.content)}')" class="text-xs text-neutral-400 hover:text-white transition-colors"><i class="fa-regular fa-copy"></i></button>
+                </div>
+            </div>`;
         }
 
-        window.addSubCollection = async (parentId) => {
-            const name = await window.modal.prompt("Sub-Collection Name:", ""); if(!name) return;
-            const icon = await window.modal.prompt("Emoji Icon:", "📂") || "📁";
-            try { await setDoc(doc(db, "collections", generateId()), { name, icon, parentId, userId: window.currentUser.uid }); } catch(e) { await window.modal.alert(e.message); }
+        window.toggleLike = async (id) => {
+            if(!window.currentUser) return document.getElementById('login-overlay').classList.add('active');
+            const isLiked = window.userLikes.has(id);
+            const likeRef = doc(db, "likes", `${id}_${window.currentUser.uid}`);
+            const promptRef = doc(db, "prompts", id);
+            try {
+                if(isLiked) {
+                    window.userLikes.delete(id); await deleteDoc(likeRef); await updateDoc(promptRef, { likes: increment(-1) });
+                } else {
+                    window.userLikes.add(id); await setDoc(likeRef, { promptId: id, userId: window.currentUser.uid, createdAt: new Date().toISOString() }); await updateDoc(promptRef, { likes: increment(1) });
+                }
+                
+                // Optimistic UI updates
+                const likeCounts = document.querySelectorAll(`#card-like-${id}`);
+                likeCounts.forEach(el => el.innerText = parseInt(el.innerText) + (isLiked ? -1 : 1));
+                const p = [...window.exploreData, ...window.feedLatestData, ...window.feedTrendingData, ...window.profileData].find(x => x.id === id);
+                if(p) p.likes = (p.likes||0) + (isLiked ? -1 : 1);
+                
+                const activeId = document.querySelector('.screen.active').id;
+                if(activeId === 'explore') window.renderExplore();
+                else if(activeId === 'feed') window.renderFeed();
+                else if(activeId === 'profile') window.renderProfile();
+                else if(activeId === 'detail') window.viewPrompt(id); // refresh modal
+
+            } catch(e) { console.error(e); }
+        }
+
+        window.forkPrompt = async (id) => {
+            if(!window.currentUser) return document.getElementById('login-overlay').classList.add('active');
+            try {
+                const docSnap = await getDoc(doc(db, "prompts", id)); if(!docSnap.exists()) return;
+                const data = docSnap.data();
+                const newId = generateId();
+                const newPrompt = { ...data, userId: window.currentUser.uid, authorDisplayName: window.currentUser.displayName, authorAvatar: window.currentUser.photoURL, isPublic: false, likes: 0, forks: 0, forkedFrom: id, date: new Date().toISOString(), createdAt: new Date().toISOString() };
+                await setDoc(doc(db, "prompts", newId), newPrompt);
+                await updateDoc(doc(db, "prompts", id), { forks: increment(1) });
+                window.showToast("Prompt Forked to your Library!");
+            } catch(e) { await window.modal.alert(e.message); }
+        }
+
+        window.copyToClipboardText = (txt) => { navigator.clipboard.writeText(txt).then(()=>window.showToast("Copied!")); }
+        window.copyToClipboard = (id) => { navigator.clipboard.writeText(document.getElementById(id).innerText).then(()=>window.showToast("Copied!")); }
+
+        // --- EXPLORE PAGE ---
+        let currentExploreCat = '';
+        window.setExploreCat = (cat) => {
+            currentExploreCat = cat;
+            document.querySelectorAll('.cat-pill').forEach(el => el.classList.remove('active', 'bg-neutral-900', 'text-white'));
+            document.querySelectorAll('.cat-pill').forEach(el => {
+                if(el.innerText.trim() === (cat || 'All')) { el.classList.add('active'); el.classList.remove('bg-neutral-900'); }
+                else el.classList.add('bg-neutral-900');
+            });
+            window.renderExplore();
+        }
+
+        window.loadExplore = async (force = false) => {
+            if(window.exploreData.length > 0 && !force) { window.renderExplore(); return; }
+            document.getElementById('explore-loader').style.display = 'flex'; document.getElementById('explore-grid').innerHTML = '';
+            try {
+                const q = query(collection(db, "prompts"), where("isPublic", "==", true), orderBy("likes", "desc"), limit(50));
+                const snap = await getDocs(q);
+                window.exploreData = []; snap.forEach(doc => window.exploreData.push({id: doc.id, ...doc.data()}));
+                window.renderExplore();
+            } catch(e) { console.error(e); window.showToast("Failed to load explore"); }
+            finally { document.getElementById('explore-loader').style.display = 'none'; }
+        }
+
+        window.renderExplore = () => {
+            const q = document.getElementById('explore-search').value.toLowerCase();
+            const m = document.getElementById('explore-model').value;
+            const c = currentExploreCat;
+            const grid = document.getElementById('explore-grid');
+            
+            const filtered = window.exploreData.filter(p => {
+                const matchQ = p.title.toLowerCase().includes(q) || (p.tags && p.tags.join(' ').toLowerCase().includes(q)) || p.content.toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q);
+                const matchC = c === '' || p.category === c;
+                const matchM = m === '' || p.targetModel === m;
+                return matchQ && matchC && matchM;
+            });
+            grid.innerHTML = filtered.map(p => renderPromptCard(p)).join('');
+            if(filtered.length === 0) grid.innerHTML = `<p class="text-neutral-500 col-span-full py-10">No public prompts found.</p>`;
+        }
+
+        // --- FEED PAGE ---
+        let currentFeedTab = 'latest';
+        window.setFeedTab = (tab) => {
+            currentFeedTab = tab;
+            document.getElementById('tab-latest').classList.toggle('active', tab === 'latest');
+            document.getElementById('tab-trending').classList.toggle('active', tab === 'trending');
+            window.loadFeed(false);
+        }
+
+        window.loadFeed = async (force = false) => {
+            const grid = document.getElementById('feed-grid');
+            if(currentFeedTab === 'latest') {
+                if(window.feedLatestData.length > 0 && !force) { grid.innerHTML = window.feedLatestData.map(p => renderPromptCard(p)).join(''); return; }
+                grid.innerHTML = '<div class="flex justify-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-primary text-2xl"></i></div>';
+                try {
+                    const q = query(collection(db, "prompts"), where("isPublic", "==", true), orderBy("date", "desc"), limit(30));
+                    const snap = await getDocs(q); window.feedLatestData = []; snap.forEach(doc => window.feedLatestData.push({id: doc.id, ...doc.data()}));
+                    grid.innerHTML = window.feedLatestData.map(p => renderPromptCard(p)).join('');
+                } catch(e) { console.error(e); }
+            } else {
+                if(window.feedTrendingData.length > 0 && !force) { grid.innerHTML = window.feedTrendingData.map(p => renderPromptCard(p)).join(''); return; }
+                grid.innerHTML = '<div class="flex justify-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-primary text-2xl"></i></div>';
+                try {
+                    const q = query(collection(db, "prompts"), where("isPublic", "==", true), orderBy("forks", "desc"), limit(30));
+                    const snap = await getDocs(q); window.feedTrendingData = []; snap.forEach(doc => window.feedTrendingData.push({id: doc.id, ...doc.data()}));
+                    grid.innerHTML = window.feedTrendingData.map(p => renderPromptCard(p)).join('');
+                } catch(e) { console.error(e); }
+            }
+        }
+
+        // --- USER PROFILE ---
+        let currentProfId = null; let currentProfTab = 'prompts';
+        window.viewProfile = async (uid) => {
+            if(uid === 'me') { if(!window.currentUser) return; uid = window.currentUser.uid; }
+            currentProfId = uid;
+            window.switchTab('profile');
+            document.getElementById('profile-grid').innerHTML = '<div class="col-span-full flex justify-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-primary text-2xl"></i></div>';
+            
+            try {
+                const uSnap = await getDoc(doc(db, "users", uid));
+                if(uSnap.exists()) {
+                    const ud = uSnap.data();
+                    document.getElementById('prof-name').innerText = esc(ud.displayName || "User");
+                    document.getElementById('prof-avatar').src = esc(ud.photoURL || 'https://ui-avatars.com/api/?name=U&background=333&color=fff');
+                } else { document.getElementById('prof-name').innerText = "Unknown User"; }
+
+                const q = query(collection(db, "prompts"), where("userId", "==", uid), where("isPublic", "==", true), limit(50));
+                const snap = await getDocs(q);
+                window.profileData = []; let tLikes = 0;
+                snap.forEach(doc => { const d = doc.data(); window.profileData.push({id: doc.id, ...d}); tLikes += (d.likes||0); });
+                
+                document.getElementById('prof-stat-prompts').innerText = window.profileData.length;
+                document.getElementById('prof-stat-likes').innerText = tLikes;
+                
+                window.setProfTab('prompts');
+            } catch(e) { console.error(e); }
+        }
+
+        window.setProfTab = async (tab) => {
+            currentProfTab = tab;
+            document.getElementById('ptab-prompts').classList.toggle('active', tab === 'prompts');
+            document.getElementById('ptab-liked').classList.toggle('active', tab === 'liked');
+            
+            const grid = document.getElementById('profile-grid');
+            if(tab === 'prompts') {
+                grid.innerHTML = window.profileData.map(p => renderPromptCard(p)).join('');
+                if(window.profileData.length===0) grid.innerHTML = `<p class="text-neutral-500">No public prompts.</p>`;
+            } else {
+                grid.innerHTML = '<div class="col-span-full flex justify-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-primary text-2xl"></i></div>';
+                try {
+                    const lSnap = await getDocs(query(collection(db, "likes"), where("userId", "==", currentProfId), limit(20)));
+                    let pIds = []; lSnap.forEach(d => pIds.push(d.data().promptId));
+                    if(pIds.length === 0) { grid.innerHTML = `<p class="text-neutral-500">No liked prompts.</p>`; return; }
+                    
+                    let likedPrompts = [];
+                    // chunk fetching to avoid in query limits
+                    for(let i=0; i<pIds.length; i+=10) {
+                        const chunk = pIds.slice(i, i+10);
+                        const pSnap = await getDocs(query(collection(db, "prompts"), where("__name__", "in", chunk)));
+                        pSnap.forEach(doc => likedPrompts.push({id: doc.id, ...doc.data()}));
+                    }
+                    grid.innerHTML = likedPrompts.map(p => renderPromptCard(p)).join('');
+                } catch(e) { console.error(e); }
+            }
         }
 
         // --- DASHBOARD ---
-        
         function renderDashboard() {
             document.getElementById('stat-total').innerText = window.prompts.length;
             document.getElementById('stat-collections').innerText = window.collectionsData.length;
@@ -922,212 +1074,51 @@
             const grid = document.getElementById('dashboard-recent-grid');
             const recent = [...window.prompts].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
             grid.innerHTML = recent.map(p => `<div onclick="window.viewPrompt('${esc(p.id)}')" class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm flex flex-col gap-3 hover-card cursor-pointer"><h4 class="font-bold text-white text-lg line-clamp-1">${esc(p.title)}</h4><p class="text-xs text-neutral-500 font-mono line-clamp-2">${esc(p.content)}</p></div>`).join('');
-            
-            const trendingGrid = document.getElementById('dashboard-trending-grid');
-            if(trendingGrid && window.publicPrompts) {
-                const trending = [...window.publicPrompts].sort((a,b) => (b.likedBy?.length || 0) - (a.likedBy?.length || 0)).slice(0, 3);
-                trendingGrid.innerHTML = trending.map(p => {
-                    const isLiked = window.currentUser && p.likedBy?.includes(window.currentUser?.uid);
-                    return `
-                    <div class="bg-darksurface p-5 rounded-3xl border border-neutral-800 shadow-sm hover-card flex flex-col relative cursor-pointer" onclick="window.viewPrompt('${esc(p.id)}')">
-                        <div class="flex items-center gap-3 mb-3">
-                            <img src="${esc(p.authorAvatar || 'https://ui-avatars.com/api/?name=U&background=262626&color=fff')}" class="w-6 h-6 rounded-full border border-neutral-700">
-                            <span class="text-xs font-bold text-white hover:text-primary transition-colors">${esc(p.authorName || 'Unknown')}</span>
-                        </div>
-                        <h4 class="font-extrabold text-white text-lg line-clamp-1 mb-2 pr-4">${esc(p.title)}</h4>
-                        <p class="text-[12px] text-neutral-500 line-clamp-2 font-mono mb-4">${esc(p.content)}</p>
-                        <div class="mt-auto flex justify-between items-center pt-3 border-t border-neutral-800">
-                            <button onclick="window.toggleLike(event, '${esc(p.id)}')" class="flex items-center gap-1.5 ${isLiked ? 'text-red-500' : 'text-neutral-500 hover:text-red-400'} transition-colors"><i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i> <span class="text-xs font-bold">${p.likedBy?.length || 0}</span></button>
-                            <span class="px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">${esc(p.targetModel || 'Any')}</span>
-                        </div>
-                    </div>`
-                }).join('');
-            }
         }
 
-
-        // --- DISCOVER TAB ---
-        
-        window.loadExplore = async (forceRefresh = false) => {
-            const grid = document.getElementById('explore-grid');
-            const loader = document.getElementById('explore-loader');
-            if(window.publicPrompts.length > 0 && !forceRefresh) return;
-            
-            grid.innerHTML = ''; loader.classList.remove('hidden');
-            try {
-                const q = query(collection(db, "prompts"), where("isPublic", "==", true), orderBy("date", "desc"), limit(100));
-                const snap = await getDocs(q);
-                window.publicPrompts = []; 
-                snap.forEach(doc => window.publicPrompts.push({id: doc.id, ...doc.data()}));
-                window.renderExplore();
-            } catch(e) { console.error(e); window.showToast("Failed to load explore page"); }
-            finally { loader.classList.add('hidden'); }
+        // --- COLLECTIONS ---
+        function buildCollectionTree() {
+            const root = []; const map = {};
+            window.collectionsData.forEach(c => map[c.id] = { ...c, children: [] });
+            window.collectionsData.forEach(c => { if(c.parentId && map[c.parentId]) map[c.parentId].children.push(map[c.id]); else root.push(map[c.id]); });
+            return root;
         }
-
-        window.renderExplore = () => {
-            const q = document.getElementById('explore-search').value.toLowerCase();
-            const grid = document.getElementById('explore-grid');
-            const sort = document.getElementById('explore-sort').value;
-            
-            let filtered = window.publicPrompts.filter(p => {
-                const matchQ = p.title.toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q) || (p.tags && p.tags.join(' ').toLowerCase().includes(q));
-                const matchCat = window.exploreFilterCategory === 'All' || p.category === window.exploreFilterCategory;
-                const matchMod = window.exploreFilterModel === 'All Models' || p.targetModel === window.exploreFilterModel || (window.exploreFilterModel === 'All Models' && !p.targetModel);
-                return matchQ && matchCat && matchMod;
-            });
-            
-            if(sort === 'likes') filtered.sort((a,b) => (b.likedBy?.length || 0) - (a.likedBy?.length || 0));
-            else if(sort === 'forks') filtered.sort((a,b) => (b.forks || 0) - (a.forks || 0));
-            else filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
-
-            grid.innerHTML = filtered.map(p => {
-                const isLiked = window.currentUser && p.likedBy?.includes(window.currentUser.uid);
-                const catClass = `cat-${(p.category||'other').toLowerCase()}`;
-                return `
-                    <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card flex flex-col h-full relative overflow-hidden group cursor-pointer" onclick="window.viewPrompt('${esc(p.id)}')">
-                        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div class="flex items-center gap-3 mb-4">
-                            <img src="${esc(p.authorAvatar || 'https://ui-avatars.com/api/?name=U&background=262626&color=fff')}" class="w-8 h-8 rounded-full border border-neutral-700">
-                            <div class="flex flex-col">
-                                <span class="text-xs font-bold text-white hover:text-primary transition-colors">${esc(p.authorName || 'Unknown')}</span>
-                                <span class="text-[10px] text-neutral-500">${new Date(p.date).toLocaleDateString()}</span>
-                            </div>
-                        </div>
-                        <h4 class="font-extrabold text-white text-xl line-clamp-1 mb-2 pr-4">${esc(p.title)}</h4>
-                        <div class="flex gap-2 mb-3 flex-wrap">
-                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${catClass}">${esc(p.category || 'Other')}</span>
-                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">${esc(p.targetModel || 'Any')}</span>
-                        </div>
-                        <p class="text-xs text-neutral-400 italic mb-4 line-clamp-2">${esc(p.description || '')}</p>
-                        <div class="bg-[#0A0A0A] p-3 rounded-xl mb-4 flex-1">
-                            <p class="text-[12px] text-neutral-500 line-clamp-3 font-mono">${esc(p.content)}</p>
-                        </div>
-                        <div class="mt-auto flex justify-between items-center pt-3 border-t border-neutral-800">
-                            <div class="flex gap-4">
-                                <button onclick="window.toggleLike(event, '${esc(p.id)}')" class="flex items-center gap-1.5 ${isLiked ? 'text-red-500' : 'text-neutral-500 hover:text-red-400'} transition-colors">
-                                    <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i> <span class="text-xs font-bold">${p.likedBy?.length || 0}</span>
-                                </button>
-                                <button onclick="window.forkPrompt(event, '${esc(p.id)}')" class="flex items-center gap-1.5 text-neutral-500 hover:text-primary transition-colors">
-                                    <i class="fa-solid fa-code-branch"></i> <span class="text-xs font-bold">${p.forks || 0}</span>
-                                </button>
-                            </div>
-                            <button class="text-neutral-500 hover:text-white transition-colors"><i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            if(filtered.length === 0) grid.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-10">No public prompts found.</p>`;
+        function generateCollectionOptions(nodes, depth = 0) {
+            let html = ''; const indent = '&nbsp;&nbsp;'.repeat(depth * 3);
+            nodes.forEach(n => { html += `<option value="${esc(n.id)}">${indent}${depth > 0 ? '└ ' : ''}${esc(n.icon)} ${esc(n.name)}</option>`; if(n.children.length > 0) html += generateCollectionOptions(n.children, depth + 1); });
+            return html;
         }
-
-        window.toggleLike = async (e, id) => {
-            e.stopPropagation();
-            if(!window.currentUser) return window.showToast("Please sign in to like prompts.");
-            const p = window.publicPrompts.find(x => x.id === id) || window.prompts.find(x => x.id === id);
-            if(!p) return;
-            const pRef = doc(db, "prompts", id);
-            const isLiked = p.likedBy?.includes(window.currentUser.uid);
-            try {
-                if(isLiked) {
-                    await updateDoc(pRef, { likedBy: arrayRemove(window.currentUser.uid) });
-                    p.likedBy = p.likedBy.filter(u => u !== window.currentUser.uid);
-                } else {
-                    await updateDoc(pRef, { likedBy: arrayUnion(window.currentUser.uid) });
-                    if(!p.likedBy) p.likedBy = [];
-                    p.likedBy.push(window.currentUser.uid);
-                }
-                const activeId = document.querySelector('.screen.active')?.id;
-                if(activeId === 'explore') window.renderExplore();
-                if(activeId === 'detail') window.viewPrompt(id); // Re-render detail view
-            } catch(err) { window.showToast("Failed to like"); }
+        function updateCollectionDropdowns() {
+            const tree = buildCollectionTree(); const opts = generateCollectionOptions(tree);
+            document.getElementById('lib-collection').innerHTML = '<option value="">All Collections</option>' + opts;
+            document.getElementById('prompt-collection').innerHTML = '<option value="">No Collection (Root)</option>' + opts;
         }
-
-        window.forkPrompt = async (e, id) => {
-            e.stopPropagation();
-            if(!window.currentUser) return window.showToast("Please sign in to fork prompts.");
-            const p = window.publicPrompts.find(x => x.id === id) || window.prompts.find(x => x.id === id);
-            if(!p) return;
-            
-            try {
-                const newId = generateId();
-                const forked = {
-                    ...p, id: newId, userId: window.currentUser.uid,
-                    authorName: window.currentUser.displayName || window.currentUser.email.split('@')[0],
-                    authorAvatar: window.currentUser.photoURL || `https://ui-avatars.com/api/?name=${window.currentUser.email}&background=6366F1&color=fff`,
-                    isPublic: false, date: new Date().toISOString(), forkedFrom: id, likedBy: [], forks: 0, history: []
-                };
-                await setDoc(doc(db, "prompts", newId), forked);
-                await updateDoc(doc(db, "prompts", id), { forks: increment(1) });
-                p.forks = (p.forks || 0) + 1;
-                const activeId = document.querySelector('.screen.active')?.id;
-                if(activeId === 'explore') window.renderExplore();
-                if(activeId === 'detail') window.viewPrompt(id);
-                window.showToast("Prompt Forked to your Library!");
-            } catch(err) { window.modal.alert("Failed to fork: " + err.message); }
+        window.createCollectionPrompt = async () => {
+            const name = await window.modal.prompt("Collection Name:", ""); if(!name) return;
+            const icon = await window.modal.prompt("Emoji Icon:", "📁") || "📁";
+            try { await setDoc(doc(db, "collections", generateId()), { name, icon, parentId: null, userId: window.currentUser.uid }); window.showToast("Collection created!"); } catch (e) { await window.modal.alert(e.message); }
         }
-
-        window.loadDiscover_OLD = async () => {
-            const grid = document.getElementById('discover-grid');
-            const loader = document.getElementById('discover-loader');
-            if(grid.innerHTML !== '' && !forceRefresh) return;
-            
-            grid.innerHTML = ''; loader.classList.remove('hidden');
-            try {
-                const q = query(collection(db, "prompts"), where("isPublic", "==", true), limit(30));
-                const snap = await getDocs(q);
-                let items = []; snap.forEach(doc => items.push({id: doc.id, ...doc.data()}));
-                
-                grid.innerHTML = items.map(p => `
-                    <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card flex flex-col h-full relative overflow-hidden group">
-                        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <h4 class="font-extrabold text-white text-xl line-clamp-1 mb-2 pr-4">${esc(p.title)}</h4>
-                        <p class="text-[13px] text-neutral-400 mb-6 line-clamp-3 flex-1 font-mono leading-relaxed">${esc(p.content)}</p>
-                        <button onclick="window.forkDiscoverPrompt('${esc(p.id)}')" class="w-full py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-xl text-sm font-bold text-white transition-colors"><i class="fa-solid fa-code-branch mr-2"></i> Fork Prompt</button>
-                    </div>
-                `).join('');
-                if(items.length === 0) grid.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-10">No public prompts available yet.</p>`;
-            } catch(e) { console.error(e); window.showToast("Failed to load discover page"); }
-            finally { loader.classList.add('hidden'); }
+        window.renderCollections = () => {
+            const tree = buildCollectionTree(); const grid = document.getElementById('collections-grid');
+            const renderNode = (node, depth) => {
+                const count = window.prompts.filter(p => p.collectionId === node.id).length;
+                let childHtml = node.children.map(c => renderNode(c, depth+1)).join('');
+                return `<div class="bg-darksurface p-5 rounded-2xl border border-neutral-800 shadow-sm ${depth > 0 ? 'ml-8 mt-4 border-l-primary/30 border-l-4' : ''}"><div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('lib-collection').value='${esc(node.id)}'; window.switchTab('library');"><div class="flex items-center gap-3"><span class="text-3xl">${esc(node.icon)}</span><div><h3 class="text-lg font-bold text-white">${esc(node.name)}</h3><p class="text-xs text-neutral-500 font-bold uppercase tracking-widest">${count} Prompts</p></div></div><button class="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center text-neutral-400 hover:text-white transition-colors" onclick="event.stopPropagation(); window.addSubCollection('${esc(node.id)}')"><i class="fa-solid fa-plus text-xs"></i></button></div>${childHtml}</div>`;
+            };
+            grid.innerHTML = tree.map(n => renderNode(n, 0)).join('');
         }
-
-        window.forkDiscoverPrompt = async (id) => {
-            if(!window.currentUser) return window.modal.alert("Login required.");
-            try {
-                const docSnap = await getDoc(doc(db, "prompts", id));
-                if(docSnap.exists()) {
-                    const data = docSnap.data();
-                    const newId = generateId();
-                    await setDoc(doc(db, "prompts", newId), { ...data, userId: window.currentUser.uid, isPublic: false, date: new Date().toISOString() });
-                    window.showToast("Prompt Forked to your Library!");
-                }
-            } catch(e) { await window.modal.alert(e.message); }
-        }
-
-        // --- LIBRARY ---
-        window.renderLibrary = () => {
-            const q = document.getElementById('lib-search').value.toLowerCase();
-            const colId = document.getElementById('lib-collection').value;
-            const grid = document.getElementById('library-grid');
-            
-            const filtered = window.prompts.filter(p => {
-                const matchQ = p.title.toLowerCase().includes(q) || (p.tags && p.tags.join(' ').toLowerCase().includes(q)) || p.content.toLowerCase().includes(q);
-                // Also match children of the selected collection conceptually, but for simplicity exact match for now
-                const matchCol = colId === '' || p.collectionId === colId;
-                return matchQ && matchCol;
-            });
-
-            grid.innerHTML = filtered.map(p => {
-                const col = window.collectionsData.find(c => c.id === p.collectionId);
-                const colTag = col ? `<span class="bg-neutral-900 text-neutral-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-neutral-800">${esc(col.icon)} ${esc(col.name)}</span>` : '';
-                return `<div onclick="window.viewPrompt('${esc(p.id)}')" class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card cursor-pointer flex flex-col h-full relative overflow-hidden"><div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div><div class="flex justify-between items-start mb-3"><h4 class="font-extrabold text-white text-xl line-clamp-1 pr-4">${esc(p.title)}</h4>${p.isPublic ? `<i class="fa-solid fa-globe text-emerald-500 text-xs"></i>` : ''}</div><p class="text-[13px] text-neutral-400 mb-6 line-clamp-3 flex-1 font-mono leading-relaxed">${esc(p.content)}</p><div class="mt-auto flex items-center gap-2 flex-wrap">${colTag}</div></div>`;
-            }).join('');
+        window.addSubCollection = async (parentId) => {
+            const name = await window.modal.prompt("Sub-Collection Name:", ""); if(!name) return;
+            const icon = await window.modal.prompt("Emoji Icon:", "📂") || "📁";
+            try { await setDoc(doc(db, "collections", generateId()), { name, icon, parentId, userId: window.currentUser.uid }); } catch(e) { await window.modal.alert(e.message); }
         }
 
         // --- ADD/EDIT ---
         window.prepareAddPrompt = () => {
             currentEditingId = null; document.getElementById('form-title').innerText = "Create New Prompt";
-            document.getElementById('prompt-id').value = ""; document.getElementById('prompt-name').value = "";
-            document.getElementById('prompt-collection').value = ""; document.getElementById('prompt-tags').value = "";
-            document.getElementById('prompt-content').value = ""; window.editorDirty = false;
+            ['prompt-id','prompt-name','prompt-desc','prompt-collection','prompt-tags','prompt-content'].forEach(id => document.getElementById(id).value = "");
+            document.getElementById('prompt-cat').value = 'Other'; document.getElementById('prompt-target-model').value = 'Any';
+            document.getElementById('prompt-public').checked = false; window.editorDirty = false;
             window.parseVariables(); window.switchTab('add');
         }
 
@@ -1135,42 +1126,36 @@
             const p = window.prompts.find(x => x.id === currentViewId); if(!p) return;
             currentEditingId = p.id; document.getElementById('form-title').innerText = "Edit Prompt";
             document.getElementById('prompt-id').value = p.id; document.getElementById('prompt-name').value = p.title;
+            document.getElementById('prompt-desc').value = p.description || "";
+            document.getElementById('prompt-cat').value = p.category || "Other";
+            document.getElementById('prompt-target-model').value = p.targetModel || "Any";
             document.getElementById('prompt-collection').value = p.collectionId || "";
             document.getElementById('prompt-tags').value = (p.tags || []).join(", ");
-            document.getElementById('prompt-content').value = p.content; window.editorDirty = false;
-            window.parseVariables(); window.switchTab('add');
+            document.getElementById('prompt-content').value = p.content;
+            document.getElementById('prompt-public').checked = p.isPublic || false;
+            window.editorDirty = false; window.parseVariables(); window.switchTab('add');
         }
 
-        
         window.savePrompt = async () => {
             const title = document.getElementById('prompt-name').value.trim(); const content = document.getElementById('prompt-content').value.trim();
             if(!title || !content) return window.modal.alert("Title and Content required.");
 
             const docId = currentEditingId || generateId();
             let existing = window.prompts.find(x => x.id === docId);
-            
-            let historyArray = existing ? (existing.history || []) : [];
-            let currentVer = existing ? parseFloat(existing.version || 1.0) : 1.0;
+            let historyArray = existing ? (existing.history || []) : []; let currentVer = existing ? parseFloat(existing.version || 1.0) : 1.0;
             if(existing && existing.content !== content) { historyArray.push({ version: currentVer.toFixed(1), content: existing.content, date: existing.date }); currentVer += 0.1; }
 
             const newPrompt = {
-                title, content, version: currentVer.toFixed(1), history: historyArray, collectionId: document.getElementById('prompt-collection').value,
-                category: document.getElementById('prompt-category').value, targetModel: document.getElementById('prompt-target-model').value,
-                description: document.getElementById('prompt-desc').value.trim(),
-                tags: document.getElementById('prompt-tags').value.split(',').map(t => t.trim()).filter(t => t),
-                date: new Date().toISOString(), userId: window.currentUser.uid, 
-                authorName: window.currentUser.displayName || window.currentUser.email.split('@')[0],
-                authorAvatar: window.currentUser.photoURL || `https://ui-avatars.com/api/?name=${window.currentUser.email}&background=6366F1&color=fff`,
-                isPublic: existing ? existing.isPublic : false
+                title, content, description: document.getElementById('prompt-desc').value.trim(), category: document.getElementById('prompt-cat').value,
+                targetModel: document.getElementById('prompt-target-model').value, version: currentVer.toFixed(1), history: historyArray,
+                collectionId: document.getElementById('prompt-collection').value, tags: document.getElementById('prompt-tags').value.split(',').map(t => t.trim()).filter(t => t),
+                date: new Date().toISOString(), createdAt: existing ? existing.createdAt : new Date().toISOString(), userId: window.currentUser.uid, 
+                authorDisplayName: window.currentUser.displayName, authorAvatar: window.currentUser.photoURL,
+                isPublic: document.getElementById('prompt-public').checked, likes: existing ? (existing.likes||0) : 0, forks: existing ? (existing.forks||0) : 0
             };
-            
-            if(!existing) { newPrompt.likedBy = []; newPrompt.forks = 0; }
-            else { newPrompt.likedBy = existing.likedBy || []; newPrompt.forks = existing.forks || 0; }
-
-            try { await setDoc(doc(db, "prompts", docId), newPrompt, { merge: true }); window.editorDirty = false; window.showToast("Saved!"); window.switchTab('library'); } 
+            try { await setDoc(doc(db, "prompts", docId), newPrompt); window.editorDirty = false; window.showToast("Saved!"); window.switchTab('library'); } 
             catch (e) { await window.modal.alert(e.message); }
         }
-
 
         window.parseVariables = () => {
             const content = document.getElementById('prompt-content').value;
@@ -1178,36 +1163,47 @@
             const container = document.getElementById('variables-container');
             if (matches.length === 0) container.innerHTML = `<div class="p-6 text-center border-2 border-dashed border-neutral-800 rounded-2xl"><i class="fa-solid fa-cube text-3xl text-neutral-700 mb-2"></i><p class="text-sm font-medium text-neutral-500">No variables detected.<br>Type <code class="text-primary">{{var}}</code></p></div>`;
             else container.innerHTML = matches.map(v => `<div class="border border-neutral-800 rounded-xl p-3 bg-neutral-900/50"><code class="text-xs font-bold text-primary mb-2 block">{{${esc(v)}}}</code><input type="text" placeholder="Value..." class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-primary text-white"></div>`).join('');
-            
-            // Update token cost estimate live
-            const est = Math.ceil(content.length / 4);
-            const estUI = document.getElementById('token-estimate');
-            if(estUI) { estUI.innerText = `~${est} Tokens`; estUI.classList.remove('hidden'); }
+            const est = Math.ceil(content.length / 4); const estUI = document.getElementById('token-estimate'); if(estUI) { estUI.innerText = `~${est} Tokens`; estUI.classList.remove('hidden'); }
         }
 
         // --- DETAIL VIEW ---
-        
         window.viewPrompt = (id) => {
-            const p = window.prompts.find(x => x.id === id) || window.publicPrompts.find(x => x.id === id); if(!p) return;
+            // Check all lists
+            let p = window.prompts.find(x => x.id === id) || window.exploreData.find(x => x.id === id) || window.feedLatestData.find(x => x.id === id) || window.feedTrendingData.find(x => x.id === id) || window.profileData.find(x => x.id === id);
+            if(!p) return;
             currentViewId = id;
-            document.getElementById('view-title').innerText = p.title; document.getElementById('view-date').innerText = new Date(p.date).toLocaleDateString();
+            
+            document.getElementById('view-title').innerText = p.title; document.getElementById('view-date').innerText = timeAgo(p.createdAt || p.date);
             document.getElementById('view-version').innerText = p.version || '1.0'; document.getElementById('view-content').innerText = p.content;
             
-            document.getElementById('view-desc').innerText = p.description || '';
-            document.getElementById('view-author-name').innerText = p.authorName || 'Unknown Author';
-            document.getElementById('view-author-avatar').src = p.authorAvatar || 'https://ui-avatars.com/api/?name=User&background=262626&color=fff';
+            if(p.description) { document.getElementById('view-desc').innerText = p.description; document.getElementById('view-desc').classList.remove('hidden'); } else document.getElementById('view-desc').classList.add('hidden');
             
-            const isLiked = window.currentUser && p.likedBy?.includes(window.currentUser.uid);
-            document.getElementById('view-likes').innerHTML = `<i class="${isLiked ? 'fa-solid text-red-500' : 'fa-regular text-neutral-500'} fa-heart"></i> ${p.likedBy?.length || 0} Likes`;
-            document.getElementById('view-forks').innerHTML = `<i class="fa-solid fa-code-branch text-neutral-500"></i> ${p.forks || 0} Forks`;
-
-            const colClass = `cat-${(p.category||'Other').toLowerCase()}`;
-            document.getElementById('view-cat').innerHTML = `<span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase ${colClass}">${esc(p.category || 'Other')}</span>`;
-            document.getElementById('view-model').innerHTML = `<span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">${esc(p.targetModel || 'Any')}</span>`;
+            const col = window.collectionsData.find(c => c.id === p.collectionId);
+            const cColor = catColors[p.category] || 'bg-neutral-800 text-neutral-300 border-neutral-700';
+            document.getElementById('view-cat').className = `px-3 py-1.5 rounded-lg text-xs font-bold border ${cColor}`;
+            document.getElementById('view-cat').innerText = p.category || 'Other';
+            document.getElementById('view-model').innerText = p.targetModel || 'Any';
             
             document.getElementById('view-tags').innerHTML = (p.tags || []).map(t => `<span class="text-xs font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">#${esc(t)}</span>`).join('');
             
             const pubBadge = document.getElementById('view-public-badge'); p.isPublic ? pubBadge.classList.remove('hidden') : pubBadge.classList.add('hidden');
+            
+            const av = document.getElementById('view-author-avatar'); const an = document.getElementById('view-author-name');
+            if(p.authorDisplayName) { av.src = p.authorAvatar || 'https://ui-avatars.com/api/?name=U&background=333&color=fff'; av.classList.remove('hidden'); an.innerText = p.authorDisplayName; an.classList.remove('hidden'); an.onclick = () => window.viewProfile(p.userId); } else { av.classList.add('hidden'); an.classList.add('hidden'); }
+
+            document.getElementById('view-likes').innerText = p.likes || 0;
+            document.getElementById('view-forks').innerText = p.forks || 0;
+            const isLiked = window.userLikes && window.userLikes.has(p.id);
+            document.getElementById('btn-like-detail').className = `flex items-center gap-1.5 text-sm font-bold transition-colors ${isLiked ? 'text-red-500 hover:text-red-400' : 'text-neutral-400 hover:text-white'}`;
+
+            // Buttons visibility
+            const isOwner = window.currentUser && window.currentUser.uid === p.userId;
+            document.getElementById('btn-edit').classList.toggle('hidden', !isOwner);
+            document.getElementById('btn-delete').classList.toggle('hidden', !isOwner);
+            document.getElementById('btn-fork').classList.toggle('hidden', isOwner);
+
+            const sel = document.getElementById('version-selector'); sel.innerHTML = `<option value="current">v${p.version || '1.0'} (Current)</option>`;
+            if(p.history && p.history.length > 0) { [...p.history].reverse().forEach(h => { sel.innerHTML += `<option value="${h.version}">v${h.version} (${new Date(h.date).toLocaleDateString()})</option>`; }); }
 
             const matches = [...new Set(Array.from(p.content.matchAll(/\{\{([^}]+)\}\}/g)).map(m => m[1]))];
             const playVars = document.getElementById('play-variables');
@@ -1215,20 +1211,22 @@
             else playVars.innerHTML = matches.map(v => `<div><label class="block text-[10px] font-bold text-neutral-400 mb-1 uppercase flex justify-between">${esc(v)} <button onclick="window.startVoiceDictation('play_var_${esc(v)}', 'btn_mic_${esc(v)}')" id="btn_mic_${esc(v)}" class="text-neutral-500 hover:text-primary transition-colors"><i class="fa-solid fa-microphone"></i></button></label><input type="text" id="play_var_${esc(v)}" class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary text-white" placeholder="Type or Speak..."></div>`).join('');
 
             document.getElementById('play-output').innerHTML = `<div class="h-full flex flex-col items-center justify-center text-neutral-600 mt-10"><i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i><p class="font-medium">Fill in variables and click Run.</p></div>`;
-            window.toggleCompareMode(false);
-            window.switchTab('detail');
+            window.toggleCompareMode(false); window.switchTab('detail');
         }
 
+        window.loadHistoricalVersion = (ver) => {
+            const p = window.prompts.find(x => x.id === currentViewId); if(!p) return;
+            if(ver === 'current') { document.getElementById('view-content').innerText = p.content; } 
+            else { const hist = p.history.find(h => h.version === ver); if(hist) document.getElementById('view-content').innerText = hist.content; }
+        }
 
         window.generateShareLink = async () => {
             const p = window.prompts.find(x => x.id === currentViewId);
             try {
-                if(!p.isPublic) { await setDoc(doc(db, "prompts", currentViewId), { isPublic: true }, { merge: true }); document.getElementById('view-public-badge').classList.remove('hidden'); }
+                if(p && !p.isPublic && window.currentUser && window.currentUser.uid === p.userId) { await setDoc(doc(db, "prompts", currentViewId), { isPublic: true }, { merge: true }); document.getElementById('view-public-badge').classList.remove('hidden'); }
                 navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?share=' + currentViewId).then(() => window.showToast("Public Link Copied!"));
             } catch(e) { await window.modal.alert(e.message); }
         }
-
-        window.copyToClipboard = (id) => { navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => window.showToast("Copied!")); }
         
         window.deleteCurrentPrompt = async () => {
             if(await window.modal.confirm("Move this prompt to trash?", "Delete Prompt")) {
@@ -1237,13 +1235,7 @@
                     const trashRef = doc(db, "trash", currentViewId); const promptRef = doc(db, "prompts", currentViewId);
                     await setDoc(trashRef, { ...p, deletedAt: new Date().toISOString() }); await deleteDoc(promptRef);
                     window.switchTab('library'); window.showToast(`Moved to trash. <button id="undo-btn" class="ml-3 underline font-bold text-white">Undo</button>`, true);
-                    
-                    let undoClicked = false;
-                    document.getElementById('undo-btn').onclick = async () => {
-                        undoClicked = true;
-                        try { await setDoc(promptRef, p); await deleteDoc(trashRef); document.getElementById('toast').classList.remove('show'); window.showToast("Restored from trash!"); } 
-                        catch(e) { await window.modal.alert(e.message); }
-                    };
+                    let undoClicked = false; document.getElementById('undo-btn').onclick = async () => { undoClicked = true; try { await setDoc(promptRef, p); await deleteDoc(trashRef); document.getElementById('toast').classList.remove('show'); window.showToast("Restored from trash!"); } catch(e) { await window.modal.alert(e.message); } };
                     toastTimeout = setTimeout(() => { if (!undoClicked) document.getElementById('toast').classList.remove('show'); }, 6000);
                 } catch(e) { await window.modal.alert(e.message); }
             }
@@ -1251,14 +1243,9 @@
 
         // --- OMNI-MODEL API INTEGRATIONS & COST TRACKING ---
         const MODEL_PRICING = { openai: { in: 0.005, out: 0.015 }, anthropic: { in: 0.003, out: 0.015 }, gemini: { in: 0.00035, out: 0.00105 }, grok: { in: 0.005, out: 0.015 } };
-        
         function updateCostCounter(tokensIn, tokensOut, model) {
             const cost = ((tokensIn / 1000) * MODEL_PRICING[model].in) + ((tokensOut / 1000) * MODEL_PRICING[model].out);
-            let current = parseFloat(localStorage.getItem('monthly_spend') || 0);
-            current += cost;
-            localStorage.setItem('monthly_spend', current);
-            updateMonthlySpendUI();
-            return cost.toFixed(4);
+            let current = parseFloat(localStorage.getItem('monthly_spend') || 0); current += cost; localStorage.setItem('monthly_spend', current); updateMonthlySpendUI(); return cost.toFixed(4);
         }
         function updateMonthlySpendUI() { document.getElementById('monthly-spend').innerText = parseFloat(localStorage.getItem('monthly_spend') || 0).toFixed(4); }
 
@@ -1267,35 +1254,23 @@
         async function callOmniAPI(promptText, modelProvider) {
             const keys = { gemini: localStorage.getItem('api_key_gemini'), openai: localStorage.getItem('api_key_openai'), grok: localStorage.getItem('api_key_grok'), anthropic: localStorage.getItem('api_key_anthropic') };
             const estInTokens = Math.ceil(promptText.length / 4);
-
             if(modelProvider === 'gemini') {
                 if(!keys.gemini) throw new Error("Gemini Key missing.");
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${keys.gemini}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{parts: [{text: promptText}]}] }) });
                 const data = await res.json(); if(data.error) throw new Error(data.error.message); 
-                const outText = data.candidates[0].content.parts[0].text;
-                const cost = updateCostCounter(estInTokens, Math.ceil(outText.length / 4), 'gemini');
-                return { text: outText, cost };
-            }
-            else if(modelProvider === 'openai') {
+                const outText = data.candidates[0].content.parts[0].text; return { text: outText, cost: updateCostCounter(estInTokens, Math.ceil(outText.length / 4), 'gemini') };
+            } else if(modelProvider === 'openai') {
                 if(!keys.openai) throw new Error("OpenAI Key missing.");
                 const res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.openai}`}, body: JSON.stringify({ model: 'gpt-4o', messages: [{role: 'user', content: promptText}] }) });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
-                const cost = updateCostCounter(data.usage.prompt_tokens, data.usage.completion_tokens, 'openai');
-                return { text: data.choices[0].message.content, cost };
-            }
-            else if(modelProvider === 'grok') {
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); return { text: data.choices[0].message.content, cost: updateCostCounter(data.usage.prompt_tokens, data.usage.completion_tokens, 'openai') };
+            } else if(modelProvider === 'grok') {
                 if(!keys.grok) throw new Error("Grok Key missing.");
                 const res = await fetch('https://api.x.ai/v1/chat/completions', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.grok}`}, body: JSON.stringify({ model: 'grok-beta', messages: [{role: 'user', content: promptText}] }) });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
-                const cost = updateCostCounter(data.usage.prompt_tokens, data.usage.completion_tokens, 'grok');
-                return { text: data.choices[0].message.content, cost };
-            }
-            else if(modelProvider === 'anthropic') {
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); return { text: data.choices[0].message.content, cost: updateCostCounter(data.usage.prompt_tokens, data.usage.completion_tokens, 'grok') };
+            } else if(modelProvider === 'anthropic') {
                 if(!keys.anthropic) throw new Error("Anthropic Key missing.");
                 const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: {'Content-Type': 'application/json', 'x-api-key': keys.anthropic, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'}, body: JSON.stringify({ model: 'claude-3-5-sonnet-20241022', max_tokens: 1024, messages: [{role: 'user', content: promptText}] }) });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
-                const cost = updateCostCounter(data.usage.input_tokens, data.usage.output_tokens, 'anthropic');
-                return { text: data.content[0].text, cost };
+                const data = await res.json(); if(data.error) throw new Error(data.error.message); return { text: data.content[0].text, cost: updateCostCounter(data.usage.input_tokens, data.usage.output_tokens, 'anthropic') };
             }
             throw new Error("Provider not configured.");
         }
@@ -1310,120 +1285,63 @@
             } catch(e) { await window.modal.alert(e.message); } finally { document.getElementById('magic-loader').style.display = 'none'; }
         }
 
-        // Comparison mode logic
         window.toggleCompareMode = (forceState = null) => {
-            const cb = document.getElementById('compare-mode-toggle');
-            if(forceState !== null) cb.checked = forceState;
-            isCompareMode = cb.checked;
-            
-            document.getElementById('omni-model-select').disabled = isCompareMode;
-            document.getElementById('run-btn-text').innerText = isCompareMode ? "Run Comparison" : "Run Model";
-            
-            const tempCol = document.getElementById('template-col');
-            const singleOut = document.getElementById('single-output-container');
-            const compOut = document.getElementById('compare-output-container');
-
-            if(isCompareMode) {
-                tempCol.classList.replace('lg:w-1/3', 'lg:w-0');
-                tempCol.classList.replace('xl:w-1/4', 'xl:w-0');
-                tempCol.style.opacity = '0'; setTimeout(()=>tempCol.style.display='none', 300);
-                singleOut.classList.add('hidden'); compOut.classList.remove('hidden');
-            } else {
-                tempCol.style.display = 'block'; setTimeout(()=>tempCol.style.opacity = '1', 10);
-                tempCol.classList.replace('lg:w-0', 'lg:w-1/3');
-                tempCol.classList.replace('xl:w-0', 'xl:w-1/4');
-                singleOut.classList.remove('hidden'); compOut.classList.add('hidden');
-            }
+            const cb = document.getElementById('compare-mode-toggle'); if(forceState !== null) cb.checked = forceState; isCompareMode = cb.checked;
+            document.getElementById('omni-model-select').disabled = isCompareMode; document.getElementById('run-btn-text').innerText = isCompareMode ? "Run Comparison" : "Run Model";
+            const tempCol = document.getElementById('template-col'); const singleOut = document.getElementById('single-output-container'); const compOut = document.getElementById('compare-output-container');
+            if(isCompareMode) { tempCol.classList.replace('lg:w-1/3', 'lg:w-0'); tempCol.classList.replace('xl:w-1/4', 'xl:w-0'); tempCol.style.opacity = '0'; setTimeout(()=>tempCol.style.display='none', 300); singleOut.classList.add('hidden'); compOut.classList.remove('hidden'); } 
+            else { tempCol.style.display = 'block'; setTimeout(()=>tempCol.style.opacity = '1', 10); tempCol.classList.replace('lg:w-0', 'lg:w-1/3'); tempCol.classList.replace('xl:w-0', 'xl:w-1/4'); singleOut.classList.remove('hidden'); compOut.classList.add('hidden'); }
         }
 
         window.executeAI = async () => {
-            const p = window.prompts.find(x => x.id === currentViewId); if(!p) return;
-            let finalText = p.content;
-            finalText = finalText.replace(/\{\{([^}]+)\}\}/g, (m, vName) => { const el = document.getElementById(`play_var_${vName}`); return el && el.value.trim() ? el.value.trim() : m; });
-
+            const p = window.prompts.find(x => x.id === currentViewId) || window.exploreData.find(x => x.id === currentViewId) || window.feedLatestData.find(x => x.id === currentViewId) || window.feedTrendingData.find(x => x.id === currentViewId) || window.profileData.find(x => x.id === currentViewId); if(!p) return;
+            let finalText = p.content; finalText = finalText.replace(/\{\{([^}]+)\}\}/g, (m, vName) => { const el = document.getElementById(`play_var_${vName}`); return el && el.value.trim() ? el.value.trim() : m; });
             if(isCompareMode) {
-                document.getElementById('compare-loader').style.display = 'flex';
-                const models = ['gemini', 'openai', 'anthropic'];
+                document.getElementById('compare-loader').style.display = 'flex'; const models = ['gemini', 'openai', 'anthropic'];
                 const results = await Promise.allSettled(models.map(m => callOmniAPI(finalText, m)));
-                
                 models.forEach((m, idx) => {
-                    const out = document.getElementById(`out-${m}`);
-                    const cst = document.getElementById(`cost-${m}`);
-                    if(results[idx].status === 'fulfilled') {
-                        out.innerHTML = DOMPurify.sanitize(marked.parse(results[idx].value.text));
-                        cst.innerText = `$${results[idx].value.cost}`;
-                    } else {
-                        out.innerHTML = `<p class="text-red-500 font-bold">Error: ${esc(results[idx].reason.message)}</p>`;
-                        cst.innerText = '';
-                    }
+                    const out = document.getElementById(`out-${m}`); const cst = document.getElementById(`cost-${m}`);
+                    if(results[idx].status === 'fulfilled') { out.innerHTML = DOMPurify.sanitize(marked.parse(results[idx].value.text)); cst.innerText = `$${results[idx].value.cost}`; } 
+                    else { out.innerHTML = `<p class="text-red-500 font-bold">Error: ${esc(results[idx].reason.message)}</p>`; cst.innerText = ''; }
                 });
-                localStorage.setItem('ai_exec_count', parseInt(localStorage.getItem('ai_exec_count')||0) + 3);
-                document.getElementById('compare-loader').style.display = 'none';
+                localStorage.setItem('ai_exec_count', parseInt(localStorage.getItem('ai_exec_count')||0) + 3); document.getElementById('compare-loader').style.display = 'none';
             } else {
-                const provider = document.getElementById('omni-model-select').value;
-                const outputBox = document.getElementById('play-output');
-                document.getElementById('play-loader').style.display = 'flex';
+                const provider = document.getElementById('omni-model-select').value; const outputBox = document.getElementById('play-output'); document.getElementById('play-loader').style.display = 'flex';
                 try {
-                    const res = await callOmniAPI(finalText, provider);
-                    outputBox.innerHTML = DOMPurify.sanitize(marked.parse(res.text));
-                    const costUI = document.getElementById('cost-result-single');
-                    costUI.innerText = `$${res.cost}`; costUI.classList.remove('hidden');
+                    const res = await callOmniAPI(finalText, provider); outputBox.innerHTML = DOMPurify.sanitize(marked.parse(res.text));
+                    const costUI = document.getElementById('cost-result-single'); costUI.innerText = `$${res.cost}`; costUI.classList.remove('hidden');
                     localStorage.setItem('ai_exec_count', parseInt(localStorage.getItem('ai_exec_count')||0) + 1);
-                } catch(e) { outputBox.innerHTML = `<p class="text-red-500 font-bold">Error: ${esc(e.message)}</p>`; } 
-                finally { document.getElementById('play-loader').style.display = 'none'; }
+                } catch(e) { outputBox.innerHTML = `<p class="text-red-500 font-bold">Error: ${esc(e.message)}</p>`; } finally { document.getElementById('play-loader').style.display = 'none'; }
             }
         }
 
         // --- IMPORT CHATGPT DATA ---
         window.importChatGPTData = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            const reader = new FileReader();
+            const file = e.target.files[0]; if(!file) return; const reader = new FileReader();
             reader.onload = async (ev) => {
                 try {
-                    const data = JSON.parse(ev.target.result);
-                    if(!Array.isArray(data)) throw new Error("Invalid ChatGPT conversations.json");
-                    
+                    const data = JSON.parse(ev.target.result); if(!Array.isArray(data)) throw new Error("Invalid ChatGPT conversations.json");
                     let importedCount = 0;
                     for(let convo of data) {
-                        if(!convo.mapping) continue;
-                        let firstUserMsg = null;
-                        // find first user message
-                        for(let key in convo.mapping) {
-                            const msg = convo.mapping[key].message;
-                            if(msg && msg.author && msg.author.role === 'user' && msg.content && msg.content.parts) {
-                                firstUserMsg = msg.content.parts.join('\n');
-                                break;
-                            }
-                        }
+                        if(!convo.mapping) continue; let firstUserMsg = null;
+                        for(let key in convo.mapping) { const msg = convo.mapping[key].message; if(msg && msg.author && msg.author.role === 'user' && msg.content && msg.content.parts) { firstUserMsg = msg.content.parts.join('\n'); break; } }
                         if(firstUserMsg && firstUserMsg.length > 20) {
-                            const newPrompt = {
-                                title: convo.title || "ChatGPT Import", content: firstUserMsg, version: "1.0", history: [], collectionId: "", tags: ["chatgpt"],
-                                date: new Date(convo.create_time * 1000).toISOString(), userId: window.currentUser.uid, isPublic: false
-                            };
-                            await setDoc(doc(db, "prompts", generateId()), newPrompt);
-                            importedCount++;
+                            await setDoc(doc(db, "prompts", generateId()), { title: convo.title || "ChatGPT Import", content: firstUserMsg, version: "1.0", history: [], collectionId: "", tags: ["chatgpt"], date: new Date(convo.create_time * 1000).toISOString(), userId: window.currentUser.uid, isPublic: false }); importedCount++;
                         }
                     }
-                    window.showToast(`Imported ${importedCount} prompts from ChatGPT!`);
-                } catch(err) { await window.modal.alert("Error parsing ChatGPT export: " + err.message); }
-            };
-            reader.readAsText(file); e.target.value = '';
+                    window.showToast(`Imported ${importedCount} prompts!`);
+                } catch(err) { await window.modal.alert("Error parsing export: " + err.message); }
+            }; reader.readAsText(file); e.target.value = '';
         }
 
         let categoryChartInst = null;
         window.renderAnalytics = () => {
-            if (categoryChartInst) categoryChartInst.destroy();
-            const cats = {};
+            if (categoryChartInst) categoryChartInst.destroy(); const cats = {};
             window.prompts.forEach(p => { const col = window.collectionsData.find(c => c.id === p.collectionId); const name = col ? col.name : 'Uncategorized'; cats[name] = (cats[name] || 0) + 1; });
-            const ctx = document.getElementById('categoryChart').getContext('2d');
-            Chart.defaults.color = '#737373';
+            const ctx = document.getElementById('categoryChart').getContext('2d'); Chart.defaults.color = '#737373';
             categoryChartInst = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#6366F1', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6'], borderWidth: 0, hoverOffset: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
         }
-        window.exportDataFile = () => {
-            const dataStr = JSON.stringify(window.prompts, null, 2);
-            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([dataStr], {type: "application/json"})); a.download = "promptvault_pro_backup.json";
-            document.body.appendChild(a); a.click(); a.remove();
-        }
+        window.exportDataFile = () => { const dataStr = JSON.stringify(window.prompts, null, 2); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([dataStr], {type: "application/json"})); a.download = "promptvault_pro_backup.json"; document.body.appendChild(a); a.click(); a.remove(); }
     </script>
 </body>
 </html>
