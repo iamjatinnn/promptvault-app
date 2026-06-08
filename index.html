@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PromptVault AI - Pro Cloud V13</title>
     
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://api.openai.com https://api.x.ai https://api.anthropic.com; img-src 'self' data: https://*;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google.com https://api.openai.com https://api.x.ai https://api.anthropic.com; frame-src 'self' https://accounts.google.com https://*.firebaseapp.com; img-src 'self' data: https://*; worker-src 'self';">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     
@@ -99,12 +99,12 @@
 <body class="bg-darkbg text-slate-200 overflow-hidden flex h-screen antialiased selection:bg-primary/30 selection:text-primary relative">
     <div id="toast">Action successful!</div>
     <div id="cmd-palette" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999999] flex-col items-center pt-[15vh] opacity-0 transition-opacity duration-200"><div class="bg-darksurface2 border border-neutral-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200" id="cmd-box"><div class="flex items-center px-4 py-3 border-b border-neutral-800"><i class="fa-solid fa-magnifying-glass text-neutral-500 mr-3"></i><input type="text" id="cmd-input" class="flex-1 bg-transparent border-none text-white text-lg focus:outline-none placeholder-neutral-600" placeholder="Search prompts, or type '>' for actions..."><div class="bg-neutral-800 text-[10px] text-neutral-400 px-2 py-1 rounded font-mono">ESC</div></div><div id="cmd-results" class="max-h-96 overflow-y-auto p-2"></div></div></div>
-    <div id="login-overlay"><div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(99,102,241,0.25),transparent_35%),radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.18),transparent_30%)]"></div><div class="relative z-10 w-full max-w-md px-6 text-center"><div id="splash-bolt" class="mx-auto mb-6 w-20 h-20 rounded-3xl bg-gradient-to-br from-primary via-secondary to-pink-500 flex items-center justify-center shadow-[0_0_45px_rgba(99,102,241,.45)] animate-pulse"><i class="fa-solid fa-bolt text-3xl text-white"></i></div><h1 class="text-4xl font-black tracking-tight text-white mb-3">PromptVault AI</h1><p id="splash-text" class="text-neutral-400 mb-8">Omni-Models, Voice, and Cloud Sync.</p><div id="login-content" class="opacity-0 translate-y-4 transition-all duration-500 hidden"><button onclick="window.signInWithGoogle()" class="w-full py-3.5 bg-white hover:bg-neutral-200 text-black rounded-2xl font-extrabold transition-all shadow-xl flex items-center justify-center gap-3"><i class="fa-brands fa-google"></i> Continue with Google</button><div id="login-loader" class="hidden mt-5 text-primary"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Connecting securely...</div><p class="mt-5 text-[11px] text-neutral-600">Works on Firebase Hosting, Vercel, GitHub Pages, and any static host.</p></div></div></div>
+    <div id="login-overlay" style="display:none;opacity:0;visibility:hidden"><button onclick="window.closeLoginOverlay()" class="absolute top-5 right-5 z-20 w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white"><i class="fa-solid fa-xmark"></i></button><div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(99,102,241,0.25),transparent_35%),radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.18),transparent_30%)]"></div><div class="relative z-10 w-full max-w-md px-6 text-center"><div id="splash-bolt" class="mx-auto mb-6 w-20 h-20 rounded-3xl bg-gradient-to-br from-primary via-secondary to-pink-500 flex items-center justify-center shadow-[0_0_45px_rgba(99,102,241,.45)] animate-pulse"><i class="fa-solid fa-bolt text-3xl text-white"></i></div><h1 class="text-4xl font-black tracking-tight text-white mb-3">PromptVault AI</h1><p id="splash-text" class="text-neutral-400 mb-8">Omni-Models, Voice, and Cloud Sync.</p><div id="login-content" class="opacity-0 translate-y-4 transition-all duration-500 hidden"><button onclick="window.signInWithGoogle()" class="w-full py-3.5 bg-white hover:bg-neutral-200 text-black rounded-2xl font-extrabold transition-all shadow-xl flex items-center justify-center gap-3"><i class="fa-brands fa-google"></i> Continue with Google</button><div id="login-loader" class="hidden mt-5 text-primary"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Connecting securely...</div><p class="mt-5 text-[11px] text-neutral-600">Works on Firebase Hosting, Vercel, GitHub Pages, and any static host.</p></div></div></div>
     <div id="share-overlay" class="hidden"><div class="w-full max-w-2xl bg-darksurface2 border border-neutral-800 rounded-3xl p-8 shadow-2xl flex flex-col max-h-[90vh] mx-4"><div class="flex items-center gap-4 mb-6"><div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-lg"><i class="fa-solid fa-share-nodes text-xl"></i></div><div><p class="text-xs uppercase tracking-widest text-neutral-500 font-bold">Shared Prompt</p><h2 id="share-title" class="text-2xl font-black text-white">Loading...</h2></div></div><pre id="share-content" class="flex-1 overflow-y-auto whitespace-pre-wrap font-mono text-sm text-neutral-300 bg-black border border-neutral-800 rounded-2xl p-5 mb-6"></pre><div class="flex flex-col sm:flex-row gap-3"><button onclick="window.copySharedPrompt()" class="flex-1 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-bold"><i class="fa-regular fa-copy mr-2"></i> Copy</button><button onclick="window.saveSharedPrompt()" class="flex-1 py-3 bg-primary hover:bg-indigo-600 text-white rounded-xl font-bold"><i class="fa-solid fa-cloud-arrow-down mr-2"></i> Save to Library</button><button onclick="window.closeShareOverlay()" class="px-5 py-3 border border-neutral-700 hover:bg-neutral-800 text-white rounded-xl font-bold">Close</button></div></div></div>
     <div id="mobile-backdrop" onclick="window.toggleMobileMenu()" class="hidden fixed inset-0 bg-black/70 z-30 md:hidden"></div>
     <aside id="sidebar" class="fixed md:relative z-40 inset-y-0 left-0 w-72 bg-darksurface border-r border-neutral-900 flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-300"><div class="p-6 border-b border-neutral-900 flex items-center gap-3"><img src="logo.png" class="w-10 h-10 rounded-2xl border border-neutral-800" alt="PromptVault logo"><div><h2 class="font-black text-white leading-tight">PromptVault</h2><p class="text-[10px] text-primary uppercase tracking-widest font-bold">AI Pro Cloud</p></div></div><nav class="flex-1 py-4 space-y-1 overflow-y-auto"><button onclick="window.switchTab('dashboard')" class="nav-item active w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-grid-2 w-6"></i> Dashboard</button><button onclick="window.switchTab('library')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-book w-6"></i> Library</button><button onclick="window.switchTab('collections')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-folder-tree w-6"></i> Collections</button><button onclick="window.switchTab('explore')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-compass w-6"></i> Explore</button><button onclick="window.switchTab('analytics')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-chart-pie w-6"></i> Analytics</button><button onclick="window.switchTab('settings')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-gear w-6"></i> Settings</button></nav><div class="p-5 border-t border-neutral-900"><div class="rounded-2xl bg-neutral-950 border border-neutral-900 p-4 mb-4"><div class="flex items-center justify-between text-xs text-neutral-500 mb-2"><span>Monthly API spend</span><span class="text-amber-400 font-mono">$<span id="monthly-spend">0.0000</span></span></div><div class="flex items-center gap-2 text-xs text-neutral-500"><span id="sync-indicator" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud sync active</div></div><div class="flex items-center gap-3"><img id="user-avatar" src="" class="hidden w-10 h-10 rounded-full border border-neutral-700" alt="User avatar"><div class="min-w-0 flex-1"><p id="user-name" class="text-sm font-bold text-white truncate">User</p><button onclick="window.signOutUser()" class="text-xs text-neutral-500 hover:text-red-400">Sign out</button></div></div></div></aside>
-    <div class="flex-1 flex flex-col min-w-0"><header class="h-16 glass sticky top-0 z-20 flex items-center justify-between px-4 md:px-8"><button onclick="window.toggleMobileMenu()" class="md:hidden w-10 h-10 rounded-xl border border-neutral-800 flex items-center justify-center"><i class="fa-solid fa-bars"></i></button><button onclick="window.openCmdPalette()" class="hidden md:flex items-center gap-3 w-full max-w-md bg-neutral-950 border border-neutral-900 rounded-2xl px-4 py-2 text-neutral-500 text-sm hover:border-neutral-700 transition-colors"><i class="fa-solid fa-magnifying-glass"></i><span>Search prompts or run actions...</span><kbd class="ml-auto text-[10px] bg-neutral-900 px-2 py-0.5 rounded">⌘K</kbd></button><div class="ml-auto flex items-center gap-3"><button onclick="window.manualRefresh()" class="w-10 h-10 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800"><i class="fa-solid fa-rotate"></i></button><button onclick="window.prepareAddPrompt()" class="px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-plus mr-2"></i>New</button></div></header><main id="main-scroll" class="flex-1 overflow-auto p-4 md:p-8 bg-darkbg">
-            <div id="dashboard" class="screen active max-w-7xl mx-auto" style="display:block;opacity:1"><div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"><div><h1 class="text-3xl md:text-4xl font-black text-white tracking-tight">Dashboard</h1><p class="text-neutral-400 mt-2">Manage, test, share, and improve your AI prompts.</p></div><button onclick="window.prepareAddPrompt()" class="px-5 py-3 bg-primary hover:bg-indigo-600 text-white rounded-2xl font-bold shadow-lg"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Create Prompt</button></div><div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10"><div class="bg-darksurface border border-neutral-800 rounded-3xl p-5"><p class="text-xs text-neutral-500 font-bold uppercase tracking-widest mb-2">Prompts</p><h3 id="stat-total" class="text-3xl font-black text-white">0</h3></div><div class="bg-darksurface border border-neutral-800 rounded-3xl p-5"><p class="text-xs text-neutral-500 font-bold uppercase tracking-widest mb-2">Collections</p><h3 id="stat-collections" class="text-3xl font-black text-white">0</h3></div><div class="bg-darksurface border border-neutral-800 rounded-3xl p-5"><p class="text-xs text-neutral-500 font-bold uppercase tracking-widest mb-2">Shared</p><h3 id="stat-shared" class="text-3xl font-black text-white">0</h3></div><div class="bg-darksurface border border-neutral-800 rounded-3xl p-5"><p class="text-xs text-neutral-500 font-bold uppercase tracking-widest mb-2">AI Runs</p><h3 id="stat-executions" class="text-3xl font-black text-white">0</h3></div></div><div class="mb-10"><div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold text-white"><i class="fa-solid fa-fire text-red-500 mr-2"></i> Trending This Week</h3><button onclick="window.switchTab('explore')" class="text-primary text-sm font-bold hover:text-indigo-400">Explore Marketplace <i class="fa-solid fa-arrow-right text-xs"></i></button></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="dashboard-trending-grid"><p class="text-neutral-500">Loading community prompts...</p></div></div><div><div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold text-white">Recently Edited</h3><button onclick="window.switchTab('library')" class="text-primary text-sm font-bold hover:text-indigo-400">View Library <i class="fa-solid fa-arrow-right text-xs"></i></button></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="dashboard-recent-grid"></div></div></div>
+    <div class="flex-1 flex flex-col min-w-0"><header class="h-16 glass sticky top-0 z-20 flex items-center justify-between px-4 md:px-8"><button onclick="window.toggleMobileMenu()" class="md:hidden w-10 h-10 rounded-xl border border-neutral-800 flex items-center justify-center"><i class="fa-solid fa-bars"></i></button><button onclick="window.openCmdPalette()" class="hidden md:flex items-center gap-3 w-full max-w-md bg-neutral-950 border border-neutral-900 rounded-2xl px-4 py-2 text-neutral-500 text-sm hover:border-neutral-700 transition-colors"><i class="fa-solid fa-magnifying-glass"></i><span>Search prompts or run actions...</span><kbd class="ml-auto text-[10px] bg-neutral-900 px-2 py-0.5 rounded">⌘K</kbd></button><div class="ml-auto flex items-center gap-3"><button id="auth-action-btn" onclick="window.openLoginOverlay()" class="px-3 sm:px-4 py-2 bg-white hover:bg-neutral-200 text-black rounded-xl text-xs sm:text-sm font-extrabold transition-colors"><i class="fa-solid fa-user mr-1.5"></i>Login / Sign up</button><button onclick="window.manualRefresh()" class="w-10 h-10 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800"><i class="fa-solid fa-rotate"></i></button><button onclick="window.prepareAddPrompt()" class="px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-plus mr-2"></i>New</button></div></header><main id="main-scroll" class="flex-1 overflow-auto p-4 md:p-8 bg-darkbg">
+            <div id="dashboard" class="screen max-w-7xl mx-auto"><div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"><div><h1 class="text-3xl md:text-4xl font-black text-white tracking-tight">Dashboard</h1><p class="text-neutral-400 mt-2">Manage, test, share, and improve your AI prompts.</p></div><button onclick="window.prepareAddPrompt()" class="px-5 py-3 bg-primary hover:bg-indigo-600 text-white rounded-2xl font-bold shadow-lg"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Create Prompt</button></div><div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10"><div class="bg-darksurface border border-neutral-800 rounded-3xl p-5"><p class="text-xs text-neutral-500 font-bold uppercase tracking-widest mb-2">Prompts</p><h3 id="stat-total" class="text-3xl font-black text-white">0</h3></div><div class="bg-darksurface border border-neutral-800 rounded-3xl p-5"><p class="text-xs text-neutral-500 font-bold uppercase tracking-widest mb-2">Collections</p><h3 id="stat-collections" class="text-3xl font-black text-white">0</h3></div><div class="bg-darksurface border border-neutral-800 rounded-3xl p-5"><p class="text-xs text-neutral-500 font-bold uppercase tracking-widest mb-2">Shared</p><h3 id="stat-shared" class="text-3xl font-black text-white">0</h3></div><div class="bg-darksurface border border-neutral-800 rounded-3xl p-5"><p class="text-xs text-neutral-500 font-bold uppercase tracking-widest mb-2">AI Runs</p><h3 id="stat-executions" class="text-3xl font-black text-white">0</h3></div></div><div class="mb-10"><div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold text-white"><i class="fa-solid fa-fire text-red-500 mr-2"></i> Trending This Week</h3><button onclick="window.switchTab('explore')" class="text-primary text-sm font-bold hover:text-indigo-400">Explore Marketplace <i class="fa-solid fa-arrow-right text-xs"></i></button></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="dashboard-trending-grid"><p class="text-neutral-500">Loading community prompts...</p></div></div><div><div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold text-white">Recently Edited</h3><button onclick="window.switchTab('library')" class="text-primary text-sm font-bold hover:text-indigo-400">View Library <i class="fa-solid fa-arrow-right text-xs"></i></button></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="dashboard-recent-grid"></div></div></div>
 
             <!-- 2. LIBRARY -->
             <div id="library" class="screen max-w-7xl mx-auto">
@@ -143,7 +143,7 @@
 
             
             <!-- 2.8. EXPLORE TAB -->
-            <div id="explore" class="screen max-w-7xl mx-auto pb-10">
+            <div id="explore" class="screen active max-w-7xl mx-auto pb-10" style="display:block;opacity:1">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
                         <h1 class="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">Explore <span class="bg-primary/20 text-primary text-xs px-2 py-1 rounded-full border border-primary/30 uppercase tracking-widest">Marketplace</span></h1>
@@ -465,7 +465,7 @@
             window.renderExplore();
         }
         
-        window.addEventListener('load', () => window.initFilters());
+        window.addEventListener('load', () => { window.initFilters(); window.loadExplore?.(true); updateAuthButton(null); });
 
         if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
 
@@ -513,6 +513,39 @@
             confirm(msg, title='Are you sure?') { return this.show({type: 'confirm', msg, title}); },
             prompt(label, defaultVal='', title='Input') { return this.show({type: 'prompt', msg: label, defaultVal, title}); }
         };
+
+        window.openLoginOverlay = () => {
+            const overlay = document.getElementById('login-overlay');
+            if (!overlay) return;
+            overlay.style.display = 'flex';
+            overlay.style.visibility = 'visible';
+            requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+            const content = document.getElementById('login-content');
+            if (content) {
+                content.classList.remove('hidden');
+                requestAnimationFrame(() => content.classList.remove('opacity-0', 'translate-y-4'));
+            }
+        }
+        window.closeLoginOverlay = () => {
+            const overlay = document.getElementById('login-overlay');
+            if (!overlay) return;
+            overlay.style.opacity = '0';
+            overlay.style.visibility = 'hidden';
+            setTimeout(() => { if(!window.currentUser) overlay.style.display = 'none'; }, 250);
+        }
+        function updateAuthButton(user) {
+            const btn = document.getElementById('auth-action-btn');
+            if (!btn) return;
+            if (user) {
+                btn.innerHTML = '<i class="fa-solid fa-right-from-bracket mr-1.5"></i>Sign out';
+                btn.onclick = () => window.signOutUser();
+                btn.className = 'px-3 sm:px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white rounded-xl text-xs sm:text-sm font-bold transition-colors';
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-user mr-1.5"></i>Login / Sign up';
+                btn.onclick = () => window.openLoginOverlay();
+                btn.className = 'px-3 sm:px-4 py-2 bg-white hover:bg-neutral-200 text-black rounded-xl text-xs sm:text-sm font-extrabold transition-colors';
+            }
+        }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const synth = window.speechSynthesis;
@@ -576,6 +609,7 @@
 
         // --- AUTHENTICATION ---
         window.signInWithGoogle = async () => {
+            window.openLoginOverlay();
             document.getElementById('login-loader').classList.remove('hidden');
             signInWithPopup(auth, new GoogleAuthProvider()).catch(async e => { document.getElementById('login-loader').classList.add('hidden'); await window.modal.alert(e.message, "Login Failed"); });
         };
@@ -626,7 +660,8 @@
                 const overlay = document.getElementById('login-overlay');
                 if (user) {
                     window.currentUser = user;
-                    overlay.style.opacity = '0'; setTimeout(() => { overlay.style.visibility = 'hidden'; }, 500);
+                    updateAuthButton(user);
+                    overlay.style.opacity = '0'; setTimeout(() => { overlay.style.visibility = 'hidden'; overlay.style.display = 'none'; }, 500);
                     document.getElementById('user-name').innerText = user.displayName || "User";
                     if(user.photoURL) { const av = document.getElementById('user-avatar'); av.src = user.photoURL; av.classList.remove('hidden'); }
                     ['gemini','openai','grok','anthropic'].forEach(k => { const val = localStorage.getItem('api_key_'+k); if(val) document.getElementById('key-'+k).value = val; });
@@ -641,17 +676,23 @@
                     }, { merge: true });
                     
                     window.startDataSync();
+                    window.loadExplore(true);
+                    if (!window.location.search.includes('share=')) window.switchTab('explore');
 
                 } else {
                     window.currentUser = null; window.prompts = []; window.collectionsData = [];
+                    updateAuthButton(null);
                     if(unsubscribePrompts) { unsubscribePrompts(); unsubscribePrompts = null; }
                     if(unsubscribeCollections) { unsubscribeCollections(); unsubscribeCollections = null; }
-                    overlay.style.visibility = 'visible'; overlay.style.opacity = '1';
+                    overlay.style.opacity = '0'; overlay.style.visibility = 'hidden'; overlay.style.display = 'none';
+                    document.getElementById('user-name').innerText = "Guest";
+                    const av = document.getElementById('user-avatar'); if(av) { av.src = ''; av.classList.add('hidden'); }
                     document.getElementById('splash-bolt').classList.remove('animate-pulse');
                     document.getElementById('splash-text').innerText = "Omni-Models, Voice, and Cloud Sync.";
-                    document.getElementById('login-content').classList.remove('hidden');
-                    requestAnimationFrame(() => document.getElementById('login-content').classList.remove('opacity-0', 'translate-y-4'));
+                    document.getElementById('login-content').classList.add('hidden', 'opacity-0', 'translate-y-4');
                     document.getElementById('login-loader').classList.add('hidden');
+                    window.loadExplore(true);
+                    if (!window.location.search.includes('share=')) window.switchTab('explore');
                 }
             });
         }
@@ -694,6 +735,9 @@
                 window.startDataSync();
                 window.loadExplore(true);
                 window.showToast("Cloud Synced");
+            } else {
+                window.loadExplore(true);
+                window.showToast("Explore refreshed");
             }
         }
 
@@ -754,6 +798,7 @@
         }
 
         window.createCollectionPrompt = async () => {
+            if(!window.currentUser) { window.openLoginOverlay(); return window.showToast("Please login to create collections."); }
             const name = await window.modal.prompt("Collection Name:", ""); if(!name) return;
             const icon = await window.modal.prompt("Emoji Icon:", "📁") || "📁";
             
@@ -975,6 +1020,7 @@
 
         // --- ADD/EDIT ---
         window.prepareAddPrompt = () => {
+            if(!window.currentUser) { window.openLoginOverlay(); return window.showToast("Please login to create prompts."); }
             currentEditingId = null; document.getElementById('form-title').innerText = "Create New Prompt";
             document.getElementById('prompt-id').value = ""; document.getElementById('prompt-name').value = "";
             document.getElementById('prompt-collection').value = ""; document.getElementById('prompt-tags').value = "";
@@ -996,6 +1042,7 @@
 
         
         window.savePrompt = async () => {
+            if(!window.currentUser) { window.openLoginOverlay(); return window.showToast("Please login to save prompts."); }
             const title = document.getElementById('prompt-name').value.trim(); const content = document.getElementById('prompt-content').value.trim();
             if(!title || !content) return window.modal.alert("Title and Content required.");
 
@@ -1283,6 +1330,7 @@
         }
 
         window.importDataFile = async (e) => {
+            if(!window.currentUser) { window.openLoginOverlay(); e.target.value = ''; return window.showToast("Please login to restore backups."); }
             const file = e.target.files[0]; if(!file) return;
             const reader = new FileReader();
             reader.onload = async (ev) => {
