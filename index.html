@@ -2,6 +2,9 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PromptVault AI - Pro Cloud V13</title>
     
@@ -417,7 +420,7 @@
 
         
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc, query, where, limit, onSnapshot, orderBy, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 
@@ -467,7 +470,18 @@
         
         window.addEventListener('load', () => { window.initFilters(); window.loadExplore?.(true); updateAuthButton(null); });
 
-        if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+        if ('serviceWorker' in navigator) window.addEventListener('load', async () => {
+            try {
+                const reg = await navigator.serviceWorker.register('sw.js?v=6');
+                reg.update?.();
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!sessionStorage.getItem('sw-reloaded-v6')) {
+                        sessionStorage.setItem('sw-reloaded-v6', '1');
+                        window.location.reload();
+                    }
+                });
+            } catch (e) { console.warn('Service worker registration failed', e); }
+        });
 
         window.addEventListener('beforeunload', e => { if (window.editorDirty) { e.preventDefault(); e.returnValue = ''; } });
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -610,8 +624,37 @@
         // --- AUTHENTICATION ---
         window.signInWithGoogle = async () => {
             window.openLoginOverlay();
-            document.getElementById('login-loader').classList.remove('hidden');
-            signInWithPopup(auth, new GoogleAuthProvider()).catch(async e => { document.getElementById('login-loader').classList.add('hidden'); await window.modal.alert(e.message, "Login Failed"); });
+            const loader = document.getElementById('login-loader');
+            loader?.classList.remove('hidden');
+            try {
+                await signInWithPopup(auth, googleProvider);
+            } catch (e) {
+                console.error('Popup login failed', e);
+                const code = e?.code || '';
+                // Some deployed browsers block the popup/iframe handshake and Firebase reports auth/internal-error.
+                // Redirect is more reliable on Vercel/GitHub/Firebase Hosting.
+                if (code === 'auth/internal-error' || code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request' || code === 'auth/popup-closed-by-user') {
+                    try {
+                        await signInWithRedirect(auth, googleProvider);
+                        return;
+                    } catch (redirectErr) {
+                        console.error('Redirect login failed', redirectErr);
+                        e = redirectErr;
+                    }
+                }
+                loader?.classList.add('hidden');
+                const host = window.location.hostname;
+                let msg = e?.message || 'Unknown Firebase auth error.';
+                if ((e?.code || '').includes('unauthorized-domain') || (e?.code || '') === 'auth/internal-error') {
+                    msg += `
+
+Fix checklist:
+1) Firebase Console > Authentication > Settings > Authorized domains: add ${host}
+2) Enable Google provider in Authentication > Sign-in method
+3) Clear old service worker/cache or open in Incognito after redeploy.`;
+                }
+                await window.modal.alert(msg, 'Login Failed');
+            }
         };
         window.signOutUser = async () => { 
             if(await window.modal.confirm("Sign out?")) {
@@ -623,6 +666,15 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const sharedId = urlParams.get('share');
+        const googleProvider = new GoogleAuthProvider();
+        googleProvider.setCustomParameters({ prompt: 'select_account' });
+        auth.useDeviceLanguage?.();
+
+        getRedirectResult(auth).catch(async (e) => {
+            console.error('Redirect login failed', e);
+            const code = e?.code || 'auth/error';
+            await window.modal.alert(`Firebase login failed (${code}). If this is Vercel/GitHub, add this exact domain to Firebase Authorized domains and redeploy: ${window.location.hostname}`, 'Login Failed');
+        });
 
         async function loadSharedPrompt(id) {
             try {

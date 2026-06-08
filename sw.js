@@ -1,7 +1,5 @@
-const CACHE_NAME = 'promptvault-v4';
+const CACHE_NAME = 'promptvault-v6';
 const CORE_ASSETS = [
-  './',
-  './index.html',
   './manifest.json',
   './logo.png'
 ];
@@ -24,13 +22,27 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
 
-  const requestUrl = new URL(event.request.url);
-
-  // Firebase/API calls should always go to network.
-  if (requestUrl.hostname.includes('googleapis.com') || requestUrl.hostname.includes('firebaseio.com') || requestUrl.hostname.includes('api.openai.com') || requestUrl.hostname.includes('api.x.ai') || requestUrl.hostname.includes('api.anthropic.com')) {
+  // Always use network for app HTML/navigation so deployments on Vercel/GitHub are not stuck on stale cached builds.
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname === '/') {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => response)
+        .catch(() => caches.match('./index.html'))
+    );
     return;
   }
+
+  // API/Auth requests should not be cached.
+  if (
+    url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('google.com') ||
+    url.hostname.includes('firebaseio.com') ||
+    url.hostname.includes('api.openai.com') ||
+    url.hostname.includes('api.x.ai') ||
+    url.hostname.includes('api.anthropic.com')
+  ) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
@@ -40,7 +52,7 @@ self.addEventListener('fetch', (event) => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
         return response;
-      }).catch(() => caches.match('./index.html'));
+      });
     })
   );
 });
