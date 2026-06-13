@@ -1609,6 +1609,199 @@ Fix checklist:
 
         window.addEventListener('load', () => { v2InjectShell(); v2RenderCategories(); window.loadExplore?.(true); setTimeout(()=>{ if(document.getElementById('explore')?.classList.contains('active')) window.renderExplore(); },500); });
 
+
+        /* =========================
+           PHASE 1 POLISH ADD-ON
+           Empty states, navigation, global search, cards, responsiveness, Century Gothic
+        ========================== */
+        const P1 = {
+            empty: {
+                dashboard: {
+                    icon: 'fa-sparkles',
+                    title: 'Your prompt workspace is ready',
+                    body: 'Create your first prompt, browse the marketplace, or use the wizard to build one step by step.',
+                    primary: ['Create Prompt', "window.prepareAddPrompt()"],
+                    secondary: ['Browse Marketplace', "window.switchTab('explore')"]
+                },
+                library: {
+                    icon: 'fa-book-open',
+                    title: 'No saved prompts yet',
+                    body: 'Save prompts from the marketplace or create your own reusable templates for writing, coding, images, marketing, and research.',
+                    primary: ['Create Prompt', "window.prepareAddPrompt()"],
+                    secondary: ['Explore Prompts', "window.switchTab('explore')"]
+                },
+                marketplace: {
+                    icon: 'fa-store',
+                    title: 'Marketplace is warming up',
+                    body: 'No community prompts match this search or filter. Try clearing filters, searching another keyword, or submit the first prompt in this category.',
+                    primary: ['Clear Filters', "window.p1ClearMarketplaceFilters()"],
+                    secondary: ['Submit Prompt', "window.prepareAddPrompt()"]
+                },
+                collections: {
+                    icon: 'fa-folder-tree',
+                    title: 'Organize prompts into collections',
+                    body: 'Collections help you group prompts by workflow, client, model, topic, or project.',
+                    primary: ['New Collection', "window.createCollectionPrompt()"],
+                    secondary: ['Create Prompt', "window.prepareAddPrompt()"]
+                },
+                playground: {
+                    icon: 'fa-flask',
+                    title: 'Choose a prompt to test',
+                    body: 'Open any prompt and click Test to run it in the Omni-Model Playground. Your variables and AI output will appear there.',
+                    primary: ['Go to My Library', "window.switchTab('library')"],
+                    secondary: ['Browse Marketplace', "window.switchTab('explore')"]
+                }
+            }
+        };
+
+        function p1InstallStyles() {
+            if (document.getElementById('p1-polish-style')) return;
+            document.head.insertAdjacentHTML('beforeend', `<style id="p1-polish-style">
+                :root { --p1-font: 'Century Gothic', CenturyGothic, AppleGothic, 'Avant Garde', Avenir, Montserrat, Arial, sans-serif; }
+                html, body, button, input, select, textarea { font-family: var(--p1-font) !important; }
+                body { letter-spacing: -0.01em; }
+                .p1-shell-card { background: radial-gradient(circle at top left, rgba(99,102,241,.16), transparent 34%), #050505; border: 1px solid #262626; border-radius: 28px; }
+                .p1-empty { min-height: 330px; display:flex; align-items:center; justify-content:center; padding:34px; text-align:center; }
+                .p1-empty-icon { width:72px; height:72px; border-radius:24px; display:flex; align-items:center; justify-content:center; margin:0 auto 18px; background:linear-gradient(135deg, rgba(99,102,241,.25), rgba(236,72,153,.12)); border:1px solid rgba(99,102,241,.28); color:#a5b4fc; box-shadow:0 18px 60px rgba(99,102,241,.12); }
+                .p1-btn-primary { background:#6366f1; color:white; border-radius:14px; padding:11px 16px; font-weight:900; font-size:13px; transition:.2s; }
+                .p1-btn-primary:hover { background:#4f46e5; transform:translateY(-1px); }
+                .p1-btn-secondary { background:#0a0a0a; color:white; border:1px solid #262626; border-radius:14px; padding:11px 16px; font-weight:800; font-size:13px; transition:.2s; }
+                .p1-btn-secondary:hover { background:#171717; border-color:#404040; }
+                .p1-global-search { position:relative; width:min(560px, 52vw); }
+                .p1-search-input { width:100%; background:#050505; border:1px solid #262626; color:white; border-radius:18px; padding:11px 42px; outline:none; font-size:14px; transition:.2s; }
+                .p1-search-input:focus { border-color:rgba(99,102,241,.65); box-shadow:0 0 0 4px rgba(99,102,241,.10); }
+                .p1-search-results { position:absolute; left:0; right:0; top:calc(100% + 10px); z-index:80; background:#050505; border:1px solid #262626; border-radius:22px; overflow:hidden; box-shadow:0 24px 70px rgba(0,0,0,.65); max-height:430px; overflow-y:auto; display:none; }
+                .p1-search-results.show { display:block; }
+                .p1-search-item { padding:14px 16px; border-bottom:1px solid #111; cursor:pointer; display:flex; gap:12px; align-items:flex-start; }
+                .p1-search-item:hover { background:#0f0f0f; }
+                .p1-card { background:#050505; border:1px solid #262626; border-radius:26px; padding:18px; overflow:hidden; height:100%; display:flex; flex-direction:column; cursor:pointer; transition:.22s ease; position:relative; }
+                .p1-card:hover { transform:translateY(-4px); border-color:rgba(99,102,241,.55); box-shadow:0 20px 50px rgba(0,0,0,.35), 0 0 40px rgba(99,102,241,.08); }
+                .p1-card-thumb { height:150px; margin:-18px -18px 16px; background:linear-gradient(135deg, rgba(99,102,241,.22), rgba(236,72,153,.12)); border-bottom:1px solid #202020; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+                .p1-card-thumb img { width:100%; height:100%; object-fit:cover; transition:.35s; }
+                .p1-card:hover .p1-card-thumb img { transform:scale(1.05); }
+                .p1-card-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
+                .p1-action { padding:9px 8px; border-radius:12px; background:#0a0a0a; border:1px solid #222; color:#d4d4d4; font-size:11px; font-weight:900; transition:.2s; }
+                .p1-action:hover { background:#171717; color:white; border-color:#3f3f46; }
+                .p1-action.primary { background:rgba(99,102,241,.14); color:#a5b4fc; border-color:rgba(99,102,241,.25); }
+                .p1-count { color:#a3a3a3; font-size:11px; font-weight:800; display:flex; gap:10px; align-items:center; }
+                .p1-create-tabs details { background:#050505; border:1px solid #262626; border-radius:20px; padding:0; overflow:hidden; margin-top:14px; }
+                .p1-create-tabs details summary { padding:15px 18px; color:white; font-weight:900; list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+                .p1-create-tabs details summary::-webkit-details-marker { display:none; }
+                .p1-create-tabs details summary:after { content:'+'; color:#818cf8; font-size:18px; }
+                .p1-create-tabs details[open] summary:after { content:'–'; }
+                .p1-create-tabs details > div, .p1-create-tabs details > .grid, .p1-create-tabs details > .space-y-4 { padding:0 18px 18px; }
+                @media (max-width: 900px) {
+                    .p1-global-search { width:100%; max-width:none; order:3; flex-basis:100%; margin-top:10px; }
+                    header.glass, header { height:auto !important; min-height:64px; flex-wrap:wrap; padding-top:10px; padding-bottom:10px; }
+                    #explore .bg-darksurface .flex.gap-4, #explore .bg-darksurface { gap:12px; }
+                    #explore .bg-darksurface .flex.gap-4 { flex-direction:column; }
+                    #explore-sort, #explore-search { width:100%; }
+                    #explore-v2-tools { overflow-x:auto; padding-bottom:6px; }
+                    #add { height:auto !important; min-height:calc(100vh - 90px); }
+                    #add .flex.flex-col.lg\:flex-row { gap:18px; }
+                    #prompt-target-model { min-height:120px; }
+                    .p1-card-actions { grid-template-columns:1fr; }
+                }
+                @media (max-width: 640px) {
+                    main#main-scroll { padding:14px !important; }
+                    .p1-card { border-radius:22px; padding:16px; }
+                    .p1-card-thumb { height:180px; margin:-16px -16px 14px; }
+                    .filter-pill, .v2-pill { padding:8px 13px; }
+                    #floating-submit { bottom:14px; right:14px; padding:12px 14px; font-size:12px; }
+                }
+            </style>`);
+        }
+
+        function p1EmptyState(kind, override={}) {
+            const e = {...P1.empty[kind], ...override};
+            return `<div class="p1-shell-card p1-empty col-span-full"><div class="max-w-md"><div class="p1-empty-icon"><i class="fa-solid ${e.icon} text-3xl"></i></div><h3 class="text-2xl font-black text-white mb-3">${v2esc(e.title)}</h3><p class="text-neutral-400 text-sm leading-relaxed mb-6">${v2esc(e.body)}</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="${e.primary[1]}" class="p1-btn-primary">${v2esc(e.primary[0])}</button><button onclick="${e.secondary[1]}" class="p1-btn-secondary">${v2esc(e.secondary[0])}</button></div></div></div>`;
+        }
+
+        function p1Card(p, opts={}) {
+            const type = v2PromptType(p); const models = v2Models(p); const diff = v2Diff(p.difficulty);
+            const thumb = type === 'image'
+                ? (p.generatedPreviewUrl ? `<img src="${v2esc(p.generatedPreviewUrl)}" alt="preview">` : `<div class="text-center"><i class="fa-solid fa-image text-4xl text-fuchsia-300 mb-2"></i><p class="text-[10px] font-black uppercase tracking-widest text-neutral-300">Image Prompt</p></div>`)
+                : type === 'chain'
+                    ? `<div class="text-center"><i class="fa-solid fa-link text-4xl text-amber-300 mb-2"></i><p class="text-[10px] font-black uppercase tracking-widest text-neutral-300">${p.chainSteps?.length || 2}-Step Chain</p></div>`
+                    : `<div class="text-center"><i class="fa-solid fa-file-lines text-4xl text-indigo-300 mb-2"></i><p class="text-[10px] font-black uppercase tracking-widest text-neutral-300">Text Prompt</p></div>`;
+            if (v2ExploreView === 'list' || opts.list) return `<div class="p1-card !p-4 !flex-row !items-center gap-4" onclick="window.viewPrompt('${v2esc(p.id)}')"><div class="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center shrink-0">${type==='image'?'🎨':type==='chain'?'🔗':'📝'}</div><div class="min-w-0 flex-1"><h4 class="font-black text-white truncate">${v2esc(p.title)}</h4><p class="text-xs text-neutral-500 truncate mt-1">${v2esc(p.description || p.content || '')}</p><div class="flex flex-wrap gap-2 mt-2">${v2BadgeDifficulty(p.difficulty)}${v2ModelBadges(models)}</div></div><div class="p1-count hidden sm:flex">▲ ${v2Upvotes(p)} ♥ ${v2Likes(p)} ⑂ ${p.forks||0}</div><div class="flex gap-2" onclick="event.stopPropagation()"><button onclick="window.p1TestPrompt('${v2esc(p.id)}')" class="p1-action primary">Test</button><button onclick="window.toggleLike(event,'${v2esc(p.id)}')" class="p1-action">Fav</button><button onclick="window.forkPrompt(event,'${v2esc(p.id)}')" class="p1-action">Fork</button></div></div>`;
+            return `<div class="p1-card" onclick="window.viewPrompt('${v2esc(p.id)}')"><div class="p1-card-thumb">${thumb}</div><div class="flex items-start justify-between gap-3 mb-2"><h4 class="font-black text-white text-lg leading-snug line-clamp-2">${v2esc(p.title)}</h4><span class="text-lg">${type==='image'?'🎨':type==='chain'?'🔗':'📝'}</span></div><p class="text-xs text-neutral-400 line-clamp-3 leading-relaxed min-h-[48px]">${v2esc(p.description || p.content || 'No preview text available yet.')}</p><div class="flex flex-wrap gap-2 mt-4">${v2BadgeDifficulty(p.difficulty)}${v2ModelBadges(models)}</div><div class="mt-auto pt-4 flex items-center justify-between"><div class="p1-count"><span>▲ ${v2Upvotes(p)}</span><span>♥ ${v2Likes(p)}</span><span><i class="fa-solid fa-code-branch"></i> ${p.forks||0}</span></div><span class="text-[10px] text-neutral-600 font-bold uppercase">${v2esc(p.category||'Other')}</span></div><div class="p1-card-actions" onclick="event.stopPropagation()"><button onclick="window.p1TestPrompt('${v2esc(p.id)}')" class="p1-action primary"><i class="fa-solid fa-flask mr-1"></i>Test</button><button onclick="window.toggleLike(event,'${v2esc(p.id)}')" class="p1-action"><i class="fa-regular fa-star mr-1"></i>Favorite</button><button onclick="window.forkPrompt(event,'${v2esc(p.id)}')" class="p1-action"><i class="fa-solid fa-code-branch mr-1"></i>Fork</button></div></div>`;
+        }
+
+        function p1InstallNavigation() {
+            const nav = document.querySelector('aside nav'); if (!nav) return;
+            const labelFor = (tab, html) => { const b = nav.querySelector(`[onclick="window.switchTab('${tab}')"]`); if (b) b.innerHTML = html; };
+            labelFor('library', '<i class="fa-solid fa-book w-6"></i> My Library');
+            labelFor('explore', '<i class="fa-solid fa-store w-6"></i> Marketplace');
+            if (!document.getElementById('playground')) document.getElementById('analytics')?.insertAdjacentHTML('beforebegin', `<div id="playground" class="screen max-w-6xl mx-auto pb-10">${p1EmptyState('playground')}</div>`);
+            if (!document.getElementById('nav-playground-p1')) {
+                const exploreBtn = nav.querySelector(`[onclick="window.switchTab('explore')"]`);
+                exploreBtn?.insertAdjacentHTML('afterend', `<button id="nav-playground-p1" onclick="window.switchTab('playground')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-flask w-6"></i> Playground</button>`);
+            }
+        }
+
+        function p1InstallSearch() {
+            if (document.getElementById('global-search')) return;
+            const oldSearchBtn = document.querySelector('header button[onclick="window.openCmdPalette()"]');
+            const searchHtml = `<div class="p1-global-search"><i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500"></i><input id="global-search" class="p1-search-input" placeholder="Search your library and marketplace..."><div id="global-search-results" class="p1-search-results"></div></div>`;
+            oldSearchBtn ? oldSearchBtn.outerHTML = searchHtml : document.querySelector('header')?.insertAdjacentHTML('beforeend', searchHtml);
+            const input = document.getElementById('global-search'); const results = document.getElementById('global-search-results');
+            input?.addEventListener('input', () => {
+                const q = input.value.trim().toLowerCase();
+                if (!q) { results.classList.remove('show'); results.innerHTML=''; return; }
+                const source = [...(window.prompts||[]).map(p=>({...p,_scope:'My Library'})), ...(window.publicPrompts||[]).map(p=>({...p,_scope:'Marketplace'}))];
+                const seen = new Set();
+                const found = source.filter(p => {
+                    if (seen.has(p.id)) return false; seen.add(p.id);
+                    return [p.title,p.description,p.content,p.category,(p.tags||[]).join(' '),...v2Models(p)].join(' ').toLowerCase().includes(q);
+                }).slice(0,8);
+                results.innerHTML = found.length ? found.map(p => `<div class="p1-search-item" onclick="window.viewPrompt('${v2esc(p.id)}'); document.getElementById('global-search-results').classList.remove('show');"><div class="w-9 h-9 rounded-xl bg-neutral-900 flex items-center justify-center shrink-0">${v2PromptType(p)==='image'?'🎨':v2PromptType(p)==='chain'?'🔗':'📝'}</div><div class="min-w-0"><div class="flex gap-2 items-center"><b class="text-white text-sm truncate">${v2esc(p.title)}</b><span class="text-[10px] text-primary font-bold">${p._scope}</span></div><p class="text-xs text-neutral-500 truncate mt-1">${v2esc(p.description || p.content || '')}</p></div></div>`).join('') : `<div class="p1-empty !min-h-[180px]"><div><p class="text-white font-bold mb-1">No results found</p><p class="text-xs text-neutral-500">Try a model, category, tag, or prompt title.</p></div></div>`;
+                results.classList.add('show');
+            });
+            document.addEventListener('click', e => { if (!e.target.closest('.p1-global-search')) results?.classList.remove('show'); });
+        }
+
+        window.p1TestPrompt = (id) => { window.viewPrompt(id); setTimeout(() => { window.v2TestPrompt?.(); document.getElementById('play-output')?.scrollIntoView({behavior:'smooth', block:'center'}); }, 150); };
+        window.p1ClearMarketplaceFilters = () => { window.exploreFilterCategory='All'; window.exploreFilterModel='All Models'; v2ExploreDifficulty='All'; document.getElementById('explore-search') && (document.getElementById('explore-search').value=''); document.querySelectorAll('.filter-pill,.diff-btn').forEach(b=>b.classList.remove('active')); document.querySelectorAll('[data-val="All"],[data-val="All Models"]').forEach(b=>b.classList.add('active')); document.querySelector('.diff-btn')?.classList.add('active'); window.renderExplore(); };
+
+        try { v2Card = p1Card; } catch(e) { console.warn('Could not replace card renderer', e); }
+
+        window.renderExplore = () => {
+            const q=(document.getElementById('explore-search')?.value||'').toLowerCase(); const grid=document.getElementById('explore-grid'); if(!grid) return;
+            const sort=document.getElementById('explore-sort')?.value || 'likes';
+            let filtered=(window.publicPrompts||[]).filter(p=>{ const hay=[p.title,p.description,p.content,(p.tags||[]).join(' '),p.category,...v2Models(p)].join(' ').toLowerCase(); const matchQ=hay.includes(q); const matchCat=window.exploreFilterCategory==='All'||p.category===window.exploreFilterCategory; const matchMod=window.exploreFilterModel==='All Models'||v2Models(p).includes(window.exploreFilterModel)||p.targetModel===window.exploreFilterModel; const matchDiff=v2ExploreDifficulty==='All'||(p.difficulty||'beginner')===v2ExploreDifficulty; return matchQ&&matchCat&&matchMod&&matchDiff; });
+            if(sort==='likes') filtered.sort((a,b)=>(v2Upvotes(b)-v2Upvotes(a)) || (v2Likes(b)-v2Likes(a))); else if(sort==='forks') filtered.sort((a,b)=>(b.forks||0)-(a.forks||0)); else filtered.sort((a,b)=>new Date(b.date)-new Date(a.date));
+            grid.className = v2ExploreView==='list' ? 'space-y-3' : `grid ${v2ExploreView==='compact'?'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5':'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'} gap-6`;
+            grid.innerHTML=filtered.length?filtered.map(p=>p1Card(p)).join(''):p1EmptyState('marketplace');
+        };
+        window.renderLibrary = () => { const q=(document.getElementById('lib-search')?.value||'').toLowerCase(); const colId=document.getElementById('lib-collection')?.value||''; const grid=document.getElementById('library-grid'); if(!grid) return; const filtered=(window.prompts||[]).filter(p=>{const hay=[p.title,p.content,p.description,(p.tags||[]).join(' '),p.category,...v2Models(p)].join(' ').toLowerCase(); return hay.includes(q)&&(colId===''||p.collectionId===colId);}); grid.innerHTML=filtered.length?filtered.map(p=>p1Card(p)).join(''):p1EmptyState('library'); };
+        window.renderCollections = () => {
+            const grid = document.getElementById('collections-grid'); if(!grid) return;
+            if(!(window.collectionsData||[]).length) { grid.innerHTML = p1EmptyState('collections'); return; }
+            const tree = (()=>{ const root=[]; const map={}; window.collectionsData.forEach(c=>map[c.id]={...c,children:[]}); window.collectionsData.forEach(c=>{ if(c.parentId&&map[c.parentId]) map[c.parentId].children.push(map[c.id]); else root.push(map[c.id]); }); return root; })();
+            const renderNode = (node, depth=0) => { const count=window.prompts.filter(p=>p.collectionId===node.id).length; return `<div class="p1-shell-card p-5 ${depth?'ml-6 mt-3':''}"><div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('lib-collection').value='${v2esc(node.id)}'; window.switchTab('library');"><div class="flex items-center gap-3"><span class="text-3xl">${v2esc(node.icon||'📁')}</span><div><h3 class="text-lg font-black text-white">${v2esc(node.name)}</h3><p class="text-xs text-neutral-500 font-bold uppercase">${count} prompts</p></div></div><button onclick="event.stopPropagation(); window.addSubCollection('${v2esc(node.id)}')" class="p1-btn-secondary !p-2"><i class="fa-solid fa-plus"></i></button></div>${node.children.map(c=>renderNode(c,depth+1)).join('')}</div>`; };
+            grid.innerHTML = tree.map(n=>renderNode(n)).join('');
+        };
+        try { renderDashboard = function(){
+            document.getElementById('stat-total').innerText=window.prompts.length; document.getElementById('stat-collections').innerText=window.collectionsData.length; document.getElementById('stat-shared').innerText=window.prompts.filter(p=>p.isPublic).length; document.getElementById('stat-executions').innerText=localStorage.getItem('ai_exec_count')||0;
+            const recent=[...window.prompts].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3); document.getElementById('dashboard-recent-grid').innerHTML=recent.length?recent.map(p=>p1Card(p)).join(''):p1EmptyState('dashboard');
+            const trending=[...(window.publicPrompts||[])].sort((a,b)=>v2Upvotes(b)-v2Upvotes(a)||v2Likes(b)-v2Likes(a)).slice(0,3); document.getElementById('dashboard-trending-grid').innerHTML=trending.length?trending.map(p=>p1Card(p)).join(''):p1EmptyState('marketplace', {title:'No trending prompts yet', body:'Once the community starts upvoting and sharing prompts, trending prompts will appear here.'});
+            v2RenderDashboardExtras?.();
+        }; } catch(e) { console.warn('Dashboard phase1 override skipped', e); }
+
+        function p1PolishCreateForm() {
+            const panel = document.getElementById('v2-type-panel'); if(!panel || panel.classList.contains('p1-create-tabs')) return;
+            panel.classList.add('p1-create-tabs');
+            document.querySelectorAll('#image-fields details').forEach(d => d.open = false);
+            const imageFields = document.getElementById('image-fields');
+            if(imageFields && !document.getElementById('p1-advanced-note')) imageFields.insertAdjacentHTML('afterbegin', `<div id="p1-advanced-note" class="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 text-xs text-neutral-400"><b class="text-white">Advanced image options are collapsed by default.</b> Open MJ Parameters or SD Toolkit only when you need power-user controls.</div>`);
+        }
+
+        const p1OriginalSwitchTab = window.switchTab;
+        window.switchTab = async (tabId) => { p1InstallStyles(); p1InstallNavigation(); p1InstallSearch(); const r = await p1OriginalSwitchTab(tabId); if(tabId==='playground') document.getElementById('playground').innerHTML=p1EmptyState('playground'); if(tabId==='collections') window.renderCollections(); if(tabId==='library') window.renderLibrary(); if(tabId==='explore') window.renderExplore(); setTimeout(p1PolishCreateForm, 50); return r; };
+
+        window.addEventListener('load', () => { p1InstallStyles(); p1InstallNavigation(); p1InstallSearch(); setTimeout(()=>{ p1PolishCreateForm(); if(document.getElementById('explore')?.classList.contains('active')) window.renderExplore(); }, 600); });
+
     </script>
 </body>
 </html>
