@@ -2389,6 +2389,53 @@ Return:
         try{ renderDashboard=function(){ p4OldDashboard?.(); p4RenderRecentlyUsed(); }; }catch(e){}
         window.addEventListener('load',()=>{ p4InstallStyles(); p4ApplyTheme(); p4PatchCollectionPrompts(); p4InstallActivity(); setTimeout(()=>{p4InstallThemeSettings(); p4InstallExportUI(); p4RenderRecentlyUsed(); p4InjectVariationButton();},900); });
 
+
+        /* =========================
+           EXPLORE LOAD HOTFIX
+           Prevents Firebase/index/auth read errors from hiding seeded marketplace prompts.
+        ========================== */
+        window.loadExplore = async (forceRefresh = false) => {
+            const grid = document.getElementById('explore-grid');
+            const loader = document.getElementById('explore-loader');
+            if (!grid) return;
+
+            // If we already have data and this is not a forced refresh, just render it.
+            if ((window.publicPrompts || []).length > 0 && !forceRefresh) {
+                try { p3SeedExamples?.(); } catch (_) {}
+                window.renderExplore?.();
+                return;
+            }
+
+            loader?.classList.remove('hidden');
+            try {
+                let items = [];
+
+                // Primary query: newest public prompts.
+                try {
+                    const q1 = query(collection(db, "prompts"), where("isPublic", "==", true), orderBy("date", "desc"), limit(100));
+                    const snap = await getDocs(q1);
+                    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+                } catch (primaryErr) {
+                    console.warn('Primary Explore query failed. Trying no-order fallback.', primaryErr);
+                    // Fallback avoids composite-index/orderBy issues and some restrictive rules.
+                    const q2 = query(collection(db, "prompts"), where("isPublic", "==", true), limit(100));
+                    const snap2 = await getDocs(q2);
+                    snap2.forEach(d => items.push({ id: d.id, ...d.data() }));
+                    items.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+                }
+
+                window.publicPrompts = items;
+            } catch (e) {
+                // Do not show scary green error to visitors. Use curated local examples instead.
+                console.warn('Firestore Explore unavailable; using local seeded examples.', e);
+                window.publicPrompts = [];
+            } finally {
+                try { p3SeedExamples?.(); } catch (_) {}
+                loader?.classList.add('hidden');
+                window.renderExplore?.();
+            }
+        };
+
     </script>
 </body>
 </html>
