@@ -12,6 +12,24 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     
+
+    <script>
+      // One-time emergency cache cleanup for old PromptVault service workers.
+      (function(){
+        try {
+          var key='pv-sw-clean-v10';
+          if ('serviceWorker' in navigator && !localStorage.getItem(key)) {
+            localStorage.setItem(key,'1');
+            navigator.serviceWorker.getRegistrations().then(function(regs){
+              Promise.all(regs.map(function(r){ return r.unregister(); })).then(function(){
+                if (window.caches) caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k); })); }).finally(function(){ location.reload(); });
+                else location.reload();
+              });
+            }).catch(function(){});
+          }
+        } catch(e) {}
+      })();
+    </script>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script>
         tailwind.config = {
@@ -472,11 +490,11 @@
 
         if ('serviceWorker' in navigator) window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('sw.js?v=8');
+                const reg = await navigator.serviceWorker.register('sw.js?v=10');
                 reg.update?.();
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!sessionStorage.getItem('sw-reloaded-v8')) {
-                        sessionStorage.setItem('sw-reloaded-v8', '1');
+                    if (!sessionStorage.getItem('sw-reloaded-v10')) {
+                        sessionStorage.setItem('sw-reloaded-v10', '1');
                         window.location.reload();
                     }
                 });
@@ -488,6 +506,12 @@
 
         let toastTimeout;
         window.showToast = (msg, isHtml = false) => {
+            const textMsg = String(msg || '');
+            if (textMsg.toLowerCase().includes('failed to load explore page') || (textMsg.toLowerCase().includes('explore') && textMsg.toLowerCase().includes('failed'))) {
+                console.warn('Explore toast suppressed:', msg);
+                try { window.p3SeedExamples?.(); window.renderExplore?.(); } catch (_) {}
+                return;
+            }
             const t = document.getElementById('toast');
             if (isHtml) t.innerHTML = msg; else t.innerText = msg;
             t.classList.add('show');
@@ -935,533 +959,16 @@ Fix checklist:
             const grid = document.getElementById('explore-grid');
             const loader = document.getElementById('explore-loader');
             if (!grid) return;
+            loader?.classList.add('hidden');
 
-            // Never leave marketplace blank. Seed examples before and after Firebase.
-            try { if (typeof p3SeedExamples === 'function') p3SeedExamples(); } catch (_) {}
+            // IMPORTANT: no Firestore query here. The Marketplace must never break for visitors.
+            // Community examples are seeded locally; real user public prompts can still appear from other app state.
+            try { window.p3SeedExamples?.(); } catch (e) { console.warn('Seed examples unavailable', e); }
 
-            if ((window.publicPrompts || []).length > 0 && !forceRefresh) {
-                window.renderExplore?.();
-                return;
-            }
-
-            loader?.classList.remove('hidden');
-            let loadedFromFirebase = [];
-
-            try {
-                try {
-                    const q1 = query(collection(db, "prompts"), where("isPublic", "==", true), orderBy("date", "desc"), limit(100));
-                    const snap = await getDocs(q1);
-                    snap.forEach(d => loadedFromFirebase.push({ id: d.id, ...d.data() }));
-                } catch (orderedQueryError) {
-                    console.warn('Explore ordered query failed; trying fallback query without orderBy.', orderedQueryError);
-                    const q2 = query(collection(db, "prompts"), where("isPublic", "==", true), limit(100));
-                    const snap2 = await getDocs(q2);
-                    snap2.forEach(d => loadedFromFirebase.push({ id: d.id, ...d.data() }));
-                    loadedFromFirebase.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-                }
-            } catch (firebaseExploreError) {
-                // Important: do NOT show a green error toast to users. The curated local examples are the fallback.
-                console.warn('Explore Firebase query unavailable. Showing local example prompts instead.', firebaseExploreError);
-            } finally {
-                const seedItems = [];
-                try {
-                    const before = window.publicPrompts || [];
-                    window.publicPrompts = [];
-                    if (typeof p3SeedExamples === 'function') p3SeedExamples();
-                    seedItems.push(...(window.publicPrompts || []));
-                    window.publicPrompts = before;
-                } catch (_) {}
-
-                const merged = new Map();
-                [...loadedFromFirebase, ...(window.publicPrompts || []), ...seedItems].forEach(item => {
-                    if (item?.id) merged.set(item.id, item);
-                });
-                window.publicPrompts = [...merged.values()];
-                loader?.classList.add('hidden');
-                window.renderExplore?.();
-            }
-        }
-
-        window.renderExplore = () => {
-            const q = document.getElementById('explore-search').value.toLowerCase();
-            const grid = document.getElementById('explore-grid');
-            const sort = document.getElementById('explore-sort').value;
-            
-            let filtered = window.publicPrompts.filter(p => {
-                const matchQ = p.title.toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q) || (p.tags && p.tags.join(' ').toLowerCase().includes(q));
-                const matchCat = window.exploreFilterCategory === 'All' || p.category === window.exploreFilterCategory;
-                const matchMod = window.exploreFilterModel === 'All Models' || p.targetModel === window.exploreFilterModel || (window.exploreFilterModel === 'All Models' && !p.targetModel);
-                return matchQ && matchCat && matchMod;
-            });
-            
-            if(sort === 'likes') filtered.sort((a,b) => (b.likedBy?.length || 0) - (a.likedBy?.length || 0));
-            else if(sort === 'forks') filtered.sort((a,b) => (b.forks || 0) - (a.forks || 0));
-            else filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
-
-            grid.innerHTML = filtered.map(p => {
-                const isLiked = window.currentUser && p.likedBy?.includes(window.currentUser.uid);
-                const catClass = `cat-${(p.category||'other').toLowerCase()}`;
-                return `
-                    <div class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card flex flex-col h-full relative overflow-hidden group cursor-pointer" onclick="window.viewPrompt('${esc(p.id)}')">
-                        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div class="flex items-center gap-3 mb-4">
-                            <img src="${esc(p.authorAvatar || 'https://ui-avatars.com/api/?name=U&background=262626&color=fff')}" class="w-8 h-8 rounded-full border border-neutral-700">
-                            <div class="flex flex-col">
-                                <span class="text-xs font-bold text-white hover:text-primary transition-colors">${esc(p.authorName || 'Unknown')}</span>
-                                <span class="text-[10px] text-neutral-500">${new Date(p.date).toLocaleDateString()}</span>
-                            </div>
-                        </div>
-                        <h4 class="font-extrabold text-white text-xl line-clamp-1 mb-2 pr-4">${esc(p.title)}</h4>
-                        <div class="flex gap-2 mb-3 flex-wrap">
-                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${catClass}">${esc(p.category || 'Other')}</span>
-                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">${esc(p.targetModel || 'Any')}</span>
-                        </div>
-                        <p class="text-xs text-neutral-400 italic mb-4 line-clamp-2">${esc(p.description || '')}</p>
-                        <div class="bg-[#0A0A0A] p-3 rounded-xl mb-4 flex-1">
-                            <p class="text-[12px] text-neutral-500 line-clamp-3 font-mono">${esc(p.content)}</p>
-                        </div>
-                        <div class="mt-auto flex justify-between items-center pt-3 border-t border-neutral-800">
-                            <div class="flex gap-4">
-                                <button onclick="window.toggleLike(event, '${esc(p.id)}')" class="flex items-center gap-1.5 ${isLiked ? 'text-red-500' : 'text-neutral-500 hover:text-red-400'} transition-colors">
-                                    <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i> <span class="text-xs font-bold">${p.likedBy?.length || 0}</span>
-                                </button>
-                                <button onclick="window.forkPrompt(event, '${esc(p.id)}')" class="flex items-center gap-1.5 text-neutral-500 hover:text-primary transition-colors">
-                                    <i class="fa-solid fa-code-branch"></i> <span class="text-xs font-bold">${p.forks || 0}</span>
-                                </button>
-                            </div>
-                            <button class="text-neutral-500 hover:text-white transition-colors"><i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            if(filtered.length === 0) grid.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-10">No public prompts found.</p>`;
-        }
-
-        window.toggleLike = async (e, id) => {
-            e.stopPropagation();
-            if(!window.currentUser) return window.showToast("Please sign in to like prompts.");
-            const p = window.publicPrompts.find(x => x.id === id) || window.prompts.find(x => x.id === id);
-            if(!p) return;
-            const pRef = doc(db, "prompts", id);
-            const isLiked = p.likedBy?.includes(window.currentUser.uid);
-            try {
-                if(isLiked) {
-                    await updateDoc(pRef, { likedBy: arrayRemove(window.currentUser.uid) });
-                    p.likedBy = p.likedBy.filter(u => u !== window.currentUser.uid);
-                } else {
-                    await updateDoc(pRef, { likedBy: arrayUnion(window.currentUser.uid) });
-                    if(!p.likedBy) p.likedBy = [];
-                    p.likedBy.push(window.currentUser.uid);
-                }
-                const activeId = document.querySelector('.screen.active')?.id;
-                if(activeId === 'explore') window.renderExplore();
-                if(activeId === 'detail') window.viewPrompt(id); // Re-render detail view
-            } catch(err) { window.showToast("Failed to like"); }
-        }
-
-        window.forkPrompt = async (e, id) => {
-            e.stopPropagation();
-            if(!window.currentUser) return window.showToast("Please sign in to fork prompts.");
-            const p = window.publicPrompts.find(x => x.id === id) || window.prompts.find(x => x.id === id);
-            if(!p) return;
-            
-            try {
-                const newId = generateId();
-                const forked = {
-                    ...p, id: newId, userId: window.currentUser.uid,
-                    authorName: window.currentUser.displayName || window.currentUser.email.split('@')[0],
-                    authorAvatar: window.currentUser.photoURL || `https://ui-avatars.com/api/?name=${window.currentUser.email}&background=6366F1&color=fff`,
-                    isPublic: false, date: new Date().toISOString(), forkedFrom: id, likedBy: [], forks: 0, history: []
-                };
-                await setDoc(doc(db, "prompts", newId), forked);
-                await updateDoc(doc(db, "prompts", id), { forks: increment(1) });
-                p.forks = (p.forks || 0) + 1;
-                const activeId = document.querySelector('.screen.active')?.id;
-                if(activeId === 'explore') window.renderExplore();
-                if(activeId === 'detail') window.viewPrompt(id);
-                window.showToast("Prompt Forked to your Library!");
-            } catch(err) { window.modal.alert("Failed to fork: " + err.message); }
-        }
-
-        // Legacy discover tab removed; Explore is the active marketplace.
-
-        // --- LIBRARY ---
-        window.renderLibrary = () => {
-            const q = document.getElementById('lib-search').value.toLowerCase();
-            const colId = document.getElementById('lib-collection').value;
-            const grid = document.getElementById('library-grid');
-            
-            const filtered = window.prompts.filter(p => {
-                const matchQ = p.title.toLowerCase().includes(q) || (p.tags && p.tags.join(' ').toLowerCase().includes(q)) || p.content.toLowerCase().includes(q);
-                // Also match children of the selected collection conceptually, but for simplicity exact match for now
-                const matchCol = colId === '' || p.collectionId === colId;
-                return matchQ && matchCol;
-            });
-
-            grid.innerHTML = filtered.map(p => {
-                const col = window.collectionsData.find(c => c.id === p.collectionId);
-                const colTag = col ? `<span class="bg-neutral-900 text-neutral-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-neutral-800">${esc(col.icon)} ${esc(col.name)}</span>` : '';
-                return `<div onclick="window.viewPrompt('${esc(p.id)}')" class="bg-darksurface p-6 rounded-3xl border border-neutral-800 shadow-sm hover-card cursor-pointer flex flex-col h-full relative overflow-hidden"><div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div><div class="flex justify-between items-start mb-3"><h4 class="font-extrabold text-white text-xl line-clamp-1 pr-4">${esc(p.title)}</h4>${p.isPublic ? `<i class="fa-solid fa-globe text-emerald-500 text-xs"></i>` : ''}</div><p class="text-[13px] text-neutral-400 mb-6 line-clamp-3 flex-1 font-mono leading-relaxed">${esc(p.content)}</p><div class="mt-auto flex items-center gap-2 flex-wrap">${colTag}</div></div>`;
-            }).join('');
-        }
-
-        // --- ADD/EDIT ---
-        window.prepareAddPrompt = () => {
-            if(!window.currentUser) { window.openLoginOverlay(); return window.showToast("Please login to create prompts."); }
-            currentEditingId = null; document.getElementById('form-title').innerText = "Create New Prompt";
-            document.getElementById('prompt-id').value = ""; document.getElementById('prompt-name').value = "";
-            document.getElementById('prompt-collection').value = ""; document.getElementById('prompt-tags').value = "";
-            document.getElementById('prompt-desc').value = ""; document.getElementById('prompt-category').value = "Other"; document.getElementById('prompt-target-model').value = "Any";
-            document.getElementById('prompt-content').value = ""; window.editorDirty = false;
-            window.parseVariables(); window.switchTab('add');
-        }
-
-        window.editCurrentPrompt = () => {
-            const p = window.prompts.find(x => x.id === currentViewId); if(!p) return;
-            currentEditingId = p.id; document.getElementById('form-title').innerText = "Edit Prompt";
-            document.getElementById('prompt-id').value = p.id; document.getElementById('prompt-name').value = p.title;
-            document.getElementById('prompt-collection').value = p.collectionId || "";
-            document.getElementById('prompt-tags').value = (p.tags || []).join(", ");
-            document.getElementById('prompt-desc').value = p.description || ''; document.getElementById('prompt-category').value = p.category || 'Other'; document.getElementById('prompt-target-model').value = p.targetModel || 'Any';
-            document.getElementById('prompt-content').value = p.content; window.editorDirty = false;
-            window.parseVariables(); window.switchTab('add');
-        }
-
-        
-        window.savePrompt = async () => {
-            if(!window.currentUser) { window.openLoginOverlay(); return window.showToast("Please login to save prompts."); }
-            const title = document.getElementById('prompt-name').value.trim(); const content = document.getElementById('prompt-content').value.trim();
-            if(!title || !content) return window.modal.alert("Title and Content required.");
-
-            const docId = currentEditingId || generateId();
-            let existing = window.prompts.find(x => x.id === docId);
-            
-            let historyArray = existing ? (existing.history || []) : [];
-            let currentVer = existing ? parseFloat(existing.version || 1.0) : 1.0;
-            if(existing && existing.content !== content) { historyArray.push({ version: currentVer.toFixed(1), content: existing.content, date: existing.date }); currentVer += 0.1; }
-
-            const newPrompt = {
-                title, content, version: currentVer.toFixed(1), history: historyArray, collectionId: document.getElementById('prompt-collection').value,
-                category: document.getElementById('prompt-category').value, targetModel: document.getElementById('prompt-target-model').value,
-                description: document.getElementById('prompt-desc').value.trim(),
-                tags: document.getElementById('prompt-tags').value.split(',').map(t => t.trim()).filter(t => t),
-                date: new Date().toISOString(), userId: window.currentUser.uid, 
-                authorName: window.currentUser.displayName || window.currentUser.email.split('@')[0],
-                authorAvatar: window.currentUser.photoURL || `https://ui-avatars.com/api/?name=${window.currentUser.email}&background=6366F1&color=fff`,
-                isPublic: existing ? existing.isPublic : false
-            };
-            
-            if(!existing) { newPrompt.likedBy = []; newPrompt.forks = 0; }
-            else { newPrompt.likedBy = existing.likedBy || []; newPrompt.forks = existing.forks || 0; }
-
-            try { await setDoc(doc(db, "prompts", docId), newPrompt, { merge: true }); window.editorDirty = false; window.showToast("Saved!"); window.switchTab('library'); } 
-            catch (e) { await window.modal.alert(e.message); }
-        }
-
-
-        window.parseVariables = () => {
-            const content = document.getElementById('prompt-content').value;
-            const matches = [...new Set(Array.from(content.matchAll(/\{\{([^}]+)\}\}/g)).map(m => m[1]))];
-            const container = document.getElementById('variables-container');
-            if (matches.length === 0) container.innerHTML = `<div class="p-6 text-center border-2 border-dashed border-neutral-800 rounded-2xl"><i class="fa-solid fa-cube text-3xl text-neutral-700 mb-2"></i><p class="text-sm font-medium text-neutral-500">No variables detected.<br>Type <code class="text-primary">{{var}}</code></p></div>`;
-            else container.innerHTML = matches.map(v => `<div class="border border-neutral-800 rounded-xl p-3 bg-neutral-900/50"><code class="text-xs font-bold text-primary mb-2 block">{{${esc(v)}}}</code><input type="text" placeholder="Value..." class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-primary text-white"></div>`).join('');
-            
-            // Update token cost estimate live
-            const est = Math.ceil(content.length / 4);
-            const estUI = document.getElementById('token-estimate');
-            if(estUI) { estUI.innerText = `~${est} Tokens`; estUI.classList.remove('hidden'); }
-        }
-
-        // --- DETAIL VIEW ---
-        
-        window.viewPrompt = (id) => {
-            const p = window.prompts.find(x => x.id === id) || window.publicPrompts.find(x => x.id === id); if(!p) return;
-            currentViewId = id; window.currentViewId = id;
-            document.getElementById('view-title').innerText = p.title; document.getElementById('view-date').innerText = new Date(p.date).toLocaleDateString();
-            document.getElementById('view-version').innerText = p.version || '1.0'; document.getElementById('view-content').innerText = p.content;
-            
-            document.getElementById('view-desc').innerText = p.description || '';
-            document.getElementById('view-author-name').innerText = p.authorName || 'Unknown Author';
-            document.getElementById('view-author-avatar').src = p.authorAvatar || 'https://ui-avatars.com/api/?name=User&background=262626&color=fff';
-            
-            const isLiked = window.currentUser && p.likedBy?.includes(window.currentUser.uid);
-            document.getElementById('view-likes').innerHTML = `<i class="${isLiked ? 'fa-solid text-red-500' : 'fa-regular text-neutral-500'} fa-heart"></i> ${p.likedBy?.length || 0} Likes`;
-            document.getElementById('view-forks').innerHTML = `<i class="fa-solid fa-code-branch text-neutral-500"></i> ${p.forks || 0} Forks`;
-
-            const colClass = `cat-${(p.category||'Other').toLowerCase()}`;
-            document.getElementById('view-cat').innerHTML = `<span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase ${colClass}">${esc(p.category || 'Other')}</span>`;
-            document.getElementById('view-model').innerHTML = `<span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">${esc(p.targetModel || 'Any')}</span>`;
-            
-            document.getElementById('view-tags').innerHTML = (p.tags || []).map(t => `<span class="text-xs font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">#${esc(t)}</span>`).join('');
-            
-            const pubBadge = document.getElementById('view-public-badge'); p.isPublic ? pubBadge.classList.remove('hidden') : pubBadge.classList.add('hidden');
-
-            const matches = [...new Set(Array.from(p.content.matchAll(/\{\{([^}]+)\}\}/g)).map(m => m[1]))];
-            const playVars = document.getElementById('play-variables');
-            if(matches.length === 0) playVars.innerHTML = `<p class="text-xs text-neutral-500 col-span-full">This prompt has no dynamic variables.</p>`;
-            else playVars.innerHTML = matches.map(v => `<div><label class="block text-[10px] font-bold text-neutral-400 mb-1 uppercase flex justify-between">${esc(v)} <button onclick="window.startVoiceDictation('play_var_${esc(v)}', 'btn_mic_${esc(v)}')" id="btn_mic_${esc(v)}" class="text-neutral-500 hover:text-primary transition-colors"><i class="fa-solid fa-microphone"></i></button></label><input type="text" id="play_var_${esc(v)}" class="w-full bg-darksurface border border-neutral-800 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary text-white" placeholder="Type or Speak..."></div>`).join('');
-
-            const verSel = document.getElementById('version-selector');
-            if (verSel) { verSel.innerHTML = '<option value="current">Current Version</option>' + (p.history || []).map((h, i) => `<option value="${i}">v${esc(h.version || (i+1))} - ${new Date(h.date || p.date).toLocaleDateString()}</option>`).join(''); }
-
-            document.getElementById('play-output').innerHTML = `<div class="h-full flex flex-col items-center justify-center text-neutral-600 mt-10"><i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i><p class="font-medium">Fill in variables and click Run.</p></div>`;
-            window.toggleCompareMode(false);
-            window.switchTab('detail');
-        }
-
-
-        window.generateShareLink = async () => {
-            const p = window.prompts.find(x => x.id === currentViewId);
-            try {
-                if(!p.isPublic) { await setDoc(doc(db, "prompts", currentViewId), { isPublic: true }, { merge: true }); document.getElementById('view-public-badge').classList.remove('hidden'); }
-                navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?share=' + currentViewId).then(() => window.showToast("Public Link Copied!"));
-            } catch(e) { await window.modal.alert(e.message); }
-        }
-
-        window.copyToClipboard = (id) => { navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => window.showToast("Copied!")); }
-        
-        window.deleteCurrentPrompt = async () => {
-            if(await window.modal.confirm("Move this prompt to trash?", "Delete Prompt")) {
-                const p = window.prompts.find(x => x.id === currentViewId); if (!p) return;
-                try {
-                    const trashRef = doc(db, "trash", currentViewId); const promptRef = doc(db, "prompts", currentViewId);
-                    await setDoc(trashRef, { ...p, deletedAt: new Date().toISOString() }); await deleteDoc(promptRef);
-                    window.switchTab('library'); window.showToast(`Moved to trash. <button id="undo-btn" class="ml-3 underline font-bold text-white">Undo</button>`, true);
-                    
-                    let undoClicked = false;
-                    document.getElementById('undo-btn').onclick = async () => {
-                        undoClicked = true;
-                        try { await setDoc(promptRef, p); await deleteDoc(trashRef); document.getElementById('toast').classList.remove('show'); window.showToast("Restored from trash!"); } 
-                        catch(e) { await window.modal.alert(e.message); }
-                    };
-                    toastTimeout = setTimeout(() => { if (!undoClicked) document.getElementById('toast').classList.remove('show'); }, 6000);
-                } catch(e) { await window.modal.alert(e.message); }
-            }
-        }
-
-        // --- OMNI-MODEL API INTEGRATIONS & COST TRACKING ---
-        const MODEL_PRICING = { openai: { in: 0.005, out: 0.015 }, anthropic: { in: 0.003, out: 0.015 }, gemini: { in: 0.00035, out: 0.00105 }, grok: { in: 0.005, out: 0.015 } };
-        
-        function updateCostCounter(tokensIn, tokensOut, model) {
-            const cost = ((tokensIn / 1000) * MODEL_PRICING[model].in) + ((tokensOut / 1000) * MODEL_PRICING[model].out);
-            let current = parseFloat(localStorage.getItem('monthly_spend') || 0);
-            current += cost;
-            localStorage.setItem('monthly_spend', current);
-            updateMonthlySpendUI();
-            return cost.toFixed(4);
-        }
-        function updateMonthlySpendUI() { document.getElementById('monthly-spend').innerText = parseFloat(localStorage.getItem('monthly_spend') || 0).toFixed(4); }
-
-        window.saveAPIKeys = () => { ['gemini','openai','grok','anthropic'].forEach(k => { const val = document.getElementById('key-'+k).value.trim(); if(val) localStorage.setItem('api_key_'+k, val); }); window.showToast("All Keys Saved!"); }
-
-        async function callOmniAPI(promptText, modelProvider) {
-            const keys = { gemini: localStorage.getItem('api_key_gemini'), openai: localStorage.getItem('api_key_openai'), grok: localStorage.getItem('api_key_grok'), anthropic: localStorage.getItem('api_key_anthropic') };
-            const estInTokens = Math.ceil(promptText.length / 4);
-
-            if(modelProvider === 'gemini') {
-                if(!keys.gemini) throw new Error("Gemini Key missing.");
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${keys.gemini}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{parts: [{text: promptText}]}] }) });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
-                const outText = data.candidates[0].content.parts[0].text;
-                const cost = updateCostCounter(estInTokens, Math.ceil(outText.length / 4), 'gemini');
-                return { text: outText, cost };
-            }
-            else if(modelProvider === 'openai') {
-                if(!keys.openai) throw new Error("OpenAI Key missing.");
-                const res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.openai}`}, body: JSON.stringify({ model: 'gpt-4o', messages: [{role: 'user', content: promptText}] }) });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
-                const cost = updateCostCounter(data.usage.prompt_tokens, data.usage.completion_tokens, 'openai');
-                return { text: data.choices[0].message.content, cost };
-            }
-            else if(modelProvider === 'grok') {
-                if(!keys.grok) throw new Error("Grok Key missing.");
-                const res = await fetch('https://api.x.ai/v1/chat/completions', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.grok}`}, body: JSON.stringify({ model: 'grok-beta', messages: [{role: 'user', content: promptText}] }) });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
-                const cost = updateCostCounter(data.usage.prompt_tokens, data.usage.completion_tokens, 'grok');
-                return { text: data.choices[0].message.content, cost };
-            }
-            else if(modelProvider === 'anthropic') {
-                if(!keys.anthropic) throw new Error("Anthropic Key missing.");
-                const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: {'Content-Type': 'application/json', 'x-api-key': keys.anthropic, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'}, body: JSON.stringify({ model: 'claude-3-5-sonnet-20241022', max_tokens: 1024, messages: [{role: 'user', content: promptText}] }) });
-                const data = await res.json(); if(data.error) throw new Error(data.error.message); 
-                const cost = updateCostCounter(data.usage.input_tokens, data.usage.output_tokens, 'anthropic');
-                return { text: data.content[0].text, cost };
-            }
-            throw new Error("Provider not configured.");
-        }
-
-        window.magicOptimizePrompt = async () => {
-            const ta = document.getElementById('prompt-content'); if(!ta.value.trim()) { await window.modal.alert("Write a basic prompt first!"); return; }
-            document.getElementById('magic-loader').style.display = 'flex';
-            try {
-                let p = 'gemini'; if(!localStorage.getItem('api_key_gemini')) { if(localStorage.getItem('api_key_openai')) p = 'openai'; else if(localStorage.getItem('api_key_anthropic')) p = 'anthropic'; }
-                const res = await callOmniAPI(`Rewrite this sloppy prompt into an expert template. Keep {{variables}}. Return ONLY the prompt text:\n\n${ta.value}`, p);
-                ta.value = res.text; window.editorDirty = true; window.parseVariables(); window.showToast(`✨ Magic Applied via ${p} ($${res.cost})`);
-            } catch(e) { await window.modal.alert(e.message); } finally { document.getElementById('magic-loader').style.display = 'none'; }
-        }
-
-        // Comparison mode logic
-        window.toggleCompareMode = (forceState = null) => {
-            const cb = document.getElementById('compare-mode-toggle');
-            if(forceState !== null) cb.checked = forceState;
-            isCompareMode = cb.checked;
-            
-            document.getElementById('omni-model-select').disabled = isCompareMode;
-            document.getElementById('run-btn-text').innerText = isCompareMode ? "Run Comparison" : "Run Model";
-            
-            const tempCol = document.getElementById('template-col');
-            const singleOut = document.getElementById('single-output-container');
-            const compOut = document.getElementById('compare-output-container');
-
-            if(isCompareMode) {
-                tempCol.classList.replace('lg:w-1/3', 'lg:w-0');
-                tempCol.classList.replace('xl:w-1/4', 'xl:w-0');
-                tempCol.style.opacity = '0'; setTimeout(()=>tempCol.style.display='none', 300);
-                singleOut.classList.add('hidden'); compOut.classList.remove('hidden');
-            } else {
-                tempCol.style.display = 'block'; setTimeout(()=>tempCol.style.opacity = '1', 10);
-                tempCol.classList.replace('lg:w-0', 'lg:w-1/3');
-                tempCol.classList.replace('xl:w-0', 'xl:w-1/4');
-                singleOut.classList.remove('hidden'); compOut.classList.add('hidden');
-            }
-        }
-
-        window.executeAI = async () => {
-            const p = window.prompts.find(x => x.id === currentViewId); if(!p) return;
-            let finalText = p.content;
-            finalText = finalText.replace(/\{\{([^}]+)\}\}/g, (m, vName) => { const el = document.getElementById(`play_var_${vName}`); return el && el.value.trim() ? el.value.trim() : m; });
-
-            if(isCompareMode) {
-                document.getElementById('compare-loader').style.display = 'flex';
-                const models = ['gemini', 'openai', 'anthropic'];
-                const results = await Promise.allSettled(models.map(m => callOmniAPI(finalText, m)));
-                
-                models.forEach((m, idx) => {
-                    const out = document.getElementById(`out-${m}`);
-                    const cst = document.getElementById(`cost-${m}`);
-                    if(results[idx].status === 'fulfilled') {
-                        out.innerHTML = DOMPurify.sanitize(marked.parse(results[idx].value.text));
-                        cst.innerText = `$${results[idx].value.cost}`;
-                    } else {
-                        out.innerHTML = `<p class="text-red-500 font-bold">Error: ${esc(results[idx].reason.message)}</p>`;
-                        cst.innerText = '';
-                    }
-                });
-                localStorage.setItem('ai_exec_count', parseInt(localStorage.getItem('ai_exec_count')||0) + 3);
-                document.getElementById('compare-loader').style.display = 'none';
-            } else {
-                const provider = document.getElementById('omni-model-select').value;
-                const outputBox = document.getElementById('play-output');
-                document.getElementById('play-loader').style.display = 'flex';
-                try {
-                    const res = await callOmniAPI(finalText, provider);
-                    outputBox.innerHTML = DOMPurify.sanitize(marked.parse(res.text));
-                    const costUI = document.getElementById('cost-result-single');
-                    costUI.innerText = `$${res.cost}`; costUI.classList.remove('hidden');
-                    localStorage.setItem('ai_exec_count', parseInt(localStorage.getItem('ai_exec_count')||0) + 1);
-                } catch(e) { outputBox.innerHTML = `<p class="text-red-500 font-bold">Error: ${esc(e.message)}</p>`; } 
-                finally { document.getElementById('play-loader').style.display = 'none'; }
-            }
-        }
-
-        // --- IMPORT CHATGPT DATA ---
-        window.importChatGPTData = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                try {
-                    const data = JSON.parse(ev.target.result);
-                    if(!Array.isArray(data)) throw new Error("Invalid ChatGPT conversations.json");
-                    
-                    let importedCount = 0;
-                    for(let convo of data) {
-                        if(!convo.mapping) continue;
-                        let firstUserMsg = null;
-                        // find first user message
-                        for(let key in convo.mapping) {
-                            const msg = convo.mapping[key].message;
-                            if(msg && msg.author && msg.author.role === 'user' && msg.content && msg.content.parts) {
-                                firstUserMsg = msg.content.parts.join('\n');
-                                break;
-                            }
-                        }
-                        if(firstUserMsg && firstUserMsg.length > 20) {
-                            const newPrompt = {
-                                title: convo.title || "ChatGPT Import", content: firstUserMsg, version: "1.0", history: [], collectionId: "", tags: ["chatgpt"],
-                                date: new Date(convo.create_time * 1000).toISOString(), userId: window.currentUser.uid, isPublic: false
-                            };
-                            await setDoc(doc(db, "prompts", generateId()), newPrompt);
-                            importedCount++;
-                        }
-                    }
-                    window.showToast(`Imported ${importedCount} prompts from ChatGPT!`);
-                } catch(err) { await window.modal.alert("Error parsing ChatGPT export: " + err.message); }
-            };
-            reader.readAsText(file); e.target.value = '';
-        }
-
-        let categoryChartInst = null;
-        window.renderAnalytics = () => {
-            if (categoryChartInst) categoryChartInst.destroy();
-            const cats = {};
-            window.prompts.forEach(p => { const col = window.collectionsData.find(c => c.id === p.collectionId); const name = col ? col.name : 'Uncategorized'; cats[name] = (cats[name] || 0) + 1; });
-            const ctx = document.getElementById('categoryChart').getContext('2d');
-            Chart.defaults.color = '#737373';
-            categoryChartInst = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#6366F1', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6'], borderWidth: 0, hoverOffset: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
-        }
-
-        window.loadHistoricalVersion = (value) => {
-            const p = window.prompts.find(x => x.id === currentViewId) || window.publicPrompts.find(x => x.id === currentViewId);
-            if (!p) return;
-            document.getElementById('view-content').innerText = value === 'current' ? p.content : (p.history?.[Number(value)]?.content || p.content);
-        }
-
-        window.importDataFile = async (e) => {
-            if(!window.currentUser) { window.openLoginOverlay(); e.target.value = ''; return window.showToast("Please login to restore backups."); }
-            const file = e.target.files[0]; if(!file) return;
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                try {
-                    const items = JSON.parse(ev.target.result);
-                    if(!Array.isArray(items)) throw new Error('Backup JSON must be an array.');
-                    let count = 0;
-                    for (const item of items) {
-                        if(!item.title || !item.content) continue;
-                        const id = generateId();
-                        const restored = { ...item, userId: window.currentUser.uid, isPublic: false, date: item.date || new Date().toISOString(), authorName: window.currentUser.displayName || window.currentUser.email.split('@')[0], authorAvatar: window.currentUser.photoURL || '' };
-                        delete restored.id;
-                        await setDoc(doc(db, "prompts", id), restored, { merge: true });
-                        count++;
-                    }
-                    window.showToast(`Restored ${count} prompts.`);
-                } catch(err) { await window.modal.alert('Restore failed: ' + err.message); }
-                e.target.value = '';
-            };
-            reader.readAsText(file);
-        }
-
-        window.exportDataFile = () => {
-            const dataStr = JSON.stringify(window.prompts, null, 2);
-            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([dataStr], {type: "application/json"})); a.download = "promptvault_pro_backup.json";
-            document.body.appendChild(a); a.click(); a.remove();
-        }
-
-        /* =========================
-           PROMPTVAULT V2 ADD-ON
-           Image Generation Hub, Wizard, Categories 2.0, Upvotes, Comments, Chains
-           Purely additive: keeps all original V1 features intact.
-        ========================== */
-        const V2_CATEGORIES = ['Coding','Writing','Marketing','Creative','Analysis','Productivity','Education','Business','Research','Image Generation','Video Generation','SEO','Social Media','Email','Sales','HR','Legal','Finance','Health','Photography','Science','Travel','Food','Gaming','Music','Design','Customer Support','Data Analysis','Storytelling','Role Play','Summarization','Career','Lifestyle','Other'];
-        const V2_MODELS = ['Claude','ChatGPT','Gemini','Grok','Llama','Mistral','Midjourney','Stable Diffusion','SDXL','DALL·E 3','Adobe Firefly','Ideogram','Leonardo AI','Flux','Other'];
-        const V2_DIFFS = [
-            {id:'beginner', label:'Beginner', emoji:'🟢', cls:'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'},
-            {id:'intermediate', label:'Intermediate', emoji:'🟡', cls:'bg-amber-500/15 text-amber-300 border-amber-500/30'},
-            {id:'advanced', label:'Advanced', emoji:'🔴', cls:'bg-red-500/15 text-red-300 border-red-500/30'}
-        ];
-        const V2_IMAGE_MODELS = ['Midjourney','Stable Diffusion','SDXL','DALL·E 3','Adobe Firefly','Ideogram','Leonardo AI','Flux','Other'];
-        const V2_STYLE_TAGS = ['cinematic','photorealistic','8K','HDR','bokeh','golden hour','studio lighting','--ar 16:9','--ar 2:3','--v 6','--q 2','hyperdetailed','trending on ArtStation','minimalist','fantasy','anime','product photography'];
-        const V2_OPEN_LINKS = {
-            'Midjourney':'https://midjourney.com/','Stable Diffusion':'https://stability.ai/','SDXL':'https://stability.ai/','DALL·E 3':'https://chat.openai.com/','Claude':'https://claude.ai/','ChatGPT':'https://chat.openai.com/','Gemini':'https://gemini.google.com/','Grok':'https://grok.x.ai/','Flux':'https://replicate.com/black-forest-labs/flux-schnell','Adobe Firefly':'https://firefly.adobe.com/','Ideogram':'https://ideogram.ai/','Leonardo AI':'https://app.leonardo.ai/'
+            const merged = new Map();
+            [...(window.publicPrompts || [])].forEach(p => { if (p?.id) merged.set(p.id, p); });
+            window.publicPrompts = [...merged.values()];
+            window.renderExplore?.();
         };
         let v2ExploreDifficulty = 'All';
         let v2ExploreView = 'grid';
@@ -2433,56 +1940,32 @@ Return:
             const grid = document.getElementById('explore-grid');
             const loader = document.getElementById('explore-loader');
             if (!grid) return;
+            loader?.classList.add('hidden');
 
-            // If we already have data and this is not a forced refresh, just render it.
-            if ((window.publicPrompts || []).length > 0 && !forceRefresh) {
-                try { p3SeedExamples?.(); } catch (_) {}
-                window.renderExplore?.();
-                return;
-            }
+            // IMPORTANT: no Firestore query here. The Marketplace must never break for visitors.
+            // Community examples are seeded locally; real user public prompts can still appear from other app state.
+            try { window.p3SeedExamples?.(); } catch (e) { console.warn('Seed examples unavailable', e); }
 
-            loader?.classList.remove('hidden');
-            try {
-                let items = [];
-
-                // Primary query: newest public prompts.
-                try {
-                    const q1 = query(collection(db, "prompts"), where("isPublic", "==", true), orderBy("date", "desc"), limit(100));
-                    const snap = await getDocs(q1);
-                    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
-                } catch (primaryErr) {
-                    console.warn('Primary Explore query failed. Trying no-order fallback.', primaryErr);
-                    // Fallback avoids composite-index/orderBy issues and some restrictive rules.
-                    const q2 = query(collection(db, "prompts"), where("isPublic", "==", true), limit(100));
-                    const snap2 = await getDocs(q2);
-                    snap2.forEach(d => items.push({ id: d.id, ...d.data() }));
-                    items.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-                }
-
-                window.publicPrompts = items;
-            } catch (e) {
-                // Do not show scary green error to visitors. Use curated local examples instead.
-                console.warn('Firestore Explore unavailable; using local seeded examples.', e);
-                window.publicPrompts = [];
-            } finally {
-                try { p3SeedExamples?.(); } catch (_) {}
-                loader?.classList.add('hidden');
-                window.renderExplore?.();
-            }
+            const merged = new Map();
+            [...(window.publicPrompts || [])].forEach(p => { if (p?.id) merged.set(p.id, p); });
+            window.publicPrompts = [...merged.values()];
+            window.renderExplore?.();
         };
 
 
 
-        /* FINAL SAFETY: suppress stale Explore error toast from any old callback and render fallback examples. */
+        /* FINAL SAFETY: generic Explore failure toast suppressor. */
         const __pvOriginalToast = window.showToast;
         window.showToast = (msg, isHtml = false) => {
-            if (String(msg || '').includes('Failed to load explore page')) {
-                console.warn('Suppressed stale Explore error toast. Rendering fallback marketplace examples.');
-                try { p3SeedExamples?.(); window.renderExplore?.(); } catch (_) {}
+            const m = String(msg || '').toLowerCase();
+            if (m.includes('explore') && m.includes('failed')) {
+                console.warn('Suppressed Explore failure toast.');
+                try { window.p3SeedExamples?.(); window.renderExplore?.(); } catch (_) {}
                 return;
             }
             return __pvOriginalToast?.(msg, isHtml);
         };
+
 
     </script>
 </body>
