@@ -1802,6 +1802,498 @@ Fix checklist:
 
         window.addEventListener('load', () => { p1InstallStyles(); p1InstallNavigation(); p1InstallSearch(); setTimeout(()=>{ p1PolishCreateForm(); if(document.getElementById('explore')?.classList.contains('active')) window.renderExplore(); }, 600); });
 
+
+        /* =========================
+           PHASE 2 ADD-ON
+           Onboarding, Favorites/Pinned, Version restore, Keyboard shortcuts, Prompt of the Day
+        ========================== */
+        const P2_FAV_KEY = 'promptvault_favorite_prompt_ids_v2';
+        const P2_ONBOARD_KEY = 'promptvault_onboarding_done_v2';
+        const p2esc = typeof v2esc === 'function' ? v2esc : (s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+        const p2GetFavorites = () => {
+            try { return JSON.parse(localStorage.getItem(P2_FAV_KEY) || '[]'); }
+            catch { return []; }
+        };
+        const p2SetFavorites = ids => localStorage.setItem(P2_FAV_KEY, JSON.stringify([...new Set(ids)]));
+        const p2AllPrompts = () => {
+            const map = new Map();
+            [...(window.prompts || []), ...(window.publicPrompts || [])].forEach(p => { if (p?.id) map.set(p.id, p); });
+            return [...map.values()];
+        };
+        const p2FindPrompt = id => p2AllPrompts().find(p => p.id === id);
+        const p2IsFav = id => p2GetFavorites().includes(id);
+
+        function p2InstallStyles() {
+            if (document.getElementById('p2-style')) return;
+            document.head.insertAdjacentHTML('beforeend', `<style id="p2-style">
+                .p2-modal-backdrop{position:fixed;inset:0;z-index:999998;background:rgba(0,0,0,.78);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:18px}.p2-modal{width:min(620px,100%);background:radial-gradient(circle at top left,rgba(99,102,241,.18),transparent 36%),#050505;border:1px solid #262626;border-radius:30px;box-shadow:0 30px 100px rgba(0,0,0,.75);overflow:hidden}.p2-progress{height:4px;background:#111}.p2-progress span{display:block;height:100%;background:linear-gradient(90deg,#6366f1,#ec4899);transition:width .25s}.p2-step-card{padding:34px}.p2-dot{width:9px;height:9px;border-radius:50%;background:#333}.p2-dot.active{background:#818cf8}.p2-widget{background:radial-gradient(circle at top right,rgba(236,72,153,.13),transparent 35%),#050505;border:1px solid #262626;border-radius:28px;padding:22px}.p2-version-row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:14px;border:1px solid #262626;background:#050505;border-radius:18px}.p2-kbd{font-size:11px;font-weight:900;background:#111;border:1px solid #333;border-bottom-color:#555;border-radius:7px;padding:2px 7px;color:#e5e5e5}.p2-fav-active{color:#fbbf24!important;border-color:rgba(251,191,36,.35)!important;background:rgba(251,191,36,.12)!important}@media(max-width:640px){.p2-step-card{padding:24px}.p2-version-row{flex-direction:column}.p2-widget{padding:18px}}
+            </style>`);
+        }
+
+        function p2ShowOnboarding(force=false) {
+            if (!force && localStorage.getItem(P2_ONBOARD_KEY) === '1') return;
+            if (document.getElementById('p2-onboarding')) return;
+            const steps = [
+                {icon:'fa-store', title:'Welcome to PromptVault AI', body:'Discover community prompts in Marketplace or build your own private library. Everything is designed for beginners and power users.'},
+                {icon:'fa-magnifying-glass', title:'Search everything instantly', body:'Use the global search bar or press / to find prompts across your library and the marketplace.'},
+                {icon:'fa-star', title:'Pin your favorites', body:'Favorite any useful prompt and it will appear in your Dashboard Pinned / Favorites section.'},
+                {icon:'fa-code-branch', title:'Create, test, improve', body:'Press N to create a prompt, test it in Playground, and use version history to restore older versions when needed.'}
+            ];
+            let step = 0;
+            const render = () => {
+                const s = steps[step];
+                const modal = document.getElementById('p2-onboarding');
+                modal.innerHTML = `<div class="p2-modal"><div class="p2-progress"><span style="width:${((step+1)/steps.length)*100}%"></span></div><div class="p2-step-card text-center"><button onclick="window.p2CloseOnboarding()" class="float-right w-9 h-9 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white"><i class="fa-solid fa-xmark"></i></button><div class="mx-auto mb-5 w-20 h-20 rounded-3xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary"><i class="fa-solid ${s.icon} text-3xl"></i></div><h2 class="text-3xl font-black text-white mb-3">${p2esc(s.title)}</h2><p class="text-neutral-400 leading-relaxed mb-7">${p2esc(s.body)}</p><div class="flex justify-center gap-2 mb-7">${steps.map((_,i)=>`<span class="p2-dot ${i===step?'active':''}"></span>`).join('')}</div><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="window.p2CloseOnboarding()" class="p1-btn-secondary">Skip</button>${step>0?`<button onclick="window.p2OnboardingPrev()" class="p1-btn-secondary">Back</button>`:''}<button onclick="window.p2OnboardingNext()" class="p1-btn-primary">${step===steps.length-1?'Start using PromptVault':'Next'} →</button></div><p class="mt-6 text-xs text-neutral-600">Shortcuts: <span class="p2-kbd">/</span> Search · <span class="p2-kbd">N</span> New Prompt · <span class="p2-kbd">Esc</span> Close</p></div></div>`;
+            };
+            document.body.insertAdjacentHTML('beforeend', `<div id="p2-onboarding" class="p2-modal-backdrop"></div>`);
+            window.p2OnboardingNext = () => { if (step < steps.length - 1) { step++; render(); } else window.p2CloseOnboarding(); };
+            window.p2OnboardingPrev = () => { if (step > 0) { step--; render(); } };
+            window.p2CloseOnboarding = () => { localStorage.setItem(P2_ONBOARD_KEY, '1'); document.getElementById('p2-onboarding')?.remove(); };
+            render();
+        }
+
+        window.p2ToggleFavorite = async (event, id) => {
+            event?.stopPropagation?.();
+            let ids = p2GetFavorites();
+            const active = ids.includes(id);
+            ids = active ? ids.filter(x => x !== id) : [...ids, id];
+            p2SetFavorites(ids);
+            window.showToast(active ? 'Removed from Favorites' : 'Pinned to Favorites');
+            const btn = event?.currentTarget;
+            if (btn) btn.classList.toggle('p2-fav-active', !active);
+            try {
+                if (window.currentUser) await setDoc(doc(db, 'users', window.currentUser.uid), { favoritePromptIds: ids }, { merge: true });
+            } catch(e) { console.warn('Favorite sync skipped', e); }
+            p2RenderDashboardWidgets();
+            if (document.querySelector('.screen.active')?.id === 'library') window.renderLibrary?.();
+            if (document.querySelector('.screen.active')?.id === 'explore') window.renderExplore?.();
+        };
+
+        const p2BaseCard = typeof p1Card === 'function' ? p1Card : (typeof v2Card === 'function' ? v2Card : null);
+        function p2Card(p, opts={}) {
+            const html = p2BaseCard ? p2BaseCard(p, opts) : '';
+            if (!html) return html;
+            const active = p2IsFav(p.id);
+            // Replace Phase 1 Favorite button behavior with true pinned/favorites behavior.
+            return html
+                .replace(new RegExp(`onclick="window\\.toggleLike\\(event,'${p2esc(p.id).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'\\)"`, 'g'), `onclick="window.p2ToggleFavorite(event,'${p2esc(p.id)}')"`)
+                .replace(/<i class="fa-regular fa-star mr-1"><\/i>Favorite/g, `<i class="fa-${active?'solid':'regular'} fa-star mr-1"></i>${active?'Pinned':'Favorite'}`)
+                .replace(/class="p1-action"><i class="fa-(solid|regular) fa-star/g, `class="p1-action ${active?'p2-fav-active':''}"><i class="fa-${active?'solid':'regular'} fa-star`);
+        }
+        try { p1Card = p2Card; v2Card = p2Card; } catch(e) { console.warn('Card favorite patch skipped', e); }
+
+        function p2RenderDashboardWidgets() {
+            const dash = document.getElementById('dashboard');
+            if (!dash) return;
+            p2InstallStyles();
+            let wrap = document.getElementById('p2-dashboard-widgets');
+            if (!wrap) {
+                dash.insertAdjacentHTML('afterbegin', `<div id="p2-dashboard-widgets" class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-8"></div>`);
+                wrap = document.getElementById('p2-dashboard-widgets');
+            }
+            const favs = p2GetFavorites().map(p2FindPrompt).filter(Boolean).slice(0, 4);
+            const pool = (window.publicPrompts?.length ? window.publicPrompts : p2AllPrompts()).filter(Boolean);
+            const dayIndex = Math.floor(Date.now() / 86400000);
+            const pod = pool.length ? pool[dayIndex % pool.length] : null;
+            wrap.innerHTML = `<div class="p2-widget xl:col-span-2"><div class="flex items-center justify-between mb-4"><div><h3 class="text-xl font-black text-white">⭐ Pinned / Favorites</h3><p class="text-xs text-neutral-500">Your fastest route back to useful prompts.</p></div><button onclick="window.switchTab('library')" class="text-primary text-xs font-black">View Library →</button></div>${favs.length?`<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${favs.map(p=>`<div onclick="window.viewPrompt('${p2esc(p.id)}')" class="bg-black/50 border border-neutral-800 rounded-2xl p-4 cursor-pointer hover:border-amber-400/40"><div class="flex justify-between gap-3"><b class="text-white line-clamp-1">${p2esc(p.title)}</b><button onclick="window.p2ToggleFavorite(event,'${p2esc(p.id)}')" class="text-amber-400"><i class="fa-solid fa-star"></i></button></div><p class="text-xs text-neutral-500 line-clamp-2 mt-2">${p2esc(p.description||p.content||'')}</p></div>`).join('')}</div>`:p1EmptyState('dashboard',{icon:'fa-star',title:'No favorites pinned yet',body:'Click Favorite on any prompt card to pin it here for quick access.',primary:['Browse Marketplace',"window.switchTab('explore')"],secondary:['Create Prompt',"window.prepareAddPrompt()"]})}</div><div class="p2-widget"><p class="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Prompt of the Day</p>${pod?`<div onclick="window.viewPrompt('${p2esc(pod.id)}')" class="cursor-pointer"><h3 class="text-xl font-black text-white mb-2 line-clamp-2">${p2esc(pod.title)}</h3><p class="text-sm text-neutral-400 line-clamp-4 mb-4">${p2esc(pod.description||pod.content||'')}</p><div class="flex gap-2 flex-wrap mb-4">${typeof v2BadgeDifficulty==='function'?v2BadgeDifficulty(pod.difficulty):''}${typeof v2ModelBadges==='function'?v2ModelBadges(v2Models(pod)):''}</div><button class="p1-btn-primary w-full">Open Prompt →</button></div>`:`<div class="text-center py-8"><i class="fa-solid fa-wand-magic-sparkles text-3xl text-neutral-700 mb-3"></i><p class="text-neutral-500 text-sm">Featured community prompts will appear here.</p></div>`}</div>`;
+        }
+
+        function p2VersionRows(p) {
+            const history = (p.history || []).map((h, i) => ({...h, index:i, isCurrent:false}));
+            const versions = [...history, {version:p.version || String(history.length+1), content:p.content, date:p.date, index:'current', isCurrent:true}];
+            return versions.reverse().map((v, i) => {
+                const label = v.isCurrent ? `Current v${p2esc(v.version || versions.length)}` : `v${p2esc(v.version || (versions.length-i))}`;
+                return `<div class="p2-version-row"><div class="min-w-0"><div class="flex gap-2 items-center mb-2"><b class="text-white">${label}</b>${v.isCurrent?'<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">LIVE</span>':''}</div><p class="text-xs text-neutral-500 mb-2">${v.date?new Date(v.date).toLocaleString():''}</p><pre class="text-xs text-neutral-400 whitespace-pre-wrap line-clamp-3 font-mono">${p2esc(v.content||'')}</pre></div><div class="flex gap-2 shrink-0"><button onclick="window.p2ViewVersion('${p2esc(p.id)}','${v.index}')" class="p1-btn-secondary !py-2 !px-3">View</button>${!v.isCurrent?`<button onclick="window.p2RestoreVersion('${p2esc(p.id)}','${v.index}')" class="p1-btn-primary !py-2 !px-3">Restore</button>`:''}</div></div>`;
+            }).join('');
+        }
+
+        function p2EnhanceVersionHistory(p) {
+            const detail = document.getElementById('detail'); if (!detail || document.getElementById('p2-version-history')) return;
+            detail.insertAdjacentHTML('beforeend', `<div id="p2-version-history" class="v2-detail-block max-w-7xl mx-auto mt-8 p2-widget"><div class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center mb-5"><div><h3 class="text-2xl font-black text-white">Version History</h3><p class="text-sm text-neutral-500">View or restore older versions of this prompt.</p></div><span class="text-xs text-neutral-500"><span class="p2-kbd">v${p2esc(p.version||'1')}</span> current</span></div><div class="space-y-3">${p2VersionRows(p)}</div></div>`);
+        }
+        window.p2ViewVersion = (id, index) => {
+            const p = p2FindPrompt(id); if(!p) return;
+            const item = index === 'current' ? {content:p.content, version:p.version} : p.history?.[Number(index)];
+            if(!item) return window.showToast('Version not found');
+            document.getElementById('view-content').innerText = item.content || '';
+            document.getElementById('view-version').innerText = item.version || 'old';
+            window.showToast(index === 'current' ? 'Viewing current version' : `Viewing v${item.version || Number(index)+1}`);
+        };
+        window.p2RestoreVersion = async (id, index) => {
+            if (!window.currentUser) { window.openLoginOverlay?.(); return; }
+            const p = p2FindPrompt(id); const old = p?.history?.[Number(index)];
+            if(!p || !old) return window.showToast('Version not found');
+            if(!await window.modal.confirm('Restore this older version as the current prompt?', 'Restore Version')) return;
+            const newHistory = [...(p.history || []), {version:p.version || 'current', content:p.content, date:p.date || new Date().toISOString()}];
+            try {
+                await setDoc(doc(db,'prompts',id), {content: old.content, date: new Date().toISOString(), history: newHistory, version: String((parseFloat(p.version || '1') + 0.1).toFixed(1))}, {merge:true});
+                p.content = old.content; p.history = newHistory; p.date = new Date().toISOString();
+                window.showToast('Version restored');
+                window.viewPrompt(id);
+            } catch(e) { await window.modal.alert(e.message, 'Restore failed'); }
+        };
+
+        const p2OriginalViewPrompt = window.viewPrompt;
+        window.viewPrompt = (id) => {
+            p2OriginalViewPrompt?.(id);
+            setTimeout(() => { const p = p2FindPrompt(id); if(p) p2EnhanceVersionHistory(p); }, 120);
+        };
+
+        function p2CloseTopLayer() {
+            const onboarding = document.getElementById('p2-onboarding'); if(onboarding){ window.p2CloseOnboarding?.(); return true; }
+            const search = document.getElementById('global-search-results'); if(search?.classList.contains('show')){ search.classList.remove('show'); return true; }
+            const cmd = document.getElementById('cmd-palette'); if(cmd?.classList.contains('active')){ window.closeCmdPalette?.(); return true; }
+            const login = document.getElementById('login-overlay'); if(login && login.style.display !== 'none' && !window.currentUser){ window.closeLoginOverlay?.(); return true; }
+            const modal = window.modal?.overlay; if(modal?.classList.contains('opacity-100')){ document.getElementById('modal-confirm')?.click(); return true; }
+            return false;
+        }
+
+        function p2InstallShortcuts() {
+            if (window.__p2ShortcutsInstalled) return; window.__p2ShortcutsInstalled = true;
+            document.addEventListener('keydown', (e) => {
+                const tag = (e.target?.tagName || '').toLowerCase();
+                const typing = ['input','textarea','select'].includes(tag) || e.target?.isContentEditable;
+                if (e.key === 'Escape') { p2CloseTopLayer(); return; }
+                if (typing) return;
+                if (e.key === '/') { e.preventDefault(); document.getElementById('global-search')?.focus(); }
+                if (e.key.toLowerCase() === 'n') { e.preventDefault(); window.prepareAddPrompt?.(); }
+            });
+        }
+
+        const p2OriginalRenderDashboard = typeof renderDashboard === 'function' ? renderDashboard : null;
+        try { renderDashboard = function(){ p2OriginalRenderDashboard?.(); p2RenderDashboardWidgets(); }; } catch(e) { console.warn('Phase 2 dashboard hook skipped', e); }
+
+        window.addEventListener('load', () => {
+            p2InstallStyles();
+            p2InstallShortcuts();
+            setTimeout(() => { p2ShowOnboarding(false); p2RenderDashboardWidgets(); }, 900);
+        });
+
+
+        /* =========================
+           PHASE 3 ADD-ON
+           Seed examples, Templates, Leaderboard, improved Fork flow, Prompt Coach, Usage + Ratings
+        ========================== */
+        const P3_EXAMPLES = [
+            {id:'sample-coding-debugger', title:'Senior Debugger: Find Root Cause Fast', category:'Coding', targetModel:'ChatGPT', targetModels:['ChatGPT','Claude','Gemini'], difficulty:'intermediate', promptType:'text', forks:42, upvotes:188, likedBy:[], authorName:'PromptVault Team', tags:['debugging','code-review','engineering'], description:'Paste an error, stack trace, and code snippet to get a structured root-cause analysis and fix plan.', content:`Act as a senior software engineer and debugging partner. I will provide an error, logs, and relevant code.
+
+Your task:
+1. Identify the most likely root cause.
+2. Explain why it is happening in plain English.
+3. Give a minimal fix first.
+4. Then give a more robust production-ready fix.
+5. List edge cases I should test.
+
+Error/logs:
+{{error_logs}}
+
+Relevant code:
+{{code}}
+
+Environment/context:
+{{environment}}
+
+Return the answer with sections: Root Cause, Minimal Fix, Production Fix, Tests.`},
+            {id:'sample-coding-api-spec', title:'API Endpoint Designer', category:'Coding', targetModel:'Claude', targetModels:['Claude','ChatGPT'], difficulty:'advanced', promptType:'text', forks:27, upvotes:141, likedBy:[], authorName:'API Studio', tags:['backend','api','architecture'], description:'Design a clean REST endpoint with validation, edge cases, request/response examples, and security notes.', content:`You are an API architect. Design a production-ready API endpoint for this feature:
+
+Feature: {{feature}}
+User role: {{user_role}}
+Data involved: {{data}}
+
+Include:
+- Endpoint path and HTTP method
+- Request body schema
+- Response examples: success + common errors
+- Validation rules
+- Auth/permission checks
+- Rate-limit/security considerations
+- Database fields needed
+- Pseudocode for controller logic
+
+Keep it practical and implementation-ready.`},
+            {id:'sample-writing-editor', title:'Rewrite into Clear, Premium Writing', category:'Writing', targetModel:'Claude', targetModels:['Claude','ChatGPT','Gemini'], difficulty:'beginner', promptType:'text', forks:63, upvotes:221, likedBy:[], authorName:'Copy Desk', tags:['editing','clarity','tone'], description:'Turn rough text into polished writing while preserving your meaning and voice.', content:`Rewrite the text below to make it clearer, smoother, and more premium while preserving the original meaning.
+
+Tone: {{tone}}
+Audience: {{audience}}
+Length preference: {{length}}
+
+Text:
+{{draft}}
+
+Return:
+1. Improved version
+2. 5 bullet explanation of the biggest improvements
+3. 3 alternative headline/opening options if relevant.`},
+            {id:'sample-writing-blog-outline', title:'SEO Blog Outline Builder', category:'SEO', targetModel:'ChatGPT', targetModels:['ChatGPT','Claude'], difficulty:'beginner', promptType:'text', forks:51, upvotes:196, likedBy:[], authorName:'Growth Lab', tags:['seo','blog','content'], description:'Generate a search-intent-focused blog outline with keywords, headings, and FAQ ideas.', content:`Create an SEO blog outline for:
+
+Topic: {{topic}}
+Target keyword: {{keyword}}
+Audience: {{audience}}
+Search intent: {{intent}}
+
+Include:
+- Compelling title options
+- Meta description
+- H1/H2/H3 structure
+- Suggested intro angle
+- Key points under each section
+- FAQ section
+- Internal link ideas
+- CTA suggestion
+
+Make it useful, not keyword-stuffed.`},
+            {id:'sample-marketing-landing', title:'High-Converting Landing Page Copy', category:'Marketing', targetModel:'ChatGPT', targetModels:['ChatGPT','Claude'], difficulty:'intermediate', promptType:'text', forks:79, upvotes:244, likedBy:[], authorName:'Conversion Forge', tags:['landing-page','copywriting','saas'], description:'Create landing page copy with hero, benefits, objections, social proof, and CTA sections.', content:`Act as a conversion copywriter. Write landing page copy for:
+
+Product: {{product}}
+Target customer: {{customer}}
+Main pain point: {{pain_point}}
+Key benefit: {{benefit}}
+Offer/CTA: {{cta}}
+
+Create:
+1. Hero headline + subheadline
+2. 3 benefit sections
+3. Problem → solution section
+4. Feature bullets translated into outcomes
+5. Objection handling section
+6. Social proof placeholders
+7. Final CTA section
+
+Use clear, persuasive, modern SaaS-style language.`},
+            {id:'sample-marketing-email', title:'Cold Email Personalization Engine', category:'Email', targetModel:'Claude', targetModels:['Claude','ChatGPT'], difficulty:'advanced', promptType:'text', forks:33, upvotes:119, likedBy:[], authorName:'Outbound Ops', tags:['sales','email','personalization'], description:'Build a personalized cold email from prospect and company details without sounding robotic.', content:`Write a concise cold email using the details below.
+
+Prospect role: {{role}}
+Company: {{company}}
+Observed trigger/relevance: {{trigger}}
+Our product/service: {{offer}}
+Desired CTA: {{cta}}
+
+Rules:
+- Max 120 words
+- No hype or fake familiarity
+- Make the first line genuinely relevant
+- Include one clear business outcome
+- End with a low-friction CTA
+
+Return 3 variations with different angles.`},
+            {id:'sample-image-cinematic-product', title:'Cinematic Product Photo Prompt', category:'Image Generation', targetModel:'Midjourney', targetModels:['Midjourney','DALL·E 3','Stable Diffusion'], difficulty:'beginner', promptType:'image', forks:88, upvotes:312, likedBy:[], authorName:'Visual Prompt Co', tags:['product','cinematic','photo'], description:'Generate premium product photography prompts for ads, ecommerce, and hero visuals.', negativePrompt:'blurry, low quality, watermark, distorted logo, extra objects, bad lighting', content:`Premium cinematic product photo of {{product}}, placed on {{surface}}, surrounded by subtle {{environment_details}}, dramatic softbox lighting, shallow depth of field, realistic reflections, ultra-detailed, luxury advertising style, 8K, sharp focus --ar 16:9 --v 6 --q 2`},
+            {id:'sample-image-character', title:'Fantasy Character Concept Art', category:'Image Generation', targetModel:'Stable Diffusion', targetModels:['Stable Diffusion','Midjourney','Flux'], difficulty:'intermediate', promptType:'image', forks:65, upvotes:205, likedBy:[], authorName:'ArtForge', tags:['character','fantasy','concept-art'], description:'Create detailed fantasy character concept art with style and mood controls.', negativePrompt:'bad anatomy, extra fingers, blurry, low resolution, watermark, text, cropped face', content:`Full-body fantasy character concept art of {{character}}, wearing {{outfit}}, holding {{weapon_or_object}}, in a {{setting}} environment, {{mood}} mood, dynamic pose, intricate details, dramatic rim light, concept art, digital painting, highly detailed`},
+            {id:'sample-image-logo', title:'Minimal Logo Concept Prompt', category:'Design', targetModel:'DALL·E 3', targetModels:['DALL·E 3','Ideogram','Midjourney'], difficulty:'beginner', promptType:'image', forks:44, upvotes:172, likedBy:[], authorName:'Brand Kit', tags:['logo','branding','minimal'], description:'Generate clean logo concepts with brand personality and style direction.', negativePrompt:'photorealistic, complex background, mockup, watermark, tiny unreadable text', content:`Minimal modern logo concept for {{brand_name}}, a company that does {{what_it_does}}, brand personality: {{personality}}, color palette: {{colors}}, simple geometric mark, clean vector style, centered on plain background, professional branding presentation`},
+            {id:'sample-productivity-daily-plan', title:'Daily Execution Planner', category:'Productivity', targetModel:'Gemini', targetModels:['Gemini','ChatGPT','Claude'], difficulty:'beginner', promptType:'text', forks:58, upvotes:184, likedBy:[], authorName:'Focus Systems', tags:['planning','productivity','prioritization'], description:'Turn a messy task list into a realistic daily plan with priorities and time blocks.', content:`Act as my execution coach. Convert this messy task list into a realistic daily plan.
+
+Tasks:
+{{tasks}}
+Available hours: {{hours}}
+Energy level: {{energy_level}}
+Non-negotiables: {{non_negotiables}}
+
+Return:
+- Top 3 priorities
+- Time-blocked schedule
+- Quick wins under 15 minutes
+- What to postpone or delegate
+- End-of-day review checklist`},
+            {id:'sample-productivity-meeting', title:'Meeting Notes to Action Plan', category:'Productivity', targetModel:'ChatGPT', targetModels:['ChatGPT','Claude'], difficulty:'beginner', promptType:'text', forks:37, upvotes:132, likedBy:[], authorName:'Ops Desk', tags:['meetings','summaries','actions'], description:'Convert messy meeting notes into decisions, action items, owners, and follow-ups.', content:`Turn these meeting notes into a clean action plan.
+
+Meeting notes:
+{{notes}}
+
+Return:
+1. Executive summary
+2. Key decisions made
+3. Action items with owner and deadline
+4. Open questions
+5. Risks/blockers
+6. Follow-up email draft`},
+            {id:'sample-research-compare', title:'Research Comparison Matrix', category:'Research', targetModel:'Claude', targetModels:['Claude','Gemini','ChatGPT'], difficulty:'intermediate', promptType:'text', forks:29, upvotes:110, likedBy:[], authorName:'Research Desk', tags:['research','comparison','analysis'], description:'Compare tools, products, strategies, or options using a structured decision matrix.', content:`Compare the following options for this decision:
+
+Decision/context: {{context}}
+Options: {{options}}
+Criteria that matter: {{criteria}}
+
+Create:
+- Comparison table
+- Pros and cons for each option
+- Best option for different scenarios
+- Risks and unknowns
+- Final recommendation with reasoning
+
+Be balanced and practical.`},
+            {id:'sample-business-sop', title:'SOP Generator for Any Workflow', category:'Business', targetModel:'ChatGPT', targetModels:['ChatGPT','Claude'], difficulty:'intermediate', promptType:'text', forks:46, upvotes:158, likedBy:[], authorName:'Ops Builder', tags:['sop','operations','process'], description:'Create a clear standard operating procedure from a rough workflow description.', content:`Create a Standard Operating Procedure for this workflow:
+
+Workflow name: {{workflow_name}}
+Goal: {{goal}}
+Current rough steps: {{rough_steps}}
+Tools used: {{tools}}
+Quality standard: {{quality_standard}}
+
+Include:
+- Purpose
+- Scope
+- Roles/responsibilities
+- Step-by-step process
+- Checklist
+- Common mistakes
+- QA/review criteria
+- Improvement suggestions`},
+            {id:'sample-education-tutor', title:'Socratic Tutor for Any Topic', category:'Education', targetModel:'Gemini', targetModels:['Gemini','Claude','ChatGPT'], difficulty:'beginner', promptType:'text', forks:26, upvotes:102, likedBy:[], authorName:'Learning Lab', tags:['learning','tutor','socratic'], description:'Learn a topic through guided questions instead of passive explanations.', content:`Act as a Socratic tutor. Help me understand:
+
+Topic: {{topic}}
+My current level: {{level}}
+Goal: {{goal}}
+
+Rules:
+- Ask one question at a time
+- Wait for my answer before continuing
+- If I am wrong, give a hint before revealing the answer
+- Use simple analogies
+- End with a mini quiz and recap`},
+            {id:'sample-career-resume', title:'Resume Bullet Optimizer', category:'Career', targetModel:'Claude', targetModels:['Claude','ChatGPT'], difficulty:'beginner', promptType:'text', forks:39, upvotes:147, likedBy:[], authorName:'Career Studio', tags:['resume','career','job-search'], description:'Rewrite weak resume bullets into measurable, impact-focused bullet points.', content:`Rewrite these resume bullets to sound more specific, measurable, and impact-focused.
+
+Target role: {{target_role}}
+Current bullets:
+{{bullets}}
+
+For each bullet:
+- Improve action verb
+- Add measurable impact where possible
+- Keep it honest and concise
+- Make it ATS-friendly
+
+Return 2 versions: conservative and stronger.`},
+            {id:'sample-social-calendar', title:'30-Day Social Content Calendar', category:'Social Media', targetModel:'ChatGPT', targetModels:['ChatGPT','Gemini'], difficulty:'intermediate', promptType:'text', forks:52, upvotes:166, likedBy:[], authorName:'Social Engine', tags:['content-calendar','social-media','marketing'], description:'Generate a full month of platform-specific post ideas around your brand and offer.', content:`Create a 30-day social media content calendar for:
+
+Brand: {{brand}}
+Audience: {{audience}}
+Offer: {{offer}}
+Platform: {{platform}}
+Content pillars: {{pillars}}
+
+For each day include:
+- Post idea
+- Hook
+- Format
+- Caption outline
+- CTA
+- Suggested visual`},
+            {id:'sample-chain-blog', title:'3-Step Blog Research → Outline → Draft Chain', category:'Writing', targetModel:'Claude', targetModels:['Claude','ChatGPT'], difficulty:'advanced', promptType:'chain', forks:23, upvotes:96, likedBy:[], authorName:'Workflow Lab', tags:['prompt-chain','blog','writing'], description:'A multi-step workflow that researches, outlines, and drafts a blog post.', chainSteps:[{stepNumber:1,title:'Research',promptBody:'Research the topic {{topic}} for audience {{audience}}. Return key angles, pain points, and evidence to include.',variables:['topic','audience']},{stepNumber:2,title:'Outline',promptBody:'Using the research above, create an SEO-friendly outline with H2/H3 sections and key points.',variables:[]},{stepNumber:3,title:'Draft',promptBody:'Using the outline above, write a clear first draft in a {{tone}} tone with examples and a strong conclusion.',variables:['tone']}], content:`Step 1: Research {{topic}}
+Step 2: Outline the article
+Step 3: Draft in {{tone}} tone`},
+            {id:'sample-finance-budget', title:'Personal Budget Reality Check', category:'Finance', targetModel:'ChatGPT', targetModels:['ChatGPT','Gemini'], difficulty:'beginner', promptType:'text', forks:18, upvotes:88, likedBy:[], authorName:'Money Clarity', tags:['budget','finance','planning'], description:'Analyze income, expenses, and goals to create a practical budget plan.', content:`Help me create a realistic monthly budget.
+
+Monthly income: {{income}}
+Fixed expenses: {{fixed_expenses}}
+Variable expenses: {{variable_expenses}}
+Debt/savings goals: {{goals}}
+Lifestyle priorities: {{priorities}}
+
+Return:
+- Budget breakdown
+- Spending risks
+- 3 realistic savings moves
+- What to automate
+- Weekly check-in routine`}
+        ];
+
+        function p3InstallStyles(){ if(document.getElementById('p3-style')) return; document.head.insertAdjacentHTML('beforeend', `<style id="p3-style">.p3-widget{background:radial-gradient(circle at top left,rgba(99,102,241,.14),transparent 35%),#050505;border:1px solid #262626;border-radius:28px;padding:22px}.p3-rank{width:34px;height:34px;border-radius:12px;background:#111;border:1px solid #333;display:flex;align-items:center;justify-content:center;color:#a5b4fc;font-weight:900}.p3-coach-item{padding:14px;border:1px solid #262626;background:#050505;border-radius:16px}.p3-stars button{font-size:22px;color:#525252;transition:.15s}.p3-stars button:hover,.p3-stars button.active{color:#fbbf24;transform:translateY(-1px)}.p3-template-hero{background:radial-gradient(circle at 20% 20%,rgba(236,72,153,.14),transparent 34%),radial-gradient(circle at 80% 0%,rgba(99,102,241,.18),transparent 32%),#050505;border:1px solid #262626;border-radius:32px;padding:30px}</style>`); }
+        function p3SeedExamples(){
+            window.publicPrompts = window.publicPrompts || [];
+            const existing = new Set(window.publicPrompts.map(p=>p.id));
+            P3_EXAMPLES.forEach((p,i)=>{ if(!existing.has(p.id)) window.publicPrompts.push({...p, isPublic:true, date:p.date || new Date(Date.now() - i*86400000).toISOString(), generatedPreviewUrl:p.generatedPreviewUrl || null, commentCount:p.commentCount || Math.floor((p.upvotes||0)/18), source:'seed'}); });
+        }
+        p3SeedExamples();
+
+        function p3InstallTemplates(){
+            if(document.getElementById('templates')) return;
+            document.getElementById('analytics')?.insertAdjacentHTML('beforebegin', `<div id="templates" class="screen max-w-7xl mx-auto pb-10"><div class="p3-template-hero mb-8"><p class="text-xs text-primary font-black uppercase tracking-widest mb-2">Curated Starter Prompts</p><h1 class="text-4xl font-black text-white mb-3">Templates for faster prompting</h1><p class="text-neutral-400 max-w-2xl">Copy a starter prompt instantly or fork it into your library so you can customize, version, and test it in PromptVault.</p></div><div class="flex gap-2 overflow-x-auto pb-4 mb-5" id="template-category-pills"></div><div id="templates-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div></div>`);
+            const nav=document.querySelector('aside nav');
+            if(nav && !document.getElementById('nav-templates-p3')) nav.querySelector('#nav-playground-p1')?.insertAdjacentHTML('afterend', `<button id="nav-templates-p3" onclick="window.switchTab('templates')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-wand-magic-sparkles w-6"></i> Templates</button>`);
+        }
+        function p3RenderTemplates(cat='All'){
+            const grid=document.getElementById('templates-grid'); if(!grid) return;
+            const cats=['All','Coding','Writing','Marketing','Image Generation','Productivity','Business','Career'];
+            const pills=document.getElementById('template-category-pills'); if(pills) pills.innerHTML=cats.map(c=>`<button onclick="window.p3RenderTemplates('${c}')" class="v2-pill ${c===cat?'active':''}">${c}</button>`).join('');
+            const items=P3_EXAMPLES.filter(p=>cat==='All'||p.category===cat).slice(0,18);
+            grid.innerHTML=items.map(p=>`<div class="p3-widget flex flex-col"><div class="flex items-start justify-between gap-3 mb-3"><h3 class="text-xl font-black text-white">${p2esc(p.title)}</h3><span class="text-2xl">${p.promptType==='image'?'🎨':p.promptType==='chain'?'🔗':'📝'}</span></div><p class="text-sm text-neutral-400 line-clamp-3 mb-4">${p2esc(p.description)}</p><div class="flex flex-wrap gap-2 mb-5">${typeof v2BadgeDifficulty==='function'?v2BadgeDifficulty(p.difficulty):''}${typeof v2ModelBadges==='function'?v2ModelBadges(p.targetModels):''}</div><pre class="bg-black/60 border border-neutral-800 rounded-2xl p-4 text-xs text-neutral-400 font-mono line-clamp-5 mb-5">${p2esc(p.content)}</pre><div class="mt-auto grid grid-cols-2 gap-3"><button onclick="navigator.clipboard.writeText(${JSON.stringify(p.content)}); window.showToast('Template copied')" class="p1-btn-secondary">Copy</button><button onclick="window.p3ForkTemplate('${p.id}')" class="p1-btn-primary">Fork Template</button></div></div>`).join('');
+        }
+        window.p3RenderTemplates=p3RenderTemplates;
+        window.p3ForkTemplate=(id)=>window.forkPrompt({stopPropagation(){}}, id);
+
+        function p3Leaderboard(){
+            const prompts=[...(window.publicPrompts||[])];
+            const contributors={}; prompts.forEach(p=>{ const name=p.authorName||'Unknown'; contributors[name]=contributors[name]||{name,count:0,upvotes:0,avatar:p.authorAvatar}; contributors[name].count++; contributors[name].upvotes+=p.upvotes||0; });
+            const topContrib=Object.values(contributors).sort((a,b)=>b.upvotes-a.upvotes||b.count-a.count).slice(0,5);
+            const forked=[...prompts].sort((a,b)=>(b.forks||0)-(a.forks||0)).slice(0,5);
+            return `<div id="p3-leaderboard" class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8"><div class="p3-widget"><h3 class="text-xl font-black text-white mb-4">🏆 Top Contributors</h3><div class="space-y-3">${topContrib.map((u,i)=>`<div class="flex items-center gap-3"><div class="p3-rank">${i+1}</div><div class="min-w-0 flex-1"><b class="text-white truncate block">${p2esc(u.name)}</b><p class="text-xs text-neutral-500">${u.count} prompts · ▲ ${u.upvotes}</p></div></div>`).join('')||'<p class="text-neutral-500">No contributors yet.</p>'}</div></div><div class="p3-widget"><h3 class="text-xl font-black text-white mb-4">⑂ Most Forked Prompts</h3><div class="space-y-3">${forked.map((p,i)=>`<div onclick="window.viewPrompt('${p2esc(p.id)}')" class="flex items-center gap-3 cursor-pointer hover:bg-neutral-900/50 rounded-2xl p-1"><div class="p3-rank">${i+1}</div><div class="min-w-0 flex-1"><b class="text-white truncate block">${p2esc(p.title)}</b><p class="text-xs text-neutral-500">${p.forks||0} forks · ${p2esc(p.category||'Other')}</p></div></div>`).join('')||'<p class="text-neutral-500">No forks yet.</p>'}</div></div></div>`;
+        }
+        function p3InjectLeaderboard(){ const explore=document.getElementById('explore'); if(!explore) return; const old=document.getElementById('p3-leaderboard'); old?.remove(); const tools=explore.querySelector('.bg-darksurface'); tools?.insertAdjacentHTML('afterend', p3Leaderboard()); }
+
+        const p3OriginalFork = window.forkPrompt;
+        window.forkPrompt = async (e, id) => {
+            e?.stopPropagation?.();
+            if(!window.currentUser){ window.openLoginOverlay?.(); return window.showToast('Please login to fork prompts.'); }
+            const p = p2FindPrompt?.(id) || (window.publicPrompts||[]).find(x=>x.id===id) || (window.prompts||[]).find(x=>x.id===id);
+            if(!p) return;
+            const note = await window.modal.prompt('What did you change or plan to customize? This note is saved with your fork.', 'Adapted for my workflow', 'Fork Note');
+            if(note === null) return;
+            try {
+                const newId = generateId();
+                const forked = {...p};
+                delete forked.id; delete forked.source;
+                Object.assign(forked, { userId:window.currentUser.uid, authorName:window.currentUser.displayName||window.currentUser.email.split('@')[0], authorAvatar:window.currentUser.photoURL||'', isPublic:false, date:new Date().toISOString(), forkedFrom:id, forkedFromTitle:p.title, forkNote:note, changedNote:note, likedBy:[], upvotedBy:[], upvotes:0, forks:0, version:'1.0', history:[] });
+                await setDoc(doc(db,'prompts',newId), forked);
+                if(!String(id).startsWith('sample-')) await updateDoc(doc(db,'prompts',id), {forks: increment(1)}).catch(()=>{});
+                p.forks=(p.forks||0)+1;
+                window.showToast('Forked to your Library with note!');
+                if(document.querySelector('.screen.active')?.id==='explore') window.renderExplore?.();
+            } catch(err) { await window.modal.alert('Failed to fork: '+err.message); }
+        };
+
+        function p3PromptCoachSuggestions(text){
+            const t=(text||'').trim(); const tips=[];
+            if(t.length<80) tips.push({title:'Add more context', body:'Explain the role, audience, goal, and constraints so the model has enough information.'});
+            if(!/act as|you are/i.test(t)) tips.push({title:'Define the AI role', body:'Start with “Act as a…” to guide expertise and tone.'});
+            if(!/return|format|include|sections/i.test(t)) tips.push({title:'Specify output format', body:'Tell the AI exactly what sections, bullets, table, JSON, or checklist you want.'});
+            if(!/\{\{[^}]+\}\}/.test(t)) tips.push({title:'Add reusable variables', body:'Use {{audience}}, {{topic}}, {{tone}}, or {{goal}} so the prompt becomes reusable.'});
+            if(!/do not|avoid|constraints|rules/i.test(t)) tips.push({title:'Add constraints', body:'Include rules such as max length, style restrictions, what to avoid, and quality bar.'});
+            if(!/example|sample/i.test(t)) tips.push({title:'Consider examples', body:'Add a short example of good output if consistency matters.'});
+            if(tips.length===0) tips.push({title:'Strong prompt', body:'This prompt has role, structure, variables, and constraints. Consider adding evaluation criteria or edge cases.'});
+            return tips;
+        }
+        window.p3OpenPromptCoach = async () => {
+            const ta=document.getElementById('prompt-content'); if(!ta) return;
+            const text=ta.value.trim(); if(!text) return window.modal.alert('Write or paste a prompt first.', 'Prompt Coach');
+            let tips=p3PromptCoachSuggestions(text); let aiNote='';
+            try {
+                const hasKey=localStorage.getItem('api_key_gemini')||localStorage.getItem('api_key_openai')||localStorage.getItem('api_key_anthropic');
+                if(hasKey && typeof callOmniAPI==='function'){
+                    const provider=localStorage.getItem('api_key_gemini')?'gemini':(localStorage.getItem('api_key_openai')?'openai':'anthropic');
+                    const res=await callOmniAPI(`Review this prompt and give 5 concise improvement suggestions. Do not rewrite fully. Prompt:\n\n${text}`, provider);
+                    aiNote=res.text;
+                }
+            } catch(e){ console.warn('AI coach unavailable, using local coach', e); }
+            document.getElementById('p3-coach-panel')?.remove();
+            const panel=`<div id="p3-coach-panel" class="fixed inset-0 z-[999997] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"><div class="w-full max-w-2xl p3-widget max-h-[85vh] overflow-y-auto"><div class="flex justify-between items-start mb-5"><div><h3 class="text-2xl font-black text-white">Prompt Coach</h3><p class="text-sm text-neutral-500">Actionable suggestions to improve your current prompt.</p></div><button onclick="document.getElementById('p3-coach-panel').remove()" class="w-9 h-9 rounded-full bg-neutral-900 text-white"><i class="fa-solid fa-xmark"></i></button></div><div class="space-y-3 mb-5">${tips.map(x=>`<div class="p3-coach-item"><b class="text-white">${p2esc(x.title)}</b><p class="text-sm text-neutral-400 mt-1">${p2esc(x.body)}</p></div>`).join('')}</div>${aiNote?`<div class="p3-coach-item mb-5"><b class="text-primary">AI Coach Notes</b><div class="prose prose-invert prose-sm max-w-none mt-2">${DOMPurify.sanitize(marked.parse(aiNote))}</div></div>`:''}<div class="grid sm:grid-cols-2 gap-3"><button onclick="window.p3ApplyCoachStructure()" class="p1-btn-primary">Apply Better Structure</button><button onclick="document.getElementById('p3-coach-panel').remove()" class="p1-btn-secondary">Close</button></div></div></div>`;
+            document.body.insertAdjacentHTML('beforeend', panel);
+        };
+        window.p3ApplyCoachStructure=()=>{ const ta=document.getElementById('prompt-content'); if(!ta)return; const original=ta.value.trim(); if(/Act as|Return:/i.test(original)) return window.showToast('Prompt already has structure'); ta.value=`Act as an expert {{role}}.\n\nGoal: {{goal}}\nAudience/context: {{audience}}\n\nTask:\n${original}\n\nRules:\n- Be clear, practical, and specific.\n- Ask clarifying questions if required.\n- Avoid generic advice.\n\nReturn format:\n1. Main answer\n2. Step-by-step explanation\n3. Checklist or next actions`; ta.dispatchEvent(new Event('input')); window.showToast('Structure applied'); document.getElementById('p3-coach-panel')?.remove(); };
+        function p3InjectCoachButton(){ const btn=document.querySelector('button[onclick="window.magicOptimizePrompt()"]'); if(btn && !document.getElementById('p3-coach-btn')) btn.insertAdjacentHTML('afterend', `<button id="p3-coach-btn" onclick="window.p3OpenPromptCoach()" class="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white rounded-full text-sm font-bold transition-colors flex items-center gap-2"><i class="fa-solid fa-chalkboard-user"></i> <span class="hidden sm:inline">Prompt Coach</span></button>`); }
+
+        function p3RenderUsageRating(promptId){ const box=document.getElementById('play-output'); if(!box || document.getElementById('p3-rating-box')) return; box.insertAdjacentHTML('afterend', `<div id="p3-rating-box" class="mt-4 p3-widget"><div class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center"><div><b class="text-white">Rate this output</b><p class="text-xs text-neutral-500">Helps you remember which prompts perform best.</p></div><div class="p3-stars" data-prompt="${p2esc(promptId)}">${[1,2,3,4,5].map(n=>`<button onclick="window.p3RateOutput('${p2esc(promptId)}',${n},this)">★</button>`).join('')}</div></div></div>`); }
+        window.p3RateOutput=async(id,rating,btn)=>{ [...btn.parentElement.children].forEach((b,i)=>b.classList.toggle('active', i<rating)); localStorage.setItem('prompt_rating_'+id, String(rating)); try{ if(window.currentUser) await setDoc(doc(db,'promptUsage',`${window.currentUser.uid}_${id}`), {promptId:id,userId:window.currentUser.uid,lastRating:rating,lastRatedAt:new Date().toISOString()}, {merge:true}); await setDoc(doc(db,'prompts',id), {ratingTotal: increment(rating), ratingCount: increment(1)}, {merge:true}).catch(()=>{}); }catch(e){} window.showToast(`Rated ${rating}/5`); };
+        const p3OriginalExecuteAI=window.executeAI;
+        window.executeAI=async()=>{ const id=window.currentViewId||currentViewId; const before=Date.now(); await p3OriginalExecuteAI?.(); if(id){ const p=p2FindPrompt?.(id); if(p) p.usageCount=(p.usageCount||0)+1; try{ await setDoc(doc(db,'prompts',id), {usageCount: increment(1), lastUsedAt:new Date().toISOString()}, {merge:true}).catch(()=>{}); if(window.currentUser) await setDoc(doc(db,'promptUsage',`${window.currentUser.uid}_${id}`), {promptId:id,userId:window.currentUser.uid,count: increment(1), lastUsedAt:new Date().toISOString()}, {merge:true}); }catch(e){} setTimeout(()=>p3RenderUsageRating(id),200); } };
+        const p3OriginalViewPrompt=window.viewPrompt;
+        window.viewPrompt=(id)=>{ p3OriginalViewPrompt?.(id); setTimeout(()=>{ const p=p2FindPrompt?.(id); const meta=document.getElementById('template-col')?.querySelector('.bg-darksurface'); if(p && meta && !document.getElementById('p3-usage-stat')){ const avg=p.ratingCount?((p.ratingTotal||0)/p.ratingCount).toFixed(1):'—'; meta.insertAdjacentHTML('afterbegin', `<div id="p3-usage-stat" class="grid grid-cols-2 gap-2 mb-5"><div class="bg-black border border-neutral-800 rounded-2xl p-3"><p class="text-[10px] text-neutral-500 uppercase font-black">Uses</p><b class="text-white text-xl">${p.usageCount||0}</b></div><div class="bg-black border border-neutral-800 rounded-2xl p-3"><p class="text-[10px] text-neutral-500 uppercase font-black">Rating</p><b class="text-white text-xl">★ ${avg}</b></div></div>`); } },180); };
+
+        const p3OriginalRenderExplore=window.renderExplore;
+        window.renderExplore=()=>{ p3SeedExamples(); p3OriginalRenderExplore?.(); p3InjectLeaderboard(); };
+        const p3OriginalSwitch=window.switchTab;
+        window.switchTab=async(tabId)=>{ p3InstallStyles(); p3InstallTemplates(); const r=await p3OriginalSwitch(tabId); if(tabId==='templates') p3RenderTemplates(); if(tabId==='explore') p3InjectLeaderboard(); setTimeout(p3InjectCoachButton,80); return r; };
+        const p3OriginalDashboard=typeof renderDashboard==='function'?renderDashboard:null;
+        try{ renderDashboard=function(){ p3SeedExamples(); p3OriginalDashboard?.(); }; }catch(e){}
+        window.addEventListener('load',()=>{ p3InstallStyles(); p3InstallTemplates(); p3SeedExamples(); setTimeout(()=>{ p3InjectLeaderboard(); p3InjectCoachButton(); if(document.getElementById('templates')?.classList.contains('active')) p3RenderTemplates(); },700); });
+
     </script>
 </body>
 </html>
