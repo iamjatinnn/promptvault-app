@@ -1,4 +1,4 @@
-const CACHE_NAME = 'promptvault-v6';
+const CACHE_NAME = 'promptvault-v8';
 const CORE_ASSETS = [
   './manifest.json',
   './logo.png'

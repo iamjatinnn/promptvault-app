@@ -472,11 +472,11 @@
 
         if ('serviceWorker' in navigator) window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('sw.js?v=6');
+                const reg = await navigator.serviceWorker.register('sw.js?v=8');
                 reg.update?.();
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!sessionStorage.getItem('sw-reloaded-v6')) {
-                        sessionStorage.setItem('sw-reloaded-v6', '1');
+                    if (!sessionStorage.getItem('sw-reloaded-v8')) {
+                        sessionStorage.setItem('sw-reloaded-v8', '1');
                         window.location.reload();
                     }
                 });
@@ -934,17 +934,52 @@ Fix checklist:
         window.loadExplore = async (forceRefresh = false) => {
             const grid = document.getElementById('explore-grid');
             const loader = document.getElementById('explore-loader');
-            if(window.publicPrompts.length > 0 && !forceRefresh) return;
-            
-            grid.innerHTML = ''; loader.classList.remove('hidden');
+            if (!grid) return;
+
+            // Never leave marketplace blank. Seed examples before and after Firebase.
+            try { if (typeof p3SeedExamples === 'function') p3SeedExamples(); } catch (_) {}
+
+            if ((window.publicPrompts || []).length > 0 && !forceRefresh) {
+                window.renderExplore?.();
+                return;
+            }
+
+            loader?.classList.remove('hidden');
+            let loadedFromFirebase = [];
+
             try {
-                const q = query(collection(db, "prompts"), where("isPublic", "==", true), orderBy("date", "desc"), limit(100));
-                const snap = await getDocs(q);
-                window.publicPrompts = []; 
-                snap.forEach(doc => window.publicPrompts.push({id: doc.id, ...doc.data()}));
-                window.renderExplore();
-            } catch(e) { console.error(e); window.showToast("Failed to load explore page"); }
-            finally { loader.classList.add('hidden'); }
+                try {
+                    const q1 = query(collection(db, "prompts"), where("isPublic", "==", true), orderBy("date", "desc"), limit(100));
+                    const snap = await getDocs(q1);
+                    snap.forEach(d => loadedFromFirebase.push({ id: d.id, ...d.data() }));
+                } catch (orderedQueryError) {
+                    console.warn('Explore ordered query failed; trying fallback query without orderBy.', orderedQueryError);
+                    const q2 = query(collection(db, "prompts"), where("isPublic", "==", true), limit(100));
+                    const snap2 = await getDocs(q2);
+                    snap2.forEach(d => loadedFromFirebase.push({ id: d.id, ...d.data() }));
+                    loadedFromFirebase.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+                }
+            } catch (firebaseExploreError) {
+                // Important: do NOT show a green error toast to users. The curated local examples are the fallback.
+                console.warn('Explore Firebase query unavailable. Showing local example prompts instead.', firebaseExploreError);
+            } finally {
+                const seedItems = [];
+                try {
+                    const before = window.publicPrompts || [];
+                    window.publicPrompts = [];
+                    if (typeof p3SeedExamples === 'function') p3SeedExamples();
+                    seedItems.push(...(window.publicPrompts || []));
+                    window.publicPrompts = before;
+                } catch (_) {}
+
+                const merged = new Map();
+                [...loadedFromFirebase, ...(window.publicPrompts || []), ...seedItems].forEach(item => {
+                    if (item?.id) merged.set(item.id, item);
+                });
+                window.publicPrompts = [...merged.values()];
+                loader?.classList.add('hidden');
+                window.renderExplore?.();
+            }
         }
 
         window.renderExplore = () => {
@@ -2434,6 +2469,19 @@ Return:
                 loader?.classList.add('hidden');
                 window.renderExplore?.();
             }
+        };
+
+
+
+        /* FINAL SAFETY: suppress stale Explore error toast from any old callback and render fallback examples. */
+        const __pvOriginalToast = window.showToast;
+        window.showToast = (msg, isHtml = false) => {
+            if (String(msg || '').includes('Failed to load explore page')) {
+                console.warn('Suppressed stale Explore error toast. Rendering fallback marketplace examples.');
+                try { p3SeedExamples?.(); window.renderExplore?.(); } catch (_) {}
+                return;
+            }
+            return __pvOriginalToast?.(msg, isHtml);
         };
 
     </script>
