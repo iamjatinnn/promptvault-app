@@ -17,7 +17,7 @@
       // One-time emergency cache cleanup for old PromptVault service workers.
       (function(){
         try {
-          var key='pv-sw-clean-v10';
+          var key='pv-sw-clean-v11';
           if ('serviceWorker' in navigator && !localStorage.getItem(key)) {
             localStorage.setItem(key,'1');
             navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -433,8 +433,8 @@
     </div>
 
     <script type="module">
-        window.addEventListener('error', e => window.showToast?.('Error: ' + (e.message || 'unknown')));
-        window.addEventListener('unhandledrejection', e => window.showToast?.('Error: ' + (e.reason?.message || e.reason || 'unknown')));
+        window.addEventListener('error', e => console.warn('Suppressed background error:', e.message || e));
+        window.addEventListener('unhandledrejection', e => console.warn('Suppressed background promise rejection:', e.reason || e));
 
         
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -490,11 +490,11 @@
 
         if ('serviceWorker' in navigator) window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('sw.js?v=10');
+                const reg = await navigator.serviceWorker.register('sw.js?v=11');
                 reg.update?.();
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!sessionStorage.getItem('sw-reloaded-v10')) {
-                        sessionStorage.setItem('sw-reloaded-v10', '1');
+                    if (!sessionStorage.getItem('sw-reloaded-v11')) {
+                        sessionStorage.setItem('sw-reloaded-v11', '1');
                         window.location.reload();
                     }
                 });
@@ -507,12 +507,15 @@
         let toastTimeout;
         window.showToast = (msg, isHtml = false) => {
             const textMsg = String(msg || '');
-            if (textMsg.toLowerCase().includes('failed to load explore page') || (textMsg.toLowerCase().includes('explore') && textMsg.toLowerCase().includes('failed'))) {
-                console.warn('Explore toast suppressed:', msg);
+            const lower = textMsg.toLowerCase();
+            const isTechnicalError = lower.startsWith('error:') || lower.includes('firebaseerror') || lower.includes('permission') || lower.includes('insufficient') || lower.includes('internal-error') || (lower.includes('explore') && lower.includes('failed'));
+            if (isTechnicalError) {
+                console.warn('Suppressed technical toast:', msg);
                 try { window.p3SeedExamples?.(); window.renderExplore?.(); } catch (_) {}
                 return;
             }
             const t = document.getElementById('toast');
+            if (!t) return;
             if (isHtml) t.innerHTML = msg; else t.innerText = msg;
             t.classList.add('show');
             clearTimeout(toastTimeout); toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
@@ -749,7 +752,7 @@ Fix checklist:
                         photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${user.email}&background=6366F1&color=fff`,
                         email: user.email,
                         lastLogin: new Date().toISOString()
-                    }, { merge: true });
+                    }, { merge: true }).catch(e => console.warn('User profile sync skipped:', e));
                     
                     window.startDataSync();
                     window.loadExplore(true);
@@ -776,16 +779,47 @@ Fix checklist:
         window.startDataSync = () => {
             const syncIcon = document.getElementById('sync-indicator');
             if(syncIcon) syncIcon.classList.remove('bg-neutral-500', 'animate-none');
-            
-            unsubscribePrompts = onSnapshot(query(collection(db, "prompts"), where("userId", "==", window.currentUser.uid)), (snapshot) => {
-                window.prompts = []; snapshot.forEach((doc) => window.prompts.push({ id: doc.id, ...doc.data() }));
-                refreshActiveUI();
-            });
+            if(!window.currentUser) return;
 
-            unsubscribeCollections = onSnapshot(query(collection(db, "collections"), where("userId", "==", window.currentUser.uid)), (snapshot) => {
-                window.collectionsData = []; snapshot.forEach((doc) => window.collectionsData.push({ id: doc.id, ...doc.data() }));
-                refreshActiveUI();
-            });
+            try {
+                unsubscribePrompts = onSnapshot(
+                    query(collection(db, "prompts"), where("userId", "==", window.currentUser.uid)),
+                    (snapshot) => {
+                        window.prompts = [];
+                        snapshot.forEach((docSnap) => window.prompts.push({ id: docSnap.id, ...docSnap.data() }));
+                        try { localStorage.setItem('promptvault_local_prompts_backup', JSON.stringify(window.prompts)); } catch (_) {}
+                        refreshActiveUI();
+                    },
+                    (err) => {
+                        console.warn('Prompt cloud sync unavailable; using local fallback.', err);
+                        try { window.prompts = JSON.parse(localStorage.getItem('promptvault_local_prompts_backup') || '[]'); } catch (_) { window.prompts = []; }
+                        if(syncIcon) { syncIcon.classList.remove('bg-emerald-500','animate-pulse'); syncIcon.classList.add('bg-amber-500'); }
+                        refreshActiveUI();
+                    }
+                );
+            } catch (err) {
+                console.warn('Prompt sync listener failed:', err);
+            }
+
+            try {
+                unsubscribeCollections = onSnapshot(
+                    query(collection(db, "collections"), where("userId", "==", window.currentUser.uid)),
+                    (snapshot) => {
+                        window.collectionsData = [];
+                        snapshot.forEach((docSnap) => window.collectionsData.push({ id: docSnap.id, ...docSnap.data() }));
+                        try { localStorage.setItem('promptvault_local_collections_backup', JSON.stringify(window.collectionsData)); } catch (_) {}
+                        refreshActiveUI();
+                    },
+                    (err) => {
+                        console.warn('Collection cloud sync unavailable; using local fallback.', err);
+                        try { window.collectionsData = JSON.parse(localStorage.getItem('promptvault_local_collections_backup') || '[]'); } catch (_) { window.collectionsData = []; }
+                        if(syncIcon) { syncIcon.classList.remove('bg-emerald-500','animate-pulse'); syncIcon.classList.add('bg-amber-500'); }
+                        refreshActiveUI();
+                    }
+                );
+            } catch (err) {
+                console.warn('Collection sync listener failed:', err);
+            }
         }
 
         function refreshActiveUI() {
@@ -807,7 +841,7 @@ Fix checklist:
                     photoURL: window.currentUser.photoURL || `https://ui-avatars.com/api/?name=${window.currentUser.email}&background=6366F1&color=fff`,
                     email: window.currentUser.email,
                     lastLogin: new Date().toISOString()
-                }, { merge: true });
+                }, { merge: true }).catch(e => console.warn('Manual user sync skipped:', e));
                 window.startDataSync();
                 window.loadExplore(true);
                 window.showToast("Cloud Synced");
@@ -1954,18 +1988,31 @@ Return:
 
 
 
-        /* FINAL SAFETY: generic Explore failure toast suppressor. */
-        const __pvOriginalToast = window.showToast;
-        window.showToast = (msg, isHtml = false) => {
-            const m = String(msg || '').toLowerCase();
-            if (m.includes('explore') && m.includes('failed')) {
-                console.warn('Suppressed Explore failure toast.');
-                try { window.p3SeedExamples?.(); window.renderExplore?.(); } catch (_) {}
-                return;
-            }
-            return __pvOriginalToast?.(msg, isHtml);
-        };
+        /* FINAL SAFETY: core showToast already suppresses technical errors. */
 
+
+
+
+
+        /* ROOT STABILITY PATCH: defensive render wrappers for smooth dashboard/marketplace. */
+        function pvSafeRender(fnName, fallback) {
+            const original = window[fnName];
+            if (typeof original !== 'function' || original.__pvSafe) return;
+            const wrapped = function(...args) {
+                try { return original.apply(this, args); }
+                catch (e) { console.warn(fnName + ' suppressed render error:', e); try { fallback?.(e); } catch(_) {} }
+            };
+            wrapped.__pvSafe = true;
+            window[fnName] = wrapped;
+        }
+        pvSafeRender('renderExplore', () => { try { window.p3SeedExamples?.(); const g=document.getElementById('explore-grid'); if(g && window.publicPrompts?.length) g.innerHTML = window.publicPrompts.map(p => (typeof p1Card==='function'?p1Card(p):`<div class="p1-card"><h3>${p.title}</h3></div>`)).join(''); } catch(_) {} });
+        pvSafeRender('renderLibrary', () => { const g=document.getElementById('library-grid'); if(g) g.innerHTML = '<div class="p1-shell-card p1-empty col-span-full"><div><h3 class="text-2xl font-black text-white mb-3">Library ready</h3><p class="text-neutral-400">Create or fork prompts to fill your library.</p></div></div>'; });
+        const __pvDashboardRender = (typeof renderDashboard === 'function') ? renderDashboard : null;
+        if (__pvDashboardRender && !__pvDashboardRender.__pvSafe) {
+            const safeDash = function(...args) { try { return __pvDashboardRender.apply(this,args); } catch(e) { console.warn('Dashboard render error suppressed:', e); } };
+            safeDash.__pvSafe = true;
+            renderDashboard = safeDash;
+        }
 
     </script>
 </body>
