@@ -36,7 +36,7 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'], },
+                    fontFamily: { sans: ['Gilroy', 'Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'], },
                     colors: {
                         primary: '#6366F1', secondary: '#8B5CF6', success: '#10B981', warning: '#F59E0B', error: '#EF4444',
                         darkbg: '#000000', darksurface: '#050505', darksurface2: '#0A0A0A',
@@ -65,7 +65,8 @@
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
     
     <style>
-        body { font-family: 'Inter', sans-serif; overscroll-behavior-y: none; }
+        @font-face { font-family: 'Gilroy'; src: local('Gilroy'), local('Gilroy-Regular'), local('Gilroy Regular'), local('Gilroy Medium'); font-weight: 300 900; font-style: normal; font-display: swap; }
+        body { font-family: 'Gilroy', 'Inter', sans-serif; overscroll-behavior-y: none; }
         .glass { background: rgba(0, 0, 0, 0.75); border-bottom: 1px solid #171717; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
         .screen { display: none; opacity: 0; transition: opacity 0.3s ease; min-height: 100%; }
         .screen.active { display: block; opacity: 1; }
@@ -438,7 +439,7 @@
 
         
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc, query, where, limit, onSnapshot, orderBy, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 
@@ -453,6 +454,9 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((e) => {
+            console.warn('Auth persistence setup failed; continuing with Firebase default persistence.', e);
+        });
         const db = getFirestore(app);
 
         window.prompts = [];
@@ -680,19 +684,39 @@
             help?.classList.add('hidden');
             loader?.classList.remove('hidden');
             try {
-                sessionStorage.setItem('pv-auth-redirect-started', '1');
-                // Redirect is more reliable on Vercel/custom domains than popup and avoids popup/iframe internal errors.
-                await signInWithRedirect(auth, googleProvider);
+                sessionStorage.removeItem('pv-intentional-signout');
+                intentionalSignOut = false;
+                await authPersistenceReady;
+                // Prefer popup so the app does not briefly fall back to Guest during redirect return.
+                try {
+                    const result = await signInWithPopup(auth, googleProvider);
+                    sessionStorage.removeItem('pv-auth-redirect-started');
+                    if (result?.user) localStorage.setItem('pv-last-auth-uid', result.user.uid);
+                    loader?.classList.add('hidden');
+                    return;
+                } catch (popupError) {
+                    const code = popupError?.code || '';
+                    const canRedirect = ['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/internal-error', 'auth/operation-not-supported-in-this-environment'].includes(code);
+                    if (!canRedirect || code === 'auth/popup-closed-by-user') throw popupError;
+                    console.warn('Popup login failed; falling back to redirect login:', popupError);
+                    sessionStorage.setItem('pv-auth-redirect-started', '1');
+                    await signInWithRedirect(auth, googleProvider);
+                }
             } catch (e) {
                 loader?.classList.add('hidden');
+                sessionStorage.removeItem('pv-auth-redirect-started');
                 showAuthHelp(e);
             }
         };
         window.signOutUser = async () => { 
             if(await window.modal.confirm("Sign out?")) {
+                intentionalSignOut = true;
+                sessionStorage.setItem('pv-intentional-signout', '1');
+                sessionStorage.removeItem('pv-auth-redirect-started');
+                localStorage.removeItem('pv-last-auth-uid');
                 if(unsubscribePrompts) { unsubscribePrompts(); unsubscribePrompts = null; }
                 if(unsubscribeCollections) { unsubscribeCollections(); unsubscribeCollections = null; }
-                signOut(auth); 
+                await signOut(auth); 
             }
         };
 
@@ -702,12 +726,31 @@
         googleProvider.setCustomParameters({ prompt: 'select_account' });
         auth.useDeviceLanguage?.();
 
-        getRedirectResult(auth).catch((e) => {
-            // Do not block the app with a scary modal; show inline help only if the user opens login.
-            console.warn('Redirect login did not complete:', e);
-            sessionStorage.removeItem('pv-auth-redirect-started');
-            setTimeout(() => showAuthHelp(e), 200);
-        });
+        let authInitComplete = false;
+        let lastSignedInAt = 0;
+        let guestStateTimer = null;
+        let intentionalSignOut = sessionStorage.getItem('pv-intentional-signout') === '1';
+
+        const redirectResultReady = authPersistenceReady
+            .then(() => getRedirectResult(auth))
+            .then((result) => {
+                authInitComplete = true;
+                sessionStorage.removeItem('pv-auth-redirect-started');
+                if (result?.user) {
+                    localStorage.setItem('pv-last-auth-uid', result.user.uid);
+                    sessionStorage.removeItem('pv-intentional-signout');
+                    intentionalSignOut = false;
+                }
+                return result;
+            })
+            .catch((e) => {
+                authInitComplete = true;
+                sessionStorage.removeItem('pv-auth-redirect-started');
+                console.warn('Redirect login did not complete:', e);
+                setTimeout(() => showAuthHelp(e), 200);
+                return null;
+            })
+            .finally(() => { authInitComplete = true; });
 
         async function loadSharedPrompt(id) {
             try {
@@ -736,49 +779,85 @@
             window.closeShareOverlay();
         }
 
+
+        function applySignedInState(user) {
+            const overlay = document.getElementById('login-overlay');
+            clearTimeout(guestStateTimer);
+            lastSignedInAt = Date.now();
+            intentionalSignOut = false;
+            sessionStorage.removeItem('pv-intentional-signout');
+            sessionStorage.removeItem('pv-auth-redirect-started');
+            localStorage.setItem('pv-last-auth-uid', user.uid);
+            window.currentUser = user;
+            updateAuthButton(user);
+            if (overlay) { overlay.style.opacity = '0'; setTimeout(() => { overlay.style.visibility = 'hidden'; overlay.style.display = 'none'; }, 500); }
+            document.getElementById('user-name').innerText = user.displayName || user.email?.split('@')[0] || 'User';
+            const av = document.getElementById('user-avatar');
+            if(av) { if(user.photoURL) { av.src = user.photoURL; av.classList.remove('hidden'); } else { av.src = ''; av.classList.add('hidden'); } }
+            ['gemini','openai','grok','anthropic'].forEach(k => { const val = localStorage.getItem('api_key_'+k); const input = document.getElementById('key-'+k); if(val && input) input.value = val; });
+            updateMonthlySpendUI();
+            setDoc(doc(db, "users", user.uid), {
+                displayName: user.displayName || user.email?.split('@')[0] || 'User',
+                photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || user.displayName || 'User')}&background=6366F1&color=fff`,
+                email: user.email || '',
+                lastLogin: new Date().toISOString()
+            }, { merge: true }).catch(e => console.warn('User profile sync skipped:', e));
+            if(unsubscribePrompts) { unsubscribePrompts(); unsubscribePrompts = null; }
+            if(unsubscribeCollections) { unsubscribeCollections(); unsubscribeCollections = null; }
+            window.startDataSync();
+            window.loadExplore(true);
+            if (!window.location.search.includes('share=')) window.switchTab('explore');
+        }
+
+        function applyGuestState(reason = 'auth-null') {
+            const overlay = document.getElementById('login-overlay');
+            clearTimeout(guestStateTimer);
+            localStorage.removeItem('pv-last-auth-uid');
+            window.currentUser = null; window.prompts = []; window.collectionsData = [];
+            updateAuthButton(null);
+            if(unsubscribePrompts) { unsubscribePrompts(); unsubscribePrompts = null; }
+            if(unsubscribeCollections) { unsubscribeCollections(); unsubscribeCollections = null; }
+            if (overlay) { overlay.style.opacity = '0'; overlay.style.visibility = 'hidden'; overlay.style.display = 'none'; }
+            document.getElementById('user-name').innerText = "Guest";
+            const av = document.getElementById('user-avatar'); if(av) { av.src = ''; av.classList.add('hidden'); }
+            document.getElementById('splash-bolt')?.classList.remove('animate-pulse');
+            const splashText = document.getElementById('splash-text'); if(splashText) splashText.innerText = "Omni-Models, Voice, and Cloud Sync.";
+            document.getElementById('login-content')?.classList.add('hidden', 'opacity-0', 'translate-y-4');
+            document.getElementById('login-loader')?.classList.add('hidden');
+            window.loadExplore(true);
+            if (!window.location.search.includes('share=')) window.switchTab('explore');
+            console.info('PromptVault auth state: guest', reason);
+        }
+
+        function scheduleGuestState(reason, delay = 3500) {
+            clearTimeout(guestStateTimer);
+            guestStateTimer = setTimeout(() => {
+                const graceExpired = !lastSignedInAt || (Date.now() - lastSignedInAt > 15000);
+                const redirectPending = sessionStorage.getItem('pv-auth-redirect-started') === '1';
+                if (!auth.currentUser && authInitComplete && !redirectPending && (intentionalSignOut || graceExpired)) {
+                    applyGuestState(reason);
+                }
+            }, delay);
+        }
+
         if(sharedId) {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('share-overlay').style.display = 'flex';
             loadSharedPrompt(sharedId);
         } else {
             onAuthStateChanged(auth, (user) => {
-                const overlay = document.getElementById('login-overlay');
                 if (user) {
-                    window.currentUser = user;
-                    updateAuthButton(user);
-                    overlay.style.opacity = '0'; setTimeout(() => { overlay.style.visibility = 'hidden'; overlay.style.display = 'none'; }, 500);
-                    document.getElementById('user-name').innerText = user.displayName || "User";
-                    if(user.photoURL) { const av = document.getElementById('user-avatar'); av.src = user.photoURL; av.classList.remove('hidden'); }
-                    ['gemini','openai','grok','anthropic'].forEach(k => { const val = localStorage.getItem('api_key_'+k); if(val) document.getElementById('key-'+k).value = val; });
-                    updateMonthlySpendUI();
-                    
-                    // Save user to DB
-                    setDoc(doc(db, "users", user.uid), {
-                        displayName: user.displayName || user.email.split('@')[0],
-                        photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${user.email}&background=6366F1&color=fff`,
-                        email: user.email,
-                        lastLogin: new Date().toISOString()
-                    }, { merge: true }).catch(e => console.warn('User profile sync skipped:', e));
-                    
-                    window.startDataSync();
-                    window.loadExplore(true);
-                    if (!window.location.search.includes('share=')) window.switchTab('explore');
-
-                } else {
-                    window.currentUser = null; window.prompts = []; window.collectionsData = [];
-                    updateAuthButton(null);
-                    if(unsubscribePrompts) { unsubscribePrompts(); unsubscribePrompts = null; }
-                    if(unsubscribeCollections) { unsubscribeCollections(); unsubscribeCollections = null; }
-                    overlay.style.opacity = '0'; overlay.style.visibility = 'hidden'; overlay.style.display = 'none';
-                    document.getElementById('user-name').innerText = "Guest";
-                    const av = document.getElementById('user-avatar'); if(av) { av.src = ''; av.classList.add('hidden'); }
-                    document.getElementById('splash-bolt').classList.remove('animate-pulse');
-                    document.getElementById('splash-text').innerText = "Omni-Models, Voice, and Cloud Sync.";
-                    document.getElementById('login-content').classList.add('hidden', 'opacity-0', 'translate-y-4');
-                    document.getElementById('login-loader').classList.add('hidden');
-                    window.loadExplore(true);
-                    if (!window.location.search.includes('share=')) window.switchTab('explore');
+                    applySignedInState(user);
+                    return;
                 }
+                const redirectPending = sessionStorage.getItem('pv-auth-redirect-started') === '1';
+                const recentlySignedIn = lastSignedInAt && (Date.now() - lastSignedInAt < 15000);
+                if (!intentionalSignOut && (!authInitComplete || redirectPending || recentlySignedIn)) {
+                    console.warn('Ignoring transient null Firebase auth state.', { authInitComplete, redirectPending, recentlySignedIn });
+                    scheduleGuestState('delayed-auth-null', recentlySignedIn ? 16000 : 3500);
+                    return;
+                }
+                applyGuestState('auth-null');
             });
         }
 
@@ -1657,7 +1736,7 @@
 
         /* =========================
            PHASE 1 POLISH ADD-ON
-           Empty states, navigation, global search, cards, responsiveness, Century Gothic
+           Empty states, navigation, global search, cards, responsiveness, Gilroy
         ========================== */
         const P1 = {
             empty: {
@@ -1702,7 +1781,7 @@
         function p1InstallStyles() {
             if (document.getElementById('p1-polish-style')) return;
             document.head.insertAdjacentHTML('beforeend', `<style id="p1-polish-style">
-                :root { --p1-font: 'Century Gothic', CenturyGothic, AppleGothic, 'Avant Garde', Avenir, Montserrat, Arial, sans-serif; }
+                :root { --p1-font: 'Gilroy', 'Inter', 'Avenir Next', Avenir, Montserrat, Arial, sans-serif; }
                 html, body, button, input, select, textarea { font-family: var(--p1-font) !important; }
                 body { letter-spacing: -0.01em; }
                 .p1-shell-card { background: radial-gradient(circle at top left, rgba(99,102,241,.16), transparent 34%), #050505; border: 1px solid #262626; border-radius: 28px; }
