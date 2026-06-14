@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PromptVault AI - Pro Cloud V13</title>
     
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com https://accounts.google.com https://www.google.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://api.openai.com https://api.x.ai https://api.anthropic.com; frame-src 'self' https://accounts.google.com https://*.google.com https://*.firebaseapp.com https://promptlib-78914.firebaseapp.com; child-src 'self' https://accounts.google.com https://*.google.com https://*.firebaseapp.com; form-action 'self' https://accounts.google.com; img-src 'self' data: https://*; worker-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com https://accounts.google.com https://www.google.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://api.openai.com https://api.x.ai https://api.anthropic.com https://api.stability.ai https://api.replicate.com https://cloud.leonardo.ai; frame-src 'self' https://accounts.google.com https://*.google.com https://*.firebaseapp.com https://promptlib-78914.firebaseapp.com; child-src 'self' https://accounts.google.com https://*.google.com https://*.firebaseapp.com; form-action 'self' https://accounts.google.com; img-src 'self' data: https://*; worker-src 'self';">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     
@@ -17,7 +17,7 @@
       // One-time emergency cache cleanup for old PromptVault service workers.
       (function(){
         try {
-          var key='pv-sw-clean-v12';
+          var key='pv-sw-clean-v13';
           if ('serviceWorker' in navigator && !localStorage.getItem(key)) {
             localStorage.setItem(key,'1');
             navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -490,11 +490,11 @@
 
         if ('serviceWorker' in navigator) window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('sw.js?v=12');
+                const reg = await navigator.serviceWorker.register('sw.js?v=13');
                 reg.update?.();
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!sessionStorage.getItem('sw-reloaded-v12')) {
-                        sessionStorage.setItem('sw-reloaded-v12', '1');
+                    if (!sessionStorage.getItem('sw-reloaded-v13')) {
+                        sessionStorage.setItem('sw-reloaded-v13', '1');
                         window.location.reload();
                     }
                 });
@@ -992,6 +992,469 @@
             }
         }
 
+
+
+
+        /* =========================
+           CORE STABILITY RESTORE
+           Restores constants + base functions expected by the later V2/Phase patches.
+           Keep this block before the DISCOVER/V2 add-ons so wrappers capture real functions.
+        ========================== */
+        const V2_DIFFS = [
+            { id: 'beginner', label: 'Beginner', emoji: '🟢', cls: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' },
+            { id: 'intermediate', label: 'Intermediate', emoji: '🟡', cls: 'bg-amber-500/10 text-amber-300 border-amber-500/20' },
+            { id: 'advanced', label: 'Advanced', emoji: '🔴', cls: 'bg-red-500/10 text-red-300 border-red-500/20' }
+        ];
+        const V2_CATEGORIES = [
+            'Coding','Writing','Marketing','Design','Business','Education','Productivity','Creative','Research','Other',
+            'Image Generation','Video Generation','Photography','Gaming','Finance','Health','Travel','SEO','Social Media','Data Analysis','Email','Career'
+        ];
+        const V2_MODELS = [
+            'Claude','ChatGPT','Gemini','Grok','Llama','Mistral','Midjourney','Stable Diffusion','DALL·E 3','Flux','Adobe Firefly','Ideogram','Other'
+        ];
+        const V2_IMAGE_MODELS = ['Midjourney','Stable Diffusion','DALL·E 3','Flux','Adobe Firefly','Ideogram'];
+        const V2_STYLE_TAGS = ['cinematic','photorealistic','minimal','3D render','anime','concept art','studio lighting','ultra detailed','macro photography','soft lighting','neon','isometric','watercolor','line art'];
+        const V2_OPEN_LINKS = {
+            'ChatGPT': 'https://chat.openai.com/',
+            'Claude': 'https://claude.ai/',
+            'Gemini': 'https://gemini.google.com/',
+            'Grok': 'https://grok.com/',
+            'Llama': 'https://www.meta.ai/',
+            'Mistral': 'https://chat.mistral.ai/',
+            'Midjourney': 'https://www.midjourney.com/',
+            'Stable Diffusion': 'https://platform.stability.ai/',
+            'DALL·E 3': 'https://chat.openai.com/',
+            'Flux': 'https://replicate.com/black-forest-labs',
+            'Adobe Firefly': 'https://firefly.adobe.com/',
+            'Ideogram': 'https://ideogram.ai/'
+        };
+
+        window.currentViewId = currentViewId;
+        window.currentEditingId = currentEditingId;
+        let categoryChartInstance = null;
+
+        function baseEscapeRegExp(str) { return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+        function basePromptVars(content) { return [...new Set(Array.from(String(content || '').matchAll(/\{\{\s*([^}\n]+?)\s*\}\}/g)).map(m => m[1].trim()).filter(Boolean))]; }
+        function baseShowFlex(el, show) { if(!el) return; el.classList.toggle('hidden', !show); el.classList.toggle('flex', !!show); }
+        function baseFindPrompt(id) { return [...(window.prompts || []), ...(window.publicPrompts || [])].find(p => p?.id === id); }
+        function baseCurrentPrompt() { return baseFindPrompt(currentViewId || window.currentViewId); }
+        function baseProviderLabel(provider) { return ({gemini:'Gemini', openai:'OpenAI', anthropic:'Claude', grok:'Grok'})[provider] || provider; }
+        function baseMarkdown(text) {
+            const raw = String(text ?? '');
+            try {
+                const parsed = window.marked?.parse ? window.marked.parse(raw) : esc(raw).replace(/\n/g, '<br>');
+                return window.DOMPurify?.sanitize ? window.DOMPurify.sanitize(parsed) : parsed;
+            } catch (_) { return esc(raw).replace(/\n/g, '<br>'); }
+        }
+        function baseDownloadFile(filename, content, type='application/json') {
+            const blob = new Blob([content], { type });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = filename;
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+        }
+        function baseReadFile(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result || '')); r.onerror = reject; r.readAsText(file); }); }
+        function baseRenderVariables(content, containerId, mode='editor') {
+            const container = document.getElementById(containerId); if(!container) return;
+            const vars = basePromptVars(content);
+            if (!vars.length) {
+                container.innerHTML = `<div class="text-sm text-neutral-500 border border-neutral-800 rounded-2xl p-4 bg-neutral-950/50">No variables detected. Use <code class="text-primary">{{topic}}</code> style placeholders to make prompts reusable.</div>`;
+                return;
+            }
+            container.innerHTML = vars.map((name, i) => {
+                const id = `${containerId}-${i}-${String(name).replace(/[^a-zA-Z0-9_-]+/g, '-')}`;
+                if (mode === 'play') {
+                    return `<div><label for="${esc(id)}" class="block text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">${esc(name)}</label><div class="flex gap-2"><input id="${esc(id)}" data-var="${esc(name)}" class="play-var-input flex-1 bg-black border border-neutral-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-primary" placeholder="Value for ${esc(name)}"><button type="button" onclick="window.startVoiceDictation('${esc(id)}','voice-${esc(id)}')" id="voice-${esc(id)}" class="w-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white"><i class="fa-solid fa-microphone"></i></button></div></div>`;
+                }
+                return `<div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-4"><div class="flex items-center justify-between gap-3"><code class="text-primary font-mono text-sm">{{${esc(name)}}}</code><span class="text-[10px] text-neutral-600 uppercase tracking-widest">variable</span></div></div>`;
+            }).join('');
+        }
+        window.parseVariables = () => {
+            const content = document.getElementById('prompt-content')?.value || '';
+            baseRenderVariables(content, 'variables-container', 'editor');
+        };
+        function baseRenderPlayVariables(prompt) {
+            const content = prompt?.promptType === 'chain' && prompt?.chainSteps?.length ? prompt.chainSteps.map(s => s.promptBody).join('\n\n') : (prompt?.content || '');
+            baseRenderVariables(content, 'play-variables', 'play');
+            const estimate = Math.max(1, Math.ceil(String(content).length / 4));
+            const tokenEl = document.getElementById('token-estimate');
+            if(tokenEl) { tokenEl.textContent = `≈ ${estimate} input tokens before variables`; tokenEl.classList.remove('hidden'); }
+        }
+        function baseFillTemplate(template) {
+            let out = String(template || '');
+            document.querySelectorAll('#play-variables [data-var]').forEach(input => {
+                const name = input.dataset.var || '';
+                const val = input.value.trim() || `{{${name}}}`;
+                out = out.replace(new RegExp('\\{\\{\\s*' + baseEscapeRegExp(name) + '\\s*\\}\\}', 'g'), val);
+            });
+            return out;
+        }
+        function baseSetMonthlySpend(amount) {
+            const key = 'pv_api_spend_' + new Date().toISOString().slice(0,7);
+            const next = Math.max(0, Number(localStorage.getItem(key) || 0) + Number(amount || 0));
+            localStorage.setItem(key, String(next));
+            updateMonthlySpendUI();
+        }
+        function updateMonthlySpendUI() {
+            const key = 'pv_api_spend_' + new Date().toISOString().slice(0,7);
+            const el = document.getElementById('monthly-spend');
+            if(el) el.textContent = Number(localStorage.getItem(key) || 0).toFixed(4);
+        }
+        window.updateMonthlySpendUI = updateMonthlySpendUI;
+
+        window.prepareAddPrompt = async () => {
+            currentEditingId = null; window.currentEditingId = null; window.editorDirty = false;
+            updateCollectionDropdowns?.();
+            await window.switchTab?.('add');
+            const fields = {
+                'prompt-id':'', 'prompt-name':'', 'prompt-desc':'', 'prompt-tags':'', 'prompt-content':''
+            };
+            Object.entries(fields).forEach(([id, val]) => { const el = document.getElementById(id); if(el) el.value = val; });
+            const title = document.getElementById('form-title'); if(title) title.innerText = 'Create New Prompt';
+            const cat = document.getElementById('prompt-category'); if(cat && cat.options.length) cat.value = cat.querySelector('option[value="Other"]') ? 'Other' : cat.options[0].value;
+            const model = document.getElementById('prompt-target-model'); if(model) [...model.options].forEach((o, i) => o.selected = i === 0);
+            const collection = document.getElementById('prompt-collection'); if(collection) collection.value = '';
+            window.parseVariables();
+        };
+
+        window.savePrompt = async () => {
+            if(!window.currentUser) { window.openLoginOverlay?.(); window.showToast('Please login to save prompts.'); return; }
+            const title = document.getElementById('prompt-name')?.value.trim();
+            const content = document.getElementById('prompt-content')?.value.trim();
+            if(!title || !content) return window.modal.alert('Title and content are required.', 'Missing fields');
+            const docId = currentEditingId || document.getElementById('prompt-id')?.value || generateId();
+            const existing = window.prompts.find(p => p.id === docId);
+            const history = existing?.history ? [...existing.history] : [];
+            let version = existing?.version || '1.0';
+            if(existing && existing.content !== content) {
+                history.push({version, content: existing.content, date: existing.date || new Date().toISOString()});
+                version = (parseFloat(version || '1') + 0.1).toFixed(1);
+            }
+            const prompt = {
+                title, content, version, history,
+                description: document.getElementById('prompt-desc')?.value.trim() || '',
+                category: document.getElementById('prompt-category')?.value || 'Other',
+                targetModel: document.getElementById('prompt-target-model')?.value || 'Any',
+                targetModels: [...(document.getElementById('prompt-target-model')?.selectedOptions || [])].map(o => o.value).filter(Boolean),
+                collectionId: document.getElementById('prompt-collection')?.value || '',
+                tags: (document.getElementById('prompt-tags')?.value || '').split(',').map(t => t.trim()).filter(Boolean),
+                userId: window.currentUser.uid,
+                authorName: window.currentUser.displayName || window.currentUser.email?.split('@')[0] || 'User',
+                authorAvatar: window.currentUser.photoURL || '',
+                isPublic: existing?.isPublic || false,
+                likedBy: existing?.likedBy || [], forks: existing?.forks || 0,
+                date: new Date().toISOString()
+            };
+            try {
+                await setDoc(doc(db, 'prompts', docId), prompt, { merge: true });
+                window.editorDirty = false; currentEditingId = null; window.currentEditingId = null;
+                window.showToast('Prompt saved.');
+                window.switchTab('library');
+            } catch(e) { await window.modal.alert(e.message, 'Save failed'); }
+        };
+
+        window.viewPrompt = (id) => {
+            const prompt = baseFindPrompt(id); if(!prompt) { window.showToast('Prompt not found.'); return; }
+            currentViewId = id; window.currentViewId = id;
+            window.switchTab?.('detail');
+            document.getElementById('view-title').innerText = prompt.title || 'Untitled Prompt';
+            document.getElementById('view-version').innerText = prompt.version || '1.0';
+            document.getElementById('view-date').innerText = prompt.date ? new Date(prompt.date).toLocaleDateString() : 'unknown';
+            document.getElementById('view-content').innerText = prompt.promptType === 'chain' && prompt.chainSteps?.length ? prompt.chainSteps.map((s,i)=>`Step ${i+1}: ${s.title}\n${s.promptBody}`).join('\n\n') : (prompt.content || '');
+            document.getElementById('view-desc').innerText = prompt.description || 'No description provided.';
+            const badge = document.getElementById('view-public-badge'); if(badge) badge.classList.toggle('hidden', !prompt.isPublic);
+            const catClass = `cat-${String(prompt.category || 'other').toLowerCase().replace(/\s+/g, '-')}`;
+            const cat = document.getElementById('view-cat'); if(cat) cat.outerHTML = `<span id="view-cat" class="px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase ${catClass}">${esc(prompt.category || 'Other')}</span>`;
+            const model = document.getElementById('view-model'); if(model) model.outerHTML = `<span id="view-model" class="px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">${esc((prompt.targetModels?.length ? prompt.targetModels.join(', ') : prompt.targetModel) || 'Any')}</span>`;
+            const tags = document.getElementById('view-tags'); if(tags) tags.innerHTML = (prompt.tags || []).map(t => `<span class="px-2 py-0.5 rounded-lg text-[10px] bg-neutral-900 border border-neutral-800 text-neutral-400">#${esc(t)}</span>`).join('');
+            document.getElementById('view-likes').innerHTML = `<i class="fa-regular fa-heart mr-1"></i>${prompt.likedBy?.length || 0}`;
+            document.getElementById('view-forks').innerHTML = `<i class="fa-solid fa-code-branch mr-1"></i>${prompt.forks || 0}`;
+            const av = document.getElementById('view-author-avatar'); if(av) av.src = prompt.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(prompt.authorName || 'U')}&background=262626&color=fff`;
+            const an = document.getElementById('view-author-name'); if(an) an.innerText = prompt.authorName || 'Unknown';
+            const selector = document.getElementById('version-selector');
+            if(selector) {
+                selector.innerHTML = '<option value="current">Current Version</option>' + (prompt.history || []).map((h,i)=>`<option value="${i}">v${esc(h.version || i + 1)} — ${h.date ? new Date(h.date).toLocaleDateString() : 'old'}</option>`).join('');
+                selector.classList.toggle('hidden', !(prompt.history || []).length);
+                selector.value = 'current';
+            }
+            const single = document.getElementById('play-output');
+            if(single) single.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-neutral-600"><i class="fa-solid fa-robot text-4xl mb-3 opacity-20"></i><p class="font-medium">Fill in variables and click Run.</p></div>`;
+            ['out-gemini','out-openai','out-anthropic'].forEach(outId => { const el = document.getElementById(outId); if(el) el.innerHTML = ''; });
+            baseRenderPlayVariables(prompt);
+        };
+
+        window.editCurrentPrompt = async () => {
+            const prompt = baseCurrentPrompt(); if(!prompt) return window.showToast('No prompt selected.');
+            if(window.currentUser && prompt.userId && prompt.userId !== window.currentUser.uid && !prompt.id?.startsWith('sample-')) return window.showToast('Fork this prompt before editing.');
+            currentEditingId = prompt.id; window.currentEditingId = prompt.id; window.editorDirty = false;
+            await window.switchTab?.('add');
+            document.getElementById('form-title').innerText = 'Edit Prompt';
+            document.getElementById('prompt-id').value = prompt.id;
+            document.getElementById('prompt-name').value = prompt.title || '';
+            document.getElementById('prompt-desc').value = prompt.description || '';
+            document.getElementById('prompt-tags').value = (prompt.tags || []).join(', ');
+            document.getElementById('prompt-content').value = prompt.content || '';
+            const cat = document.getElementById('prompt-category'); if(cat && prompt.category) cat.value = prompt.category;
+            const model = document.getElementById('prompt-target-model'); if(model) { const models = prompt.targetModels?.length ? prompt.targetModels : [prompt.targetModel || 'Any']; [...model.options].forEach(o => o.selected = models.includes(o.value)); }
+            const collection = document.getElementById('prompt-collection'); if(collection) collection.value = prompt.collectionId || '';
+            window.parseVariables();
+        };
+
+        window.deleteCurrentPrompt = async () => {
+            const prompt = baseCurrentPrompt(); if(!prompt) return;
+            if(!await window.modal.confirm(`Delete “${prompt.title || 'this prompt'}”?`, 'Delete Prompt')) return;
+            try {
+                if(prompt.id?.startsWith('sample-') || prompt.source === 'seed') {
+                    window.publicPrompts = (window.publicPrompts || []).filter(p => p.id !== prompt.id);
+                } else {
+                    if(!window.currentUser || prompt.userId !== window.currentUser.uid) return window.showToast('Only the owner can delete this prompt.');
+                    await deleteDoc(doc(db, 'prompts', prompt.id));
+                }
+                window.showToast('Prompt deleted.');
+                window.switchTab('library');
+            } catch(e) { await window.modal.alert(e.message, 'Delete failed'); }
+        };
+
+        window.loadHistoricalVersion = (value) => {
+            const prompt = baseCurrentPrompt(); if(!prompt) return;
+            const item = value === 'current' ? prompt : (prompt.history || [])[Number(value)];
+            const content = item?.content || prompt.content || '';
+            document.getElementById('view-content').innerText = content;
+            document.getElementById('view-version').innerText = value === 'current' ? (prompt.version || '1.0') : (item.version || value);
+        };
+
+        window.copyToClipboard = async (idOrText) => {
+            const el = document.getElementById(idOrText);
+            const text = el ? (el.innerText || el.value || '') : String(idOrText || '');
+            if(!text.trim()) return window.showToast('Nothing to copy.');
+            try { await navigator.clipboard.writeText(text); }
+            catch (_) { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+            window.showToast('Copied to clipboard.');
+        };
+
+        window.toggleLike = async (event, id) => {
+            event?.stopPropagation?.();
+            if(!window.currentUser) { window.openLoginOverlay?.(); return window.showToast('Please login to like prompts.'); }
+            const prompt = baseFindPrompt(id); if(!prompt) return;
+            const liked = (prompt.likedBy || []).includes(window.currentUser.uid);
+            prompt.likedBy = liked ? prompt.likedBy.filter(uid => uid !== window.currentUser.uid) : [...(prompt.likedBy || []), window.currentUser.uid];
+            try {
+                if(!String(id).startsWith('sample-') && prompt.source !== 'seed') await updateDoc(doc(db, 'prompts', id), { likedBy: liked ? arrayRemove(window.currentUser.uid) : arrayUnion(window.currentUser.uid) });
+            } catch(e) { console.warn('Like sync failed:', e); }
+            if((currentViewId || window.currentViewId) === id) {
+                const likes = document.getElementById('view-likes'); if(likes) likes.innerHTML = `<i class="fa-regular fa-heart mr-1"></i>${prompt.likedBy.length}`;
+            }
+            const active = document.querySelector('.screen.active')?.id;
+            if(active === 'explore') window.renderExplore?.();
+            if(active === 'library') window.renderLibrary?.();
+            window.showToast(liked ? 'Removed like.' : 'Liked prompt.');
+        };
+
+        window.generateShareLink = async () => {
+            const prompt = baseCurrentPrompt(); if(!prompt) return window.showToast('No prompt selected.');
+            if(prompt.id?.startsWith('sample-') || prompt.source === 'seed') return window.modal.alert('Seed/example prompts must be forked to your Library before sharing.', 'Share unavailable');
+            if(!window.currentUser || prompt.userId !== window.currentUser.uid) return window.modal.alert('Only the owner can generate a public share link.', 'Share unavailable');
+            try {
+                if(!prompt.isPublic) {
+                    if(!await window.modal.confirm('Make this prompt public so others can open the share link?', 'Publish Prompt')) return;
+                    await setDoc(doc(db, 'prompts', prompt.id), { isPublic: true, date: new Date().toISOString() }, { merge: true });
+                    prompt.isPublic = true;
+                }
+                const link = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(prompt.id)}`;
+                await navigator.clipboard.writeText(link);
+                window.showToast('Share link copied.');
+            } catch(e) { await window.modal.alert(e.message, 'Share failed'); }
+        };
+
+        window.saveAPIKeys = () => {
+            ['gemini','openai','grok','anthropic'].forEach(k => {
+                const el = document.getElementById('key-' + k);
+                const val = el?.value?.trim();
+                if(val) localStorage.setItem('api_key_' + k, val);
+                else localStorage.removeItem('api_key_' + k);
+            });
+            window.showToast('API keys saved on this device.');
+        };
+
+        window.exportDataFile = () => {
+            const data = { version: 'promptvault-export-v13', exportedAt: new Date().toISOString(), prompts: window.prompts || [], collections: window.collectionsData || [] };
+            baseDownloadFile(`promptvault-backup-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(data, null, 2), 'application/json');
+            window.showToast('Backup downloaded.');
+        };
+
+        window.importDataFile = async (event) => {
+            const file = event?.target?.files?.[0]; if(!file) return;
+            if(!window.currentUser) { window.openLoginOverlay?.(); event.target.value=''; return window.showToast('Please login before restoring data.'); }
+            try {
+                const data = JSON.parse(await baseReadFile(file));
+                const prompts = Array.isArray(data) ? data : (data.prompts || []);
+                const collections = Array.isArray(data.collections) ? data.collections : [];
+                const collectionMap = new Map();
+                for(const c of collections) {
+                    const newId = generateId(); collectionMap.set(c.id, newId);
+                    const { id: _oldCollectionId, ...collectionData } = c || {};
+                    await setDoc(doc(db, 'collections', newId), { ...collectionData, userId: window.currentUser.uid, parentId: c.parentId && collectionMap.get(c.parentId) ? collectionMap.get(c.parentId) : null }, { merge: true });
+                }
+                for(const p of prompts) {
+                    const newId = generateId();
+                    const { id: _oldPromptId, ...promptData } = p || {};
+                    await setDoc(doc(db, 'prompts', newId), { ...promptData, userId: window.currentUser.uid, authorName: window.currentUser.displayName || window.currentUser.email?.split('@')[0] || 'User', authorAvatar: window.currentUser.photoURL || '', collectionId: collectionMap.get(p.collectionId) || p.collectionId || '', isPublic: false, date: new Date().toISOString() }, { merge: true });
+                }
+                window.showToast(`Imported ${prompts.length} prompts and ${collections.length} collections.`);
+            } catch(e) { await window.modal.alert(e.message, 'Import failed'); }
+            finally { if(event?.target) event.target.value = ''; }
+        };
+
+        function baseExtractChatGPTPrompts(data) {
+            const conversations = Array.isArray(data) ? data : [data];
+            const results = [];
+            for(const conv of conversations) {
+                const title = conv.title || 'Imported ChatGPT Prompt';
+                const nodes = conv.mapping ? Object.values(conv.mapping) : [];
+                for(const node of nodes) {
+                    const msg = node.message || node;
+                    const role = msg?.author?.role || msg?.role || '';
+                    const parts = msg?.content?.parts || (typeof msg?.content === 'string' ? [msg.content] : []);
+                    const text = parts.filter(x => typeof x === 'string').join('\n\n').trim();
+                    if(text && ['system','developer'].includes(role)) results.push({ title, content: text });
+                }
+                if(!results.some(r => r.title === title) && nodes.length) {
+                    const firstUser = nodes.map(n => n.message || n).find(m => (m?.author?.role || m?.role) === 'user');
+                    const parts = firstUser?.content?.parts || [];
+                    const text = parts.filter(x => typeof x === 'string').join('\n\n').trim();
+                    if(text) results.push({ title, content: text });
+                }
+            }
+            return results.slice(0, 200);
+        }
+        window.importChatGPTData = async (event) => {
+            const file = event?.target?.files?.[0]; if(!file) return;
+            if(!window.currentUser) { window.openLoginOverlay?.(); event.target.value=''; return window.showToast('Please login before importing.'); }
+            try {
+                const imported = baseExtractChatGPTPrompts(JSON.parse(await baseReadFile(file)));
+                if(!imported.length) return window.modal.alert('No system/developer/user prompt text found in this export.', 'Nothing imported');
+                for(const item of imported) {
+                    await setDoc(doc(db, 'prompts', generateId()), {
+                        title: item.title, content: item.content, description: 'Imported from ChatGPT export', category: 'Other', targetModel: 'ChatGPT', targetModels: ['ChatGPT'], tags: ['chatgpt-import'], collectionId: '', userId: window.currentUser.uid, authorName: window.currentUser.displayName || 'User', authorAvatar: window.currentUser.photoURL || '', isPublic: false, version: '1.0', history: [], date: new Date().toISOString(), likedBy: [], forks: 0
+                    });
+                }
+                window.showToast(`Imported ${imported.length} ChatGPT prompts.`);
+            } catch(e) { await window.modal.alert(e.message, 'ChatGPT import failed'); }
+            finally { if(event?.target) event.target.value = ''; }
+        };
+
+        window.toggleCompareMode = () => {
+            const toggle = document.getElementById('compare-mode-toggle');
+            isCompareMode = !!toggle?.checked;
+            document.getElementById('single-output-container')?.classList.toggle('hidden', isCompareMode);
+            document.getElementById('compare-output-container')?.classList.toggle('hidden', !isCompareMode);
+            document.getElementById('template-col')?.classList.toggle('lg:w-1/4', isCompareMode);
+            const runText = document.getElementById('run-btn-text'); if(runText) runText.innerText = isCompareMode ? 'Run Compare' : 'Run Model';
+        };
+
+        window.callOmniAPI = async (prompt, provider = 'gemini') => callOmniAPI(prompt, provider);
+        async function callOmniAPI(prompt, provider = 'gemini') {
+            const keyName = provider === 'openai' ? 'openai' : provider === 'anthropic' ? 'anthropic' : provider === 'grok' ? 'grok' : 'gemini';
+            const key = localStorage.getItem('api_key_' + keyName);
+            if(!key) throw new Error(`Missing ${baseProviderLabel(provider)} API key. Add it in Settings.`);
+            const timeout = new AbortController();
+            const timer = setTimeout(() => timeout.abort(), 90000);
+            try {
+                let text = '', usageCost = 0;
+                if(provider === 'gemini') {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents:[{parts:[{text: prompt}]}], generationConfig:{temperature:0.7, maxOutputTokens:2048} }), signal: timeout.signal });
+                    const data = await res.json().catch(()=>({}));
+                    if(!res.ok) throw new Error(data.error?.message || `Gemini request failed (${res.status})`);
+                    text = data.candidates?.[0]?.content?.parts?.map(p=>p.text).join('\n') || 'No Gemini output returned.';
+                    usageCost = Math.ceil((prompt.length + text.length)/4) * 0.0000002;
+                } else if(provider === 'openai') {
+                    const res = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`}, body: JSON.stringify({ model:'gpt-4o-mini', messages:[{role:'user', content: prompt}], temperature:0.7, max_tokens:2048 }), signal: timeout.signal });
+                    const data = await res.json().catch(()=>({}));
+                    if(!res.ok) throw new Error(data.error?.message || `OpenAI request failed (${res.status})`);
+                    text = data.choices?.[0]?.message?.content || 'No OpenAI output returned.';
+                    usageCost = ((data.usage?.prompt_tokens || Math.ceil(prompt.length/4))*0.00000015) + ((data.usage?.completion_tokens || Math.ceil(text.length/4))*0.0000006);
+                } else if(provider === 'anthropic') {
+                    const res = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}, body: JSON.stringify({ model:'claude-3-5-haiku-latest', max_tokens:2048, messages:[{role:'user', content: prompt}] }), signal: timeout.signal });
+                    const data = await res.json().catch(()=>({}));
+                    if(!res.ok) throw new Error(data.error?.message || `Anthropic request failed (${res.status})`);
+                    text = data.content?.map(c=>c.text).join('\n') || 'No Claude output returned.';
+                    usageCost = ((data.usage?.input_tokens || Math.ceil(prompt.length/4))*0.0000008) + ((data.usage?.output_tokens || Math.ceil(text.length/4))*0.000004);
+                } else if(provider === 'grok') {
+                    const res = await fetch('https://api.x.ai/v1/chat/completions', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`}, body: JSON.stringify({ model:'grok-2-latest', messages:[{role:'user', content: prompt}], temperature:0.7, max_tokens:2048 }), signal: timeout.signal });
+                    const data = await res.json().catch(()=>({}));
+                    if(!res.ok) throw new Error(data.error?.message || `Grok request failed (${res.status})`);
+                    text = data.choices?.[0]?.message?.content || 'No Grok output returned.';
+                    usageCost = Math.ceil((prompt.length + text.length)/4) * 0.000002;
+                }
+                return { text, cost: Math.max(0, usageCost || 0) };
+            } finally { clearTimeout(timer); }
+        }
+
+        window.executeAI = async () => {
+            const promptObj = baseCurrentPrompt();
+            const template = promptObj?.promptType === 'chain' && promptObj.chainSteps?.length ? promptObj.chainSteps.map((s,i)=>`Step ${i+1}: ${s.title}\n${s.promptBody}`).join('\n\n') : (promptObj?.content || document.getElementById('view-content')?.innerText || '');
+            const finalPrompt = baseFillTemplate(template);
+            if(!finalPrompt.trim()) return window.modal.alert('No prompt selected.', 'Run Model');
+            const execCount = Number(localStorage.getItem('ai_exec_count') || 0) + 1;
+            localStorage.setItem('ai_exec_count', String(execCount));
+            if(isCompareMode) {
+                const loader = document.getElementById('compare-loader'); baseShowFlex(loader, true);
+                const providers = ['gemini','openai','anthropic'];
+                providers.forEach(p => { const out=document.getElementById('out-'+p); if(out) out.innerHTML = `<p class="text-neutral-500">Waiting for ${baseProviderLabel(p)}...</p>`; const c=document.getElementById('cost-'+p); if(c) c.textContent=''; });
+                const results = await Promise.allSettled(providers.map(p => callOmniAPI(finalPrompt, p)));
+                results.forEach((res, i) => {
+                    const provider = providers[i]; const out = document.getElementById('out-' + provider); const costEl = document.getElementById('cost-' + provider);
+                    if(res.status === 'fulfilled') { out.innerHTML = baseMarkdown(res.value.text); if(costEl) costEl.textContent = `$${res.value.cost.toFixed(5)}`; baseSetMonthlySpend(res.value.cost); }
+                    else { out.innerHTML = `<div class="text-red-400 text-sm"><b>${baseProviderLabel(provider)} failed:</b><br>${esc(res.reason?.message || res.reason)}</div>`; }
+                });
+                baseShowFlex(loader, false);
+            } else {
+                const provider = document.getElementById('omni-model-select')?.value || 'gemini';
+                const loader = document.getElementById('play-loader'); const output = document.getElementById('play-output'); const cost = document.getElementById('cost-result-single');
+                baseShowFlex(loader, true);
+                try {
+                    const res = await callOmniAPI(finalPrompt, provider);
+                    if(output) output.innerHTML = baseMarkdown(res.text);
+                    if(cost) { cost.textContent = `$${res.cost.toFixed(5)} est.`; cost.classList.remove('hidden'); }
+                    baseSetMonthlySpend(res.cost);
+                } catch(e) {
+                    if(output) output.innerHTML = `<div class="text-red-400 bg-red-500/10 border border-red-500/20 rounded-2xl p-4"><b>Run failed:</b><br>${esc(e.message || e)}</div>`;
+                    await window.modal.alert(e.message || String(e), 'AI request failed');
+                } finally { baseShowFlex(loader, false); }
+            }
+            if(document.getElementById('stat-executions')) document.getElementById('stat-executions').innerText = localStorage.getItem('ai_exec_count') || 0;
+        };
+
+        window.magicOptimizePrompt = async () => {
+            const ta = document.getElementById('prompt-content'); if(!ta || !ta.value.trim()) return window.modal.alert('Write a prompt first.', 'AI Optimize');
+            const provider = localStorage.getItem('api_key_gemini') ? 'gemini' : (localStorage.getItem('api_key_openai') ? 'openai' : (localStorage.getItem('api_key_anthropic') ? 'anthropic' : null));
+            if(!provider) return window.modal.alert('Add Gemini, OpenAI, or Anthropic API key in Settings before using AI Optimize.', 'API key required');
+            const loader = document.getElementById('magic-loader'); baseShowFlex(loader, true);
+            try {
+                const res = await callOmniAPI(`Rewrite and improve this prompt. Preserve all {{variables}}. Make it clearer, more structured, and more reliable. Return only the improved prompt.\n\n${ta.value}`, provider);
+                ta.value = res.text.trim(); ta.dispatchEvent(new Event('input')); window.editorDirty = true; window.parseVariables(); baseSetMonthlySpend(res.cost); window.showToast('Prompt optimized.');
+            } catch(e) { await window.modal.alert(e.message || String(e), 'Optimize failed'); }
+            finally { baseShowFlex(loader, false); }
+        };
+
+        window.renderAnalytics = () => {
+            const canvas = document.getElementById('categoryChart'); if(!canvas) return;
+            const counts = {};
+            (window.prompts || []).forEach(p => { const key = p.category || 'Other'; counts[key] = (counts[key] || 0) + 1; });
+            const labels = Object.keys(counts); const values = Object.values(counts);
+            const parent = canvas.parentElement;
+            let empty = document.getElementById('analytics-empty-state');
+            if(!labels.length) {
+                canvas.style.display = 'none';
+                if(!empty && parent) parent.insertAdjacentHTML('beforeend', '<div id="analytics-empty-state" class="text-neutral-500 flex items-center justify-center h-full">No prompt analytics yet.</div>');
+                return;
+            }
+            canvas.style.display = 'block'; empty?.remove();
+            if(window.Chart) {
+                if(categoryChartInstance) categoryChartInstance.destroy();
+                categoryChartInstance = new window.Chart(canvas, { type:'doughnut', data:{ labels, datasets:[{ data: values, backgroundColor:['#6366F1','#8B5CF6','#10B981','#F59E0B','#EF4444','#06B6D4','#EC4899','#84CC16'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#d4d4d4' } } } } });
+            }
+        };
 
         // --- DISCOVER TAB ---
         
@@ -1783,6 +2246,7 @@ Return:
             const existing = new Set(window.publicPrompts.map(p=>p.id));
             P3_EXAMPLES.forEach((p,i)=>{ if(!existing.has(p.id)) window.publicPrompts.push({...p, isPublic:true, date:p.date || new Date(Date.now() - i*86400000).toISOString(), generatedPreviewUrl:p.generatedPreviewUrl || null, commentCount:p.commentCount || Math.floor((p.upvotes||0)/18), source:'seed'}); });
         }
+        window.p3SeedExamples = p3SeedExamples;
         p3SeedExamples();
 
         function p3InstallTemplates(){
