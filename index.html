@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PromptVault AI - Pro Cloud V13</title>
     
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google.com https://api.openai.com https://api.x.ai https://api.anthropic.com; frame-src 'self' https://accounts.google.com https://*.firebaseapp.com; img-src 'self' data: https://*; worker-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com https://accounts.google.com https://www.google.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://api.openai.com https://api.x.ai https://api.anthropic.com; frame-src 'self' https://accounts.google.com https://*.google.com https://*.firebaseapp.com https://promptlib-78914.firebaseapp.com; child-src 'self' https://accounts.google.com https://*.google.com https://*.firebaseapp.com; form-action 'self' https://accounts.google.com; img-src 'self' data: https://*; worker-src 'self';">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     
@@ -17,7 +17,7 @@
       // One-time emergency cache cleanup for old PromptVault service workers.
       (function(){
         try {
-          var key='pv-sw-clean-v11';
+          var key='pv-sw-clean-v12';
           if ('serviceWorker' in navigator && !localStorage.getItem(key)) {
             localStorage.setItem(key,'1');
             navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -120,7 +120,7 @@
 <body class="bg-darkbg text-slate-200 overflow-hidden flex h-screen antialiased selection:bg-primary/30 selection:text-primary relative">
     <div id="toast">Action successful!</div>
     <div id="cmd-palette" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999999] flex-col items-center pt-[15vh] opacity-0 transition-opacity duration-200"><div class="bg-darksurface2 border border-neutral-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200" id="cmd-box"><div class="flex items-center px-4 py-3 border-b border-neutral-800"><i class="fa-solid fa-magnifying-glass text-neutral-500 mr-3"></i><input type="text" id="cmd-input" class="flex-1 bg-transparent border-none text-white text-lg focus:outline-none placeholder-neutral-600" placeholder="Search prompts, or type '>' for actions..."><div class="bg-neutral-800 text-[10px] text-neutral-400 px-2 py-1 rounded font-mono">ESC</div></div><div id="cmd-results" class="max-h-96 overflow-y-auto p-2"></div></div></div>
-    <div id="login-overlay" style="display:none;opacity:0;visibility:hidden"><button onclick="window.closeLoginOverlay()" class="absolute top-5 right-5 z-20 w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white"><i class="fa-solid fa-xmark"></i></button><div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(99,102,241,0.25),transparent_35%),radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.18),transparent_30%)]"></div><div class="relative z-10 w-full max-w-md px-6 text-center"><div id="splash-bolt" class="mx-auto mb-6 w-20 h-20 rounded-3xl bg-gradient-to-br from-primary via-secondary to-pink-500 flex items-center justify-center shadow-[0_0_45px_rgba(99,102,241,.45)] animate-pulse"><i class="fa-solid fa-bolt text-3xl text-white"></i></div><h1 class="text-4xl font-black tracking-tight text-white mb-3">PromptVault AI</h1><p id="splash-text" class="text-neutral-400 mb-8">Omni-Models, Voice, and Cloud Sync.</p><div id="login-content" class="opacity-0 translate-y-4 transition-all duration-500 hidden"><button onclick="window.signInWithGoogle()" class="w-full py-3.5 bg-white hover:bg-neutral-200 text-black rounded-2xl font-extrabold transition-all shadow-xl flex items-center justify-center gap-3"><i class="fa-brands fa-google"></i> Continue with Google</button><div id="login-loader" class="hidden mt-5 text-primary"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Connecting securely...</div><p class="mt-5 text-[11px] text-neutral-600">Works on Firebase Hosting, Vercel, GitHub Pages, and any static host.</p></div></div></div>
+    <div id="login-overlay" style="display:none;opacity:0;visibility:hidden"><button onclick="window.closeLoginOverlay()" class="absolute top-5 right-5 z-20 w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white"><i class="fa-solid fa-xmark"></i></button><div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(99,102,241,0.25),transparent_35%),radial-gradient(circle_at_70%_60%,rgba(236,72,153,0.18),transparent_30%)]"></div><div class="relative z-10 w-full max-w-md px-6 text-center"><div id="splash-bolt" class="mx-auto mb-6 w-20 h-20 rounded-3xl bg-gradient-to-br from-primary via-secondary to-pink-500 flex items-center justify-center shadow-[0_0_45px_rgba(99,102,241,.45)] animate-pulse"><i class="fa-solid fa-bolt text-3xl text-white"></i></div><h1 class="text-4xl font-black tracking-tight text-white mb-3">PromptVault AI</h1><p id="splash-text" class="text-neutral-400 mb-8">Omni-Models, Voice, and Cloud Sync.</p><div id="login-content" class="opacity-0 translate-y-4 transition-all duration-500 hidden"><button onclick="window.signInWithGoogle()" class="w-full py-3.5 bg-white hover:bg-neutral-200 text-black rounded-2xl font-extrabold transition-all shadow-xl flex items-center justify-center gap-3"><i class="fa-brands fa-google"></i> Continue with Google</button><button onclick="window.continueAsGuest()" class="w-full mt-3 py-3 bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-800 rounded-2xl font-bold transition-all flex items-center justify-center gap-3"><i class="fa-solid fa-user-clock"></i> Continue as Guest</button><div id="auth-help" class="hidden mt-4 text-left text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 leading-relaxed"></div><div id="login-loader" class="hidden mt-5 text-primary"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Connecting securely...</div><p class="mt-5 text-[11px] text-neutral-600">Works on Firebase Hosting, Vercel, GitHub Pages, and any static host.</p></div></div></div>
     <div id="share-overlay" class="hidden"><div class="w-full max-w-2xl bg-darksurface2 border border-neutral-800 rounded-3xl p-8 shadow-2xl flex flex-col max-h-[90vh] mx-4"><div class="flex items-center gap-4 mb-6"><div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-lg"><i class="fa-solid fa-share-nodes text-xl"></i></div><div><p class="text-xs uppercase tracking-widest text-neutral-500 font-bold">Shared Prompt</p><h2 id="share-title" class="text-2xl font-black text-white">Loading...</h2></div></div><pre id="share-content" class="flex-1 overflow-y-auto whitespace-pre-wrap font-mono text-sm text-neutral-300 bg-black border border-neutral-800 rounded-2xl p-5 mb-6"></pre><div class="flex flex-col sm:flex-row gap-3"><button onclick="window.copySharedPrompt()" class="flex-1 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-bold"><i class="fa-regular fa-copy mr-2"></i> Copy</button><button onclick="window.saveSharedPrompt()" class="flex-1 py-3 bg-primary hover:bg-indigo-600 text-white rounded-xl font-bold"><i class="fa-solid fa-cloud-arrow-down mr-2"></i> Save to Library</button><button onclick="window.closeShareOverlay()" class="px-5 py-3 border border-neutral-700 hover:bg-neutral-800 text-white rounded-xl font-bold">Close</button></div></div></div>
     <div id="mobile-backdrop" onclick="window.toggleMobileMenu()" class="hidden fixed inset-0 bg-black/70 z-30 md:hidden"></div>
     <aside id="sidebar" class="fixed md:relative z-40 inset-y-0 left-0 w-72 bg-darksurface border-r border-neutral-900 flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-300"><div class="p-6 border-b border-neutral-900 flex items-center gap-3"><img src="logo.png" class="w-10 h-10 rounded-2xl border border-neutral-800" alt="PromptVault logo"><div><h2 class="font-black text-white leading-tight">PromptVault</h2><p class="text-[10px] text-primary uppercase tracking-widest font-bold">AI Pro Cloud</p></div></div><nav class="flex-1 py-4 space-y-1 overflow-y-auto"><button onclick="window.switchTab('dashboard')" class="nav-item active w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-grid-2 w-6"></i> Dashboard</button><button onclick="window.switchTab('library')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-book w-6"></i> Library</button><button onclick="window.switchTab('collections')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-folder-tree w-6"></i> Collections</button><button onclick="window.switchTab('explore')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-compass w-6"></i> Explore</button><button onclick="window.switchTab('analytics')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-chart-pie w-6"></i> Analytics</button><button onclick="window.switchTab('settings')" class="nav-item w-full text-left px-6 py-3 text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"><i class="fa-solid fa-gear w-6"></i> Settings</button></nav><div class="p-5 border-t border-neutral-900"><div class="rounded-2xl bg-neutral-950 border border-neutral-900 p-4 mb-4"><div class="flex items-center justify-between text-xs text-neutral-500 mb-2"><span>Monthly API spend</span><span class="text-amber-400 font-mono">$<span id="monthly-spend">0.0000</span></span></div><div class="flex items-center gap-2 text-xs text-neutral-500"><span id="sync-indicator" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud sync active</div></div><div class="flex items-center gap-3"><img id="user-avatar" src="" class="hidden w-10 h-10 rounded-full border border-neutral-700" alt="User avatar"><div class="min-w-0 flex-1"><p id="user-name" class="text-sm font-bold text-white truncate">User</p><button onclick="window.signOutUser()" class="text-xs text-neutral-500 hover:text-red-400">Sign out</button></div></div></div></aside>
@@ -490,11 +490,11 @@
 
         if ('serviceWorker' in navigator) window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('sw.js?v=11');
+                const reg = await navigator.serviceWorker.register('sw.js?v=12');
                 reg.update?.();
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!sessionStorage.getItem('sw-reloaded-v11')) {
-                        sessionStorage.setItem('sw-reloaded-v11', '1');
+                    if (!sessionStorage.getItem('sw-reloaded-v12')) {
+                        sessionStorage.setItem('sw-reloaded-v12', '1');
                         window.location.reload();
                     }
                 });
@@ -636,7 +636,7 @@
                 const actions = [
                     {n:'Create New Prompt', icon:'fa-plus', action: 'window.prepareAddPrompt(); window.closeCmdPalette();'},
                     {n:'Go to Dashboard', icon:'fa-house', action: 'window.switchTab("dashboard"); window.closeCmdPalette();'},
-                    {n:'Go to Discover Marketplace', icon:'fa-compass text-primary', action: 'window.switchTab("discover"); window.closeCmdPalette();'},
+                    {n:'Go to Marketplace', icon:'fa-compass text-primary', action: 'window.switchTab("explore"); window.closeCmdPalette();'},
                     {n:'Sync Cloud Data', icon:'fa-rotate', action: 'window.manualRefresh(); window.closeCmdPalette();'}
                 ].filter(a => a.n.toLowerCase().includes(actionQ));
                 html = actions.map(a => `<div onclick="${a.action}" class="flex items-center px-4 py-3 hover:bg-neutral-800 rounded-xl cursor-pointer text-white"><i class="fa-solid ${a.icon} w-6 text-neutral-500"></i> ${a.n}</div>`).join('');
@@ -649,38 +649,43 @@
         }
 
         // --- AUTHENTICATION ---
+        function showAuthHelp(error) {
+            const host = window.location.hostname;
+            const help = document.getElementById('auth-help');
+            const code = error?.code || 'auth/internal-error';
+            const message = error?.message || 'Google sign-in could not complete.';
+            if (help) {
+                help.classList.remove('hidden');
+                help.innerHTML = `<b class="text-amber-200">Google login needs Firebase domain setup.</b><br><br>
+                Error: <code>${esc(code)}</code><br>
+                Current domain to add: <code>${esc(host)}</code><br><br>
+                Firebase Console → Authentication → Settings → Authorized domains → Add <code>${esc(host)}</code>.<br>
+                Also ensure Authentication → Sign-in method → Google is enabled.<br><br>
+                You can continue as Guest and browse Marketplace while this is configured.`;
+            }
+            console.warn('Auth help:', code, message, 'host:', host);
+        }
+        window.continueAsGuest = () => {
+            window.currentUser = null;
+            updateAuthButton?.(null);
+            window.closeLoginOverlay?.();
+            window.switchTab?.('explore');
+            try { window.p3SeedExamples?.(); window.renderExplore?.(); } catch (_) {}
+        };
+
         window.signInWithGoogle = async () => {
-            window.openLoginOverlay();
+            window.openLoginOverlay?.();
             const loader = document.getElementById('login-loader');
+            const help = document.getElementById('auth-help');
+            help?.classList.add('hidden');
             loader?.classList.remove('hidden');
             try {
-                await signInWithPopup(auth, googleProvider);
+                sessionStorage.setItem('pv-auth-redirect-started', '1');
+                // Redirect is more reliable on Vercel/custom domains than popup and avoids popup/iframe internal errors.
+                await signInWithRedirect(auth, googleProvider);
             } catch (e) {
-                console.error('Popup login failed', e);
-                const code = e?.code || '';
-                // Some deployed browsers block the popup/iframe handshake and Firebase reports auth/internal-error.
-                // Redirect is more reliable on Vercel/GitHub/Firebase Hosting.
-                if (code === 'auth/internal-error' || code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request' || code === 'auth/popup-closed-by-user') {
-                    try {
-                        await signInWithRedirect(auth, googleProvider);
-                        return;
-                    } catch (redirectErr) {
-                        console.error('Redirect login failed', redirectErr);
-                        e = redirectErr;
-                    }
-                }
                 loader?.classList.add('hidden');
-                const host = window.location.hostname;
-                let msg = e?.message || 'Unknown Firebase auth error.';
-                if ((e?.code || '').includes('unauthorized-domain') || (e?.code || '') === 'auth/internal-error') {
-                    msg += `
-
-Fix checklist:
-1) Firebase Console > Authentication > Settings > Authorized domains: add ${host}
-2) Enable Google provider in Authentication > Sign-in method
-3) Clear old service worker/cache or open in Incognito after redeploy.`;
-                }
-                await window.modal.alert(msg, 'Login Failed');
+                showAuthHelp(e);
             }
         };
         window.signOutUser = async () => { 
@@ -697,10 +702,11 @@ Fix checklist:
         googleProvider.setCustomParameters({ prompt: 'select_account' });
         auth.useDeviceLanguage?.();
 
-        getRedirectResult(auth).catch(async (e) => {
-            console.error('Redirect login failed', e);
-            const code = e?.code || 'auth/error';
-            await window.modal.alert(`Firebase login failed (${code}). If this is Vercel/GitHub, add this exact domain to Firebase Authorized domains and redeploy: ${window.location.hostname}`, 'Login Failed');
+        getRedirectResult(auth).catch((e) => {
+            // Do not block the app with a scary modal; show inline help only if the user opens login.
+            console.warn('Redirect login did not complete:', e);
+            sessionStorage.removeItem('pv-auth-redirect-started');
+            setTimeout(() => showAuthHelp(e), 200);
         });
 
         async function loadSharedPrompt(id) {
