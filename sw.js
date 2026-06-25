@@ -19,7 +19,11 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((names) => Promise.all(names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))))
+      .then((names) => Promise.all(
+        names
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      ))
       .then(() => self.clients.claim())
   );
 });
@@ -28,10 +32,12 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
+  // Always fetch fresh HTML
   if (event.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname === '/') {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
         .then((response) => {
+          if (!response || response.status !== 200) return response;
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy)).catch(() => {});
           return response;
@@ -41,6 +47,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Never cache external APIs
   if (
     url.hostname.includes('googleapis.com') ||
     url.hostname.includes('google.com') ||
@@ -53,6 +60,7 @@ self.addEventListener('fetch', (event) => {
     url.hostname.includes('cloud.leonardo.ai')
   ) return;
 
+  // Cache-first for static assets
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
