@@ -20,16 +20,23 @@
     
 
     <script>
-      // One-time emergency cache cleanup for old PromptVault service workers.
+      // Safe cache cleanup - only runs once per version
       (function(){
         try {
           var key='pv-sw-clean-v14';
-          if ('serviceWorker' in navigator) {
-            localStorage.setItem(key,'1');
+          if (localStorage.getItem(key) === '1') return; // Already cleaned, don't run again
+          localStorage.setItem(key,'1');
+          
+          if ('serviceWorker' in navigator && window.caches) {
             navigator.serviceWorker.getRegistrations().then(function(regs){
-              Promise.all(regs.map(function(r){ return r.unregister(); })).then(function(){
-                if (window.caches) caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k); })); }).finally(function(){ location.reload(); });
-                else location.reload();
+              regs.forEach(function(r){ r.unregister().catch(function(){}); });
+            }).catch(function(){});
+            
+            caches.keys().then(function(keys){
+              keys.forEach(function(k){
+                if (k !== 'promptvault-v14') {
+                  caches.delete(k).catch(function(){});
+                }
               });
             }).catch(function(){});
           }
